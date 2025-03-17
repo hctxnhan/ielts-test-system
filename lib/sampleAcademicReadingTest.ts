@@ -76,7 +76,12 @@ export const sampleAcademicReadingTest: Test = {
         {
           id: uuidv4(),
           type: 'completion',
-          text: 'Complete the sentences below using NO MORE THAN THREE WORDS from the passage.',
+          text: `Complete the sentences below using NO MORE THAN THREE WORDS from the passage.
+          
+          1. The term "biodiversity" refers to the variety of life on Earth, including all its forms and interactions.
+          2. The Earth's ecosystems are becoming __________ due to human activities.
+          3. The process of restoring natural habitats and reintroducing species is known as __________.
+          `,
           points: 3,
           blanks: 3,
           correctAnswers: [

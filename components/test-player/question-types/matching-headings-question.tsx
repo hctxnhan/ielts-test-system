@@ -1,69 +1,158 @@
-"use client"
+'use client';
 
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
-import { Card } from "@/components/ui/card"
-import type { MatchingHeadingsQuestion } from "@/lib/types"
+import { useState, useEffect } from 'react';
+import { useDrag, useDrop, DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { Card } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 
-interface MatchingHeadingsQuestionProps {
-  question: MatchingHeadingsQuestion
-  value: Record<number, number> | null
-  onChange: (value: Record<number, number>) => void
-}
+// Define the type for the question
+type MatchingHeadingsQuestion = {
+  headings: string[];
+  paragraphs: string[];
+};
 
-export default function MatchingHeadingsQuestionRenderer({ question, value, onChange }: MatchingHeadingsQuestionProps) {
+// Define the props for the component
+type MatchingHeadingsQuestionRendererProps = {
+  question: MatchingHeadingsQuestion;
+  value: Record<number, number> | null;
+  onChange: (value: Record<number, number>) => void;
+};
+
+const ITEM_TYPE = 'HEADING';
+
+export default function MatchingHeadingsQuestionRenderer({
+  question,
+  value,
+  onChange
+}: MatchingHeadingsQuestionRendererProps) {
+  const [matches, setMatches] = useState<Record<number, number>>({}); // Stores paragraph -> heading mapping
+
+  useEffect(() => {
+    // Initialize matches from the value prop
+    if (value) {
+      setMatches(value);
+    }
+  }, [value]);
+
+  const handleDrop = (headingIndex: number, paraIndex: number) => {
+    setMatches((prevMatches) => {
+      // Remove existing match if the heading is already assigned
+      const updatedMatches = Object.fromEntries(
+        Object.entries(prevMatches).filter(
+          ([, hIndex]) => hIndex !== headingIndex
+        )
+      );
+
+      // Assign the heading to the paragraph
+      updatedMatches[paraIndex] = headingIndex;
+
+      // Notify the parent component of the change
+      onChange(updatedMatches);
+
+      return updatedMatches;
+    });
+  };
+
   return (
-    <div className="space-y-4">
-      <p className="font-medium">{question.text}</p>
+    <DndProvider backend={HTML5Backend}>
+      <div className="relative">
+        {/* Sticky Heading Section */}
+        <div className="sticky top-0 bg-white z-10">
+          <p className="font-medium mb-2">Headings:</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {question.headings.map((heading, headingIndex) => (
+              <DraggableHeading
+                key={headingIndex}
+                heading={heading}
+                headingIndex={headingIndex}
+              />
+            ))}
+          </div>
+        </div>
 
-      <div className="space-y-2">
-        <p className="font-medium">Headings:</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {question.headings.map((heading, headingIndex) => (
-            <Card key={headingIndex} className="p-3">
-              <p>
-                <span className="font-bold">{String.fromCharCode(65 + headingIndex)}.</span> {heading}
-              </p>
-            </Card>
+        {/* Paragraphs Section */}
+        <div className="space-y-4 mt-10">
+          <p className="font-medium">Paragraphs:</p>
+          {question.paragraphs.map((paragraph, paraIndex) => (
+            <DroppableParagraph
+              key={paraIndex}
+              paragraph={paragraph}
+              paraIndex={paraIndex}
+              headingIndex={matches[paraIndex]}
+              headingText={
+                matches[paraIndex] !== undefined
+                  ? question.headings[matches[paraIndex]]
+                  : null
+              }
+              onDrop={handleDrop}
+            />
           ))}
         </div>
       </div>
-
-      <div className="space-y-4">
-        <p className="font-medium">Paragraphs:</p>
-        {question.paragraphs.map((paragraph, paraIndex) => (
-          <div key={paraIndex} className="space-y-2">
-            <Card className="p-4">
-              <p className="text-sm whitespace-pre-line">{paragraph}</p>
-            </Card>
-
-            <div className="flex items-center space-x-2">
-              <Label htmlFor={`heading-${paraIndex}`} className="w-20">
-                Paragraph {paraIndex + 1}:
-              </Label>
-              <RadioGroup
-                value={value && value[paraIndex] !== undefined ? value[paraIndex].toString() : undefined}
-                onValueChange={(val) => {
-                  const newAnswers = { ...(value || {}) }
-                  newAnswers[paraIndex] = Number.parseInt(val)
-                  onChange(newAnswers)
-                }}
-                className="flex flex-wrap gap-2"
-              >
-                {question.headings.map((_, headingIndex) => (
-                  <div key={headingIndex} className="flex items-center space-x-1 border rounded-md p-1">
-                    <RadioGroupItem value={headingIndex.toString()} id={`heading-${paraIndex}-${headingIndex}`} />
-                    <Label htmlFor={`heading-${paraIndex}-${headingIndex}`}>
-                      {String.fromCharCode(65 + headingIndex)}
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
+    </DndProvider>
+  );
 }
 
+function DraggableHeading({ heading, headingIndex }) {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: ITEM_TYPE,
+    item: { headingIndex },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging()
+    })
+  }));
+
+  return (
+    <Card
+      ref={drag}
+      className={`p-3 cursor-move ${isDragging ? 'opacity-50' : 'opacity-100'}`}
+    >
+      <p>
+        <span className="font-bold">
+          {String.fromCharCode(65 + headingIndex)}.
+        </span>{' '}
+        {heading}
+      </p>
+    </Card>
+  );
+}
+
+function DroppableParagraph({
+  paragraph,
+  paraIndex,
+  headingIndex,
+  headingText,
+  onDrop
+}) {
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: ITEM_TYPE,
+    drop: (item) => onDrop(item.headingIndex, paraIndex),
+    collect: (monitor) => ({
+      isOver: !!monitor.isOver()
+    })
+  }));
+
+  return (
+    <div
+      ref={drop}
+      className={`p-4 border rounded-md ${isOver ? 'bg-gray-100' : 'bg-white'}`}
+    >
+      <Card className="p-4">
+        <p className="text-sm whitespace-pre-line">{paragraph}</p>
+      </Card>
+      <div className="mt-2">
+        <Label>Matched Heading:</Label>
+        <div className="p-2 border rounded-md min-h-[2rem]">
+          {headingText ? (
+            <span className="font-bold">
+              {String.fromCharCode(65 + headingIndex)}. {headingText}
+            </span>
+          ) : (
+            <span className="text-gray-400">Drag a heading here</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

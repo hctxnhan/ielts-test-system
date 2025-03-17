@@ -208,7 +208,7 @@ export const sampleListeningTest: Test = {
           points: 3,
           imageUrl: '/placeholder.svg?height=300&width=400',
           labels: ['Main entrance', 'Reception', 'Multi-purpose hall'],
-          options: [],
+          options: ['main entrance', 'reception', 'multi-purpose hall'],
           correctLabels: { 0: 0, 1: 1, 2: 2 },
           scoringStrategy: 'all-or-nothing'
         }
