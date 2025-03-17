@@ -32,10 +32,16 @@ import AudioPlayer from './audio-player';
 interface TestPlayerProps {
   test: Test;
   loading: boolean;
-  onBack: () => void;
+  onBack?: () => void;
+  onTestComplete?: () => Promise<void>;
 }
 
-export default function TestPlayer({ test, loading, onBack }: TestPlayerProps) {
+export default function TestPlayer({
+  test,
+  loading,
+  onBack,
+  onTestComplete
+}: TestPlayerProps) {
   const [showInstructions, setShowInstructions] = useState(true);
   const [activeTab, setActiveTab] = useState('questions');
   const [showPassage, setShowPassage] = useState(true);
@@ -67,11 +73,13 @@ export default function TestPlayer({ test, loading, onBack }: TestPlayerProps) {
   // Start the test when instructions are dismissed
   const handleStartTest = useCallback(() => {
     setShowInstructions(false);
+    // scroll to top
     startTest();
   }, [startTest]);
 
   // Handle test completion
-  const handleCompleteTest = useCallback(() => {
+  const handleCompleteTest = useCallback(async () => {
+    await onTestComplete?.();
     completeTest();
   }, [completeTest]);
 

@@ -35,7 +35,7 @@ import {
 interface TestInstructionsProps {
   test: Test;
   onStart: () => void;
-  onBack: () => void;
+  onBack?: () => void;
   loading: boolean;
 }
 
