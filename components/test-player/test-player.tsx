@@ -332,7 +332,6 @@ export default function TestPlayer({
         <div className="flex-1">
           <div className="mb-6">
             <h1 className="text-2xl font-bold">{test.title}</h1>
-            <p className="text-muted-foreground">{section.title}</p>
           </div>
 
           {isListeningTest && section.audioUrl && (
@@ -369,9 +368,8 @@ export default function TestPlayer({
           )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-            <TabsList>
+            <TabsList className="hidden">
               <TabsTrigger value="questions">Questions</TabsTrigger>
-              <TabsTrigger value="section-info">Section Info</TabsTrigger>
             </TabsList>
 
             <TabsContent value="questions">
