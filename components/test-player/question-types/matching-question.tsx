@@ -67,7 +67,10 @@ export default function MatchingQuestionRenderer({
           <p className="font-medium">Items</p>
           {question.items.map((item, itemIndex) => (
             <div className='flex items-center gap-2' key={itemIndex}>
-              <Label className='w-[200px]'>{itemIndex + 1}. {item}</Label>
+              <Label className='w-[200px]'>{
+                question.scoringStrategy === 'partial' 
+                  ? `Question ${question.index + itemIndex}.` 
+                  : `${itemIndex + 1}.`} {item}</Label>
               <DroppableZone
                 key={itemIndex}
                 index={itemIndex}

@@ -11,7 +11,7 @@ import { DraggableItem, DroppableZone } from './shared/dnd-components';
 interface PickFromListQuestionProps {
   question: PickFromListQuestion
   value: Record<number, number> | null
-  onChange: (value: Record<number, number>) => void
+  onChange: (value: Record<number, number>) => void,
 }
 
 const ITEM_TYPE = 'OPTION';
@@ -19,11 +19,11 @@ const ITEM_TYPE = 'OPTION';
 export default function PickFromListQuestionRenderer({
   question,
   value,
-  onChange
+  onChange,
 }: PickFromListQuestionProps) {
   const options = question.options || [];
   const items = question.items || [];
-
+  const isPartial = question.scoringStrategy === "partial";
   const [matches, setMatches] = useState<Record<number, number>>({});
 
   useEffect(() => {
@@ -44,10 +44,10 @@ export default function PickFromListQuestionRenderer({
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="space-y-4">
-        <p className="font-medium">{question.text}</p>
-
+        <p className="font-medium">
+          {question.text}
+        </p>
         <div className="space-y-2 w-fit">
-          <p className="font-medium">Possible Options:</p>
           {options.map((option, optionIndex) => (
             <DraggableItem
               key={optionIndex}
@@ -60,10 +60,10 @@ export default function PickFromListQuestionRenderer({
         </div>
 
         <div className="space-y-2">
-          <p className="font-medium">Items:</p>
           {items.map((item, itemIndex) => (
             <div key={itemIndex} className="flex items-center gap-2">
-              <Label className='w-[200px]'>{item}</Label>
+              <Label className='w-[200px]'>{
+                isPartial ? `Question ${question.index + itemIndex}.` : `${itemIndex}.`} {item}</Label>
               <DroppableZone
                 key={itemIndex}
                 index={itemIndex}

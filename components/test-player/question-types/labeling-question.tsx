@@ -65,7 +65,10 @@ export default function LabelingQuestionRenderer({
             <p className="font-medium text-sm">Labels</p>
             {question.labels.map((label, labelIndex) => (
               <div key={labelIndex} className="flex items-center gap-2">
-                <span className="text-sm min-w-[200px]">{label}</span>
+                <span className="text-sm min-w-[200px]">{
+                  question.scoringStrategy === 'partial' 
+                    ? `Label ${question.index + labelIndex}.` 
+                    : `${labelIndex + 1}.`} {label}</span>
                 <DroppableZone
                   index={labelIndex}
                   itemType={ITEM_TYPE}

@@ -76,9 +76,10 @@ export default function MatchingHeadingsQuestionRenderer({
           <Label className="text-sm">Paragraphs:</Label>
           {question.paragraphs.map((paragraph, paraIndex) => (
             <div key={paraIndex} className="space-y-2 w-fit min-w-[300px]">
-              <p className="text-xs text-gray-600 whitespace-pre-line">
-                {paragraph}
-              </p>
+              <p className="text-xs text-gray-600 whitespace-pre-line">{
+                question.scoringStrategy === 'partial' 
+                  ? `Paragraph ${question.index + paraIndex}.` 
+                  : `${paraIndex + 1}.`} {paragraph}</p>
               <DroppableZone
                 index={paraIndex}
                 itemType={ITEM_TYPE}

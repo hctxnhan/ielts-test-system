@@ -21,9 +21,10 @@ export default function TrueFalseNotGivenQuestionRenderer({
       <div className="space-y-4">
         {question.statements.map((statement, index) => (
           <div key={index} className="space-y-2">
-            <p className="font-medium">
-              {index + 1}. {statement}
-            </p>
+            <p className="font-medium">{
+              question.scoringStrategy === 'partial' 
+                ? `Statement ${question.index + index}.` 
+                : `${index + 1}.`} {statement}</p>
             <RadioGroup
               value={value && value[index] ? value[index] : undefined}
               onValueChange={(val) => {

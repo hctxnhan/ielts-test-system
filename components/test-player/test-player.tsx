@@ -13,10 +13,9 @@ import {
   SheetHeader,
   SheetTitle
 } from '@/components/ui/sheet';
-import type { Test } from '@/lib/types';
+import type { Question, Test } from '@/lib/types';
 import { useTestStore } from '@/store/test-store';
 import {
-  BookOpen,
   LayoutGrid,
   SplitSquareVertical
 } from 'lucide-react';
@@ -43,7 +42,6 @@ export default function TestPlayer({
   onTestComplete
 }: TestPlayerProps) {
   const [showInstructions, setShowInstructions] = useState(true);
-  const [activeTab, setActiveTab] = useState('questions');
   const [showPassage, setShowPassage] = useState(true);
   const [audioPlayed, setAudioPlayed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -64,6 +62,8 @@ export default function TestPlayer({
   // Load the test when component mounts
   useEffect(() => {
     if (loading) return;
+
+
     loadTest(test);
     return () => {
       // Clean up when component unmounts
@@ -293,11 +293,10 @@ export default function TestPlayer({
         )}
 
         {/* Questions - Full width on mobile, expanded when passage is hidden */}
-        <div className={`lg:transition-all lg:duration-300 ${
-          isReadingTest && section.readingPassage ? 
-            (showPassage ? 'lg:w-5/12' : 'lg:w-8/12') : 
-            'lg:w-8/12'
-        }`}>
+        <div className={`lg:transition-all lg:duration-300 ${isReadingTest && section.readingPassage ?
+          (showPassage ? 'lg:w-5/12' : 'lg:w-8/12') :
+          'lg:w-8/12'
+          }`}>
           {/* Toggle passage button - moved from passage section to questions section */}
           {isReadingTest && section.readingPassage && (
             <div className="flex justify-start mb-4">

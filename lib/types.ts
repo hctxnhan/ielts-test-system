@@ -26,10 +26,8 @@ export interface BaseQuestion {
   points: number
   // Add scoring strategy
   scoringStrategy: ScoringStrategy
-  // Add grouping information
-  isPartOfGroup?: boolean
-  groupId?: string
-  groupPosition?: number // Position within the group (e.g., 1 for Question 1 in "Questions 1-5")
+  index: number
+  partialEndingIndex?: number // For partial scoring
 }
 
 export interface QuestionGroup {
@@ -195,14 +193,3 @@ export interface SectionTemplate {
   questionTypes: QuestionType[]
   duration: number
 }
-
-interface CreatorState {
-  // Current test being created
-  currentTest: Test | null
-  savedTests: Test[]
-
-  // Actions
-  createNewTest: (type: TestType, title: string, readingVariant?: ReadingVariant) => void
-  // ... other methods
-}
-

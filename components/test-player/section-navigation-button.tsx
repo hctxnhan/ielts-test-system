@@ -32,7 +32,7 @@ export default function SectionNavigationButton({
     >
       {section.title}
       <div className="ml-2 text-xs">
-        {section.questions.length} questions
+        {section.questions.at(-1).partialEndingIndex || section.questions.at(-1).index} questions
       </div>
     </Button>
   );

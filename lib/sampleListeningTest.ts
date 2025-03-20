@@ -59,7 +59,7 @@ export const sampleListeningTest: Test = {
           type: 'completion',
           text: 'The apartment is available from _____ (date).',
           points: 1,
-          blanks: 1,
+          blanks: 2,
           correctAnswers: ['June 1', 'June 1st', '1st June', '1 June'],
           scoringStrategy: 'all-or-nothing'
         },

@@ -17,9 +17,10 @@ export default function CompletionQuestionRenderer({ question, value, onChange }
       <div className="space-y-2">
         {Array.from({ length: question.blanks }).map((_, index) => (
           <div key={index} className="flex items-center space-x-2">
-            <Label htmlFor={`blank-${index}`} className="w-20">
-              Blank {index + 1}:
-            </Label>
+            <Label htmlFor={`blank-${index}`} className="w-20">{
+              question.scoringStrategy === 'partial' 
+                ? `Blank ${question.index + index}:` 
+                : `Blank ${index + 1}:`}</Label>
             <Input
               id={`blank-${index}`}
               value={value?.[index] || ""}
