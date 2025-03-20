@@ -1,10 +1,10 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { useDrag, useDrop, DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
-import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
 import type { MatchingQuestion } from '@/lib/types';
+import { useEffect, useState } from 'react';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { DraggableItem, DroppableZone } from './shared/dnd-components';
+import { Label } from '@/components/ui/label';
 
 interface MatchingQuestionProps {
   question: MatchingQuestion;
@@ -51,106 +51,37 @@ export default function MatchingQuestionRenderer({
     <DndProvider backend={HTML5Backend}>
       <div className="space-y-4">
         <p className="font-medium">{question.text}</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <p className="font-medium">Items</p>
-            {question.items.map((item, itemIndex) => (
-              <DroppableItem
+        <div className="space-y-2 w-fit">
+          <p className="font-medium">Options</p>
+          {question.options.map((option, optionIndex) => (
+            <DraggableItem
+              key={optionIndex}
+              text={option}
+              index={optionIndex}
+              itemType={ITEM_TYPE}
+              prefix={String.fromCharCode(65 + optionIndex) + '. '}
+            />
+          ))}
+        </div>
+        <div className="space-y-2">
+          <p className="font-medium">Items</p>
+          {question.items.map((item, itemIndex) => (
+            <div className='flex items-center gap-2' key={itemIndex}>
+              <Label className='w-[200px]'>{itemIndex + 1}. {item}</Label>
+              <DroppableZone
                 key={itemIndex}
-                item={item}
-                itemIndex={itemIndex}
-                optionIndex={matches[itemIndex]}
-                optionText={
-                  matches[itemIndex] !== undefined
-                    ? question.options[matches[itemIndex]]
-                    : null
-                }
-                optionLetter={
-                  matches[itemIndex] !== undefined
-                    ? String.fromCharCode(65 + matches[itemIndex])
-                    : null
-                }
+                index={itemIndex}
+                matchedIndex={matches[itemIndex]}
+                matchedText={matches[itemIndex] !== undefined ? question.options[matches[itemIndex]] : null}
+                prefix={matches[itemIndex] !== undefined ? String.fromCharCode(65 + matches[itemIndex]) + '. ' : ''}
                 onDrop={handleDrop}
+                itemType={ITEM_TYPE}
+                placeholder="Drag an option here"
               />
-            ))}
-          </div>
-
-          <div className="space-y-2">
-            <p className="font-medium">Options</p>
-            {question.options.map((option, optionIndex) => (
-              <DraggableOption
-                key={optionIndex}
-                option={option}
-                optionIndex={optionIndex}
-                optionLetter={String.fromCharCode(65 + optionIndex)}
-              />
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </div>
     </DndProvider>
-  );
-}
-
-function DraggableOption({ option, optionIndex, optionLetter }) {
-  const [{ isDragging }, drag] = useDrag(() => ({
-    type: ITEM_TYPE,
-    item: { optionIndex },
-    collect: (monitor) => ({
-      isDragging: !!monitor.isDragging()
-    })
-  }));
-
-  return (
-    <Card
-      ref={drag}
-      className={`p-3 cursor-move ${isDragging ? 'opacity-50' : 'opacity-100'}`}
-    >
-      <p>
-        <span className="font-bold">{optionLetter}.</span> {option}
-      </p>
-    </Card>
-  );
-}
-
-function DroppableItem({
-  item,
-  itemIndex,
-  optionIndex,
-  optionText,
-  optionLetter,
-  onDrop
-}) {
-  const [{ isOver }, drop] = useDrop(() => ({
-    accept: ITEM_TYPE,
-    drop: (item) => onDrop(item.optionIndex, itemIndex),
-    collect: (monitor) => ({
-      isOver: !!monitor.isOver()
-    })
-  }));
-
-  return (
-    <div
-      ref={drop}
-      className={`p-4 border rounded-md ${isOver ? 'bg-gray-100' : 'bg-white'}`}
-    >
-      <Card className="p-3">
-        <p>
-          {itemIndex + 1}. {item}
-        </p>
-      </Card>
-      <div className="mt-2">
-        <Label>Your Answer:</Label>
-        <div className="p-2 border rounded-md min-h-[2rem]">
-          {optionText ? (
-            <span className="font-bold">
-              {optionLetter}. {optionText}
-            </span>
-          ) : (
-            <span className="text-gray-400">Drag an option here</span>
-          )}
-        </div>
-      </div>
-    </div>
   );
 }

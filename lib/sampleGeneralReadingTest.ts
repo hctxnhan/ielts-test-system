@@ -48,7 +48,7 @@ export const sampleGeneralReadingTest: Test = {
             'Room rentals are free for members.'
           ],
           correctAnswers: ['true', 'false', 'false', 'true', 'false'],
-          scoringStrategy: 'all-or-nothing'
+          scoringStrategy: 'partial'
         },
         {
           id: uuidv4(),
@@ -67,7 +67,7 @@ export const sampleGeneralReadingTest: Test = {
           items: ['Community Yard Sale', 'Health Fair', 'Cultural Festival'],
           options: ['April 15', 'May 6', 'June 10'],
           correctMatches: { 0: 0, 1: 1, 2: 2 },
-          scoringStrategy: 'all-or-nothing'
+          scoringStrategy: 'partial'
         },
         {
           id: uuidv4(),
@@ -82,7 +82,14 @@ export const sampleGeneralReadingTest: Test = {
             'non-profit organizations',
             'www.greenfieldcc.org'
           ],
-          scoringStrategy: 'all-or-nothing'
+          statements: [
+            'The community center opens at ______________ on weekdays.',
+            'The swimming pool is ______________.',
+            'The fitness instructor is ______________.',
+            'The center collaborates with ______________ for events.',
+            'For more information, visit ______________.'
+          ],
+          scoringStrategy: 'partial'
         }
       ]
     },

@@ -71,7 +71,7 @@ export const sampleListeningTest: Test = {
           items: ['Washing machine', 'Storage space'],
           options: ['In the basement', 'On the balcony'],
           correctMatches: { 0: 0, 1: 1 },
-          scoringStrategy: 'all-or-nothing'
+          scoringStrategy: 'partial'
         },
         {
           id: uuidv4(),
@@ -87,7 +87,7 @@ export const sampleListeningTest: Test = {
             'a university'
           ],
           correctAnswers: [0, 3],
-          scoringStrategy: 'all-or-nothing'
+          scoringStrategy: 'partial'
         },
         {
           id: uuidv4(),
@@ -207,7 +207,7 @@ export const sampleListeningTest: Test = {
           text: 'Label the floor plan of the community center.',
           points: 3,
           imageUrl: '/placeholder.svg?height=300&width=400',
-          labels: ['Main entrance', 'Reception', 'Multi-purpose hall'],
+          labels: ['Main entrance 1', 'Reception 1', 'Multi-purpose hall 1'],
           options: ['main entrance', 'reception', 'multi-purpose hall'],
           correctLabels: { 0: 0, 1: 1, 2: 2 },
           scoringStrategy: 'all-or-nothing'
@@ -414,7 +414,11 @@ export const sampleListeningTest: Test = {
           points: 3,
           imageUrl: '/placeholder.svg?height=300&width=400',
           labels: ['Blade', 'Generator', 'Tower'],
-          options: [],
+          options: [
+            'blade 1',
+            'generator 1',
+            'tower 1'
+          ],
           correctLabels: { 0: 0, 1: 1, 2: 2 },
           scoringStrategy: 'all-or-nothing'
         }

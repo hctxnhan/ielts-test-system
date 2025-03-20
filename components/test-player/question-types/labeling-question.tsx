@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from 'react';
-import { useDrag, useDrop, DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
-import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
 import type { LabelingQuestion } from '@/lib/types';
+import { useEffect, useState } from 'react';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { DraggableItem, DroppableZone } from './shared/dnd-components';
+import { Label } from 'recharts';
 
 interface LabelingQuestionProps {
   question: LabelingQuestion;
@@ -50,12 +50,9 @@ export default function LabelingQuestionRenderer({
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="space-y-4">
-        <p className="font-medium">{question.text}</p>
-        <div
-          className="relative border rounded-lg overflow-hidden"
-          style={{ height: '300px' }}
-        >
+      <div className="space-y-3">
+        <p className="font-medium text-sm">{question.text}</p>
+        <div className="relative border rounded-lg overflow-hidden" style={{ height: '200px' }}>
           <img
             src={question.imageUrl || '/placeholder.svg'}
             alt="Diagram to label"
@@ -63,33 +60,32 @@ export default function LabelingQuestionRenderer({
           />
         </div>
 
-        <div className="space-y-4 pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <p className="font-medium">Labels</p>
-              {question.labels.map((label, labelIndex) => (
-                <DroppableLabel
-                  key={labelIndex}
-                  label={label}
-                  labelIndex={labelIndex}
-                  optionIndex={matches[labelIndex]}
-                  optionText={
-                    matches[labelIndex] !== undefined
-                      ? question.options[matches[labelIndex]]
-                      : null
-                  }
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <p className="font-medium text-sm">Labels</p>
+            {question.labels.map((label, labelIndex) => (
+              <div key={labelIndex} className="flex items-center gap-2">
+                <span className="text-sm min-w-[200px]">{label}</span>
+                <DroppableZone
+                  index={labelIndex}
+                  itemType={ITEM_TYPE}
+                  matchedText={matches[labelIndex] !== undefined ? question.options[matches[labelIndex]] : null}
                   onDrop={handleDrop}
+                  placeholder="Drag option here"
                 />
-              ))}
-            </div>
+              </div>
+            ))}
+          </div>
 
-            <div className="space-y-2">
-              <p className="font-medium">Options</p>
+          <div className="space-y-2">
+            <p className="font-medium text-sm">Options</p>
+            <div className="grid grid-cols-2 gap-2">
               {question.options.map((option, optionIndex) => (
-                <DraggableOption
+                <DraggableItem
                   key={optionIndex}
-                  option={option}
-                  optionIndex={optionIndex}
+                  text={option}
+                  index={optionIndex}
+                  itemType={ITEM_TYPE}
                 />
               ))}
             </div>
@@ -97,59 +93,6 @@ export default function LabelingQuestionRenderer({
         </div>
       </div>
     </DndProvider>
-  );
-}
-
-function DraggableOption({ option, optionIndex }) {
-  const [{ isDragging }, drag] = useDrag(() => ({
-    type: ITEM_TYPE,
-    item: { optionIndex },
-    collect: (monitor) => ({
-      isDragging: !!monitor.isDragging()
-    })
-  }));
-
-  return (
-    <Card
-      ref={drag}
-      className={`p-3 cursor-move ${isDragging ? 'opacity-50' : 'opacity-100'}`}
-    >
-      <p>{option}</p>
-    </Card>
-  );
-}
-
-function DroppableLabel({
-  label,
-  labelIndex,
-  optionIndex,
-  optionText,
-  onDrop
-}) {
-  const [{ isOver }, drop] = useDrop(() => ({
-    accept: ITEM_TYPE,
-    drop: (item) => onDrop(item.optionIndex, labelIndex),
-    collect: (monitor) => ({
-      isOver: !!monitor.isOver()
-    })
-  }));
-
-  return (
-    <div className="flex items-start space-x-2">
-      <Label className="w-1/3 pt-2">{label}:</Label>
-      <div
-        ref={drop}
-        className={`flex-1 p-2 border rounded-md min-h-[2.5rem] ${
-          isOver ? 'bg-gray-100' : 'bg-white'
-        }`}
-      >
-        {optionText ? (
-          <span className="font-medium">{optionText}</span>
-        ) : (
-          <span className="text-gray-400">Drag an option here</span>
-        )}
-      </div>
-    </div>
   );
 }
 

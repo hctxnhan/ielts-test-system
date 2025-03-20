@@ -1,44 +1,33 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useTestStore } from '@/store/test-store';
-import type { Test, Question } from '@/lib/types';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
   Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle
+  CardContent
 } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import {
   Sheet,
   SheetContent,
   SheetHeader,
-  SheetTitle,
-  SheetClose
+  SheetTitle
 } from '@/components/ui/sheet';
+import type { Test } from '@/lib/types';
+import { useTestStore } from '@/store/test-store';
 import {
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle2,
   BookOpen,
-  SplitSquareVertical,
-  X,
-  LayoutGrid
+  LayoutGrid,
+  SplitSquareVertical
 } from 'lucide-react';
-import TestInstructions from './test-instructions';
-import QuestionRenderer from './question-renderer';
-import QuestionGroupRenderer from './question-group-renderer';
-import TestTimer from './test-timer';
-import TestResults from './test-results';
-import ReadingPassageViewer from './reading-passage-viewer';
+import { useCallback, useEffect, useState } from 'react';
 import AudioPlayer from './audio-player';
+import NavigationButtons from './navigation-buttons';
+import ReadingPassageViewer from './reading-passage-viewer';
+import SectionQuestionsRenderer from './section-questions-renderer';
+import TestInstructions from './test-instructions';
+import TestResults from './test-results';
+import TestSidebar from './test-sidebar';
 
 interface TestPlayerProps {
   test: Test;
@@ -94,60 +83,64 @@ export default function TestPlayer({
     completeTest();
   }, [completeTest, onTestComplete]);
 
-  // Calculate progress percentage
-  const calculateProgress = useCallback(() => {
-    if (!progress || !test) return 0;
-
-    let totalQuestions = 0;
-    let completedQuestions = 0;
-
-    test.sections.forEach((section, sectionIndex) => {
-      totalQuestions += section.questions.length;
-
-      if (sectionIndex < progress.currentSectionIndex) {
-        // All questions in previous sections are completed
-        completedQuestions += section.questions.length;
-      } else if (sectionIndex === progress.currentSectionIndex) {
-        // Add questions completed in current section
-        completedQuestions += Object.keys(progress.answers).filter((id) =>
-          section.questions.some((q) => q.id === id)
-        ).length;
-      }
-    });
-
-    return (completedQuestions / totalQuestions) * 100;
-  }, [progress, test]);
-
   // Toggle reading passage visibility
   const togglePassage = useCallback(() => {
     setShowPassage((prev) => !prev);
   }, []);
 
-  // Memoized navigation handlers
-  const handleNextQuestion = useCallback(() => {
-    nextQuestion();
-    setSidebarOpen(false);
-  }, [nextQuestion]);
+  // Navigation between sections
+  const handleNextSection = useCallback(() => {
+    if (!progress || !test) return;
 
-  const handlePreviousQuestion = useCallback(() => {
-    previousQuestion();
+    const isLastSection = progress.currentSectionIndex === test.sections.length - 1;
+    if (isLastSection) {
+      // End of test
+      handleCompleteTest();
+    } else {
+      // Move to next section
+      const updatedProgress = {
+        ...progress,
+        currentSectionIndex: progress.currentSectionIndex + 1,
+        currentQuestionIndex: 0
+      };
+      useTestStore.setState({ progress: updatedProgress });
+    }
     setSidebarOpen(false);
-  }, [previousQuestion]);
+  }, [progress, test, handleCompleteTest]);
+
+  const handlePreviousSection = useCallback(() => {
+    if (!progress || !test) return;
+
+    const isFirstSection = progress.currentSectionIndex === 0;
+    if (isFirstSection) {
+      // Already at the beginning of the test
+      return;
+    } else {
+      // Move to previous section
+      const updatedProgress = {
+        ...progress,
+        currentSectionIndex: progress.currentSectionIndex - 1,
+        currentQuestionIndex: 0
+      };
+      useTestStore.setState({ progress: updatedProgress });
+    }
+    setSidebarOpen(false);
+  }, [progress, test]);
 
   // Handle audio ended
   const handleAudioEnded = useCallback(() => {
     setAudioPlayed(true);
   }, []);
 
-  // Jump to specific question
-  const jumpToQuestion = useCallback(
-    (sectionIndex: number, questionIndex: number) => {
+  // Jump to specific section
+  const jumpToSection = useCallback(
+    (sectionIndex: number) => {
       if (!progress) return;
 
       const updatedProgress = {
         ...progress,
         currentSectionIndex: sectionIndex,
-        currentQuestionIndex: questionIndex
+        currentQuestionIndex: 0
       };
 
       useTestStore.setState({ progress: updatedProgress });
@@ -156,13 +149,32 @@ export default function TestPlayer({
     [progress]
   );
 
-  // Check if a question has been answered
-  const isQuestionAnswered = useCallback(
-    (questionId: string) => {
-      if (!progress) return false;
-      return !!progress.answers[questionId];
+  // Check if a section has been fully answered
+  const isSectionFullyAnswered = useCallback(
+    (sectionIndex: number) => {
+      if (!progress || !test) return false;
+
+      const section = test.sections[sectionIndex];
+      const sectionQuestionIds = section.questions.map(q => q.id);
+
+      return sectionQuestionIds.every(id => progress.answers[id] !== undefined);
     },
-    [progress]
+    [progress, test]
+  );
+
+  // Check if a section has been partially answered
+  const isSectionPartiallyAnswered = useCallback(
+    (sectionIndex: number) => {
+      if (!progress || !test) return false;
+
+      const section = test.sections[sectionIndex];
+      const sectionQuestionIds = section.questions.map(q => q.id);
+
+      const answeredCount = sectionQuestionIds.filter(id => progress.answers[id] !== undefined).length;
+
+      return answeredCount > 0 && answeredCount < sectionQuestionIds.length;
+    },
+    [progress, test]
   );
 
   // If test is not loaded yet, show loading
@@ -193,9 +205,8 @@ export default function TestPlayer({
 
   // Get current section and question
   const section = currentSection();
-  const question = currentQuestion();
 
-  if (!progress || !section || !question) {
+  if (!progress || !section) {
     return (
       <div className="flex justify-center items-center h-96">
         <p>Error loading test content.</p>
@@ -205,89 +216,6 @@ export default function TestPlayer({
 
   const isReadingTest = test.type === 'reading';
   const isListeningTest = test.type === 'listening';
-
-  // Check if current question is part of a group
-  const isPartOfGroup = question.isPartOfGroup && question.groupId;
-  const currentGroup =
-    isPartOfGroup && section.questionGroups
-      ? section.questionGroups.find((g) => g.id === question.groupId)
-      : undefined;
-
-  // Get all questions in the current group
-  const groupQuestions = currentGroup
-    ? section.questions.filter((q) => q.groupId === currentGroup.id)
-    : [];
-
-  // Sidebar content component to reuse in both desktop and mobile views
-  const SidebarContent = () => (
-    <>
-      <div className="flex justify-between items-center mb-3 max-h-screen overflow-scroll">
-        <TestTimer
-          initialTime={progress.timeRemaining}
-          onTimeEnd={handleCompleteTest}
-        />
-        <Button variant="destructive" size="sm" onClick={handleCompleteTest}>
-          End Test
-        </Button>
-      </div>
-
-      <ScrollArea className="flex-1">
-        {test.sections.map((testSection, sectionIndex) => (
-          <div key={testSection.id} className="mb-6">
-            <div className="mb-3">
-              <h3 className="text-sm font-medium">
-                Section {sectionIndex + 1}
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-5 gap-2">
-              {testSection.questions.map((q: Question, questionIndex) => {
-                const isCurrentQuestion =
-                  progress.currentSectionIndex === sectionIndex &&
-                  progress.currentQuestionIndex === questionIndex;
-
-                const isAnswered = isQuestionAnswered(q.id);
-
-                return (
-                  <button
-                    key={q.id}
-                    onClick={() => jumpToQuestion(sectionIndex, questionIndex)}
-                    className="relative flex items-center justify-center"
-                  >
-                    <div
-                      className={`
-                      w-full aspect-square border rounded-md flex items-center justify-center
-                      text-sm font-medium
-                      ${
-                        isCurrentQuestion
-                          ? 'border-primary bg-primary/10'
-                          : 'border-muted'
-                      }
-                    `}
-                    >
-                      {questionIndex + 1}
-                    </div>
-                    <div
-                      className={`
-                      absolute bottom-0 left-0 right-0 h-1 rounded-b-md
-                      ${
-                        isAnswered
-                          ? 'bg-primary'
-                          : isCurrentQuestion
-                          ? 'bg-primary/40'
-                          : 'bg-muted'
-                      }
-                    `}
-                    ></div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </ScrollArea>
-    </>
-  );
 
   return (
     <div className="container mx-auto py-6 px-4">
@@ -314,175 +242,103 @@ export default function TestPlayer({
             </div>
           </SheetHeader>
           <div className="flex flex-col flex-1 mt-4">
-            <SidebarContent />
+            <TestSidebar
+              test={test}
+              progress={progress}
+              currentSectionIndex={progress.currentSectionIndex}
+              onJumpToSection={jumpToSection}
+              onCompleteTest={handleCompleteTest}
+              isSectionFullyAnswered={isSectionFullyAnswered}
+              isSectionPartiallyAnswered={isSectionPartiallyAnswered}
+            />
           </div>
         </SheetContent>
       </Sheet>
 
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">{test.title}</h1>
+      </div>
+
+      {isListeningTest && section.audioUrl && (
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-2">Listening Section</h2>
+          <AudioPlayer src={section.audioUrl} onEnded={handleAudioEnded} />
+          {!audioPlayed && (
+            <Alert className="mt-2">
+              <AlertDescription>
+                In a real IELTS test, you would only hear the recording
+                once. Listen carefully.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* Desktop sidebar - hidden on mobile */}
-        <div className="w-64 hidden lg:block">
-          <div className="sticky top-20">
-            <Card className="shadow-sm p-3 flex flex-col h-[calc(100vh-6rem)]">
-              <SidebarContent />
-            </Card>
+        {/* Reading Passage - Full width on mobile, conditionally shown column on desktop */}
+        {isReadingTest && section.readingPassage && (
+          <div className={`lg:transition-all lg:duration-300 ${showPassage ? 'lg:w-1/3 opacity-100' : 'lg:w-0 lg:opacity-0 lg:overflow-hidden'}`}>
+            <div className="mb-6 lg:mb-0">
+              <div className="sticky top-20 max-h-[calc(100vh-6rem)]">
+                <Card className="shadow-sm overflow-hidden h-full">
+                  <ScrollArea className="h-[calc(100vh-8rem)]">
+                    <CardContent className="p-4">
+                      <ReadingPassageViewer passage={section.readingPassage} />
+                    </CardContent>
+                  </ScrollArea>
+                </Card>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Questions - Full width on mobile, expanded when passage is hidden */}
+        <div className={`lg:transition-all lg:duration-300 ${
+          isReadingTest && section.readingPassage ? 
+            (showPassage ? 'lg:w-5/12' : 'lg:w-8/12') : 
+            'lg:w-8/12'
+        }`}>
+          {/* Toggle passage button - moved from passage section to questions section */}
+          {isReadingTest && section.readingPassage && (
+            <div className="flex justify-start mb-4">
+              <Button variant="outline" size="sm" onClick={togglePassage}>
+                {showPassage ? 'Hide Passage' : 'Show Passage'}
+                <SplitSquareVertical className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <SectionQuestionsRenderer
+              questions={section.questions}
+              sectionId={section.id}
+            />
+
+            <NavigationButtons
+              currentSectionIndex={progress.currentSectionIndex}
+              totalSections={test.sections.length}
+              onPreviousSection={handlePreviousSection}
+              onNextSection={handleNextSection}
+              onCompleteTest={handleCompleteTest}
+            />
           </div>
         </div>
-        {/* Main content area */}
-        <div className="flex-1">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold">{test.title}</h1>
+
+        {/* Sidebar - hidden on mobile, last column on desktop */}
+        <div className="lg:w-1/4 hidden lg:block">
+          <div className="sticky top-20">
+            <Card className="shadow-sm p-3 flex flex-col h-[calc(100vh-6rem)]">
+              <TestSidebar
+                test={test}
+                progress={progress}
+                currentSectionIndex={progress.currentSectionIndex}
+                onJumpToSection={jumpToSection}
+                onCompleteTest={handleCompleteTest}
+                isSectionFullyAnswered={isSectionFullyAnswered}
+                isSectionPartiallyAnswered={isSectionPartiallyAnswered}
+              />
+            </Card>
           </div>
-
-          {isListeningTest && section.audioUrl && (
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold mb-2">Listening Section</h2>
-              <AudioPlayer src={section.audioUrl} onEnded={handleAudioEnded} />
-              {!audioPlayed && (
-                <Alert className="mt-2">
-                  <AlertDescription>
-                    In a real IELTS test, you would only hear the recording
-                    once. Listen carefully.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-          )}
-
-          {isReadingTest && section.readingPassage && (
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="text-xl font-semibold flex items-center">
-                  <BookOpen className="mr-2 h-5 w-5" /> Reading Passage
-                </h2>
-                <Button variant="outline" size="sm" onClick={togglePassage}>
-                  {showPassage ? 'Hide Passage' : 'Show Passage'}
-                  <SplitSquareVertical className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-
-              {showPassage && (
-                <ReadingPassageViewer passage={section.readingPassage} />
-              )}
-            </div>
-          )}
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-            <TabsList className="hidden">
-              <TabsTrigger value="questions">Questions</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="questions">
-              {isPartOfGroup && currentGroup ? (
-                <QuestionGroupRenderer
-                  group={currentGroup}
-                  questions={groupQuestions}
-                  sectionId={section.id}
-                />
-              ) : (
-                <Card>
-                  <CardHeader className="flex flex-row justify-between items-center">
-                    <CardTitle>
-                      <span>
-                        Question {progress.currentQuestionIndex + 1} of{' '}
-                        {section.questions.length}
-                      </span>
-                    </CardTitle>
-
-                    <div className="flex justify-end gap-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handlePreviousQuestion}
-                        disabled={
-                          progress.currentSectionIndex === 0 &&
-                          progress.currentQuestionIndex === 0
-                        }
-                        className="h-8 px-2"
-                      >
-                        <ArrowLeft className="h-3 w-3 mr-1" /> Prev
-                      </Button>
-
-                      {isLastQuestion() ? (
-                        <Button
-                          size="sm"
-                          onClick={handleCompleteTest}
-                          className="h-8 px-2"
-                        >
-                          <CheckCircle2 className="h-3 w-3 mr-1" /> Finish
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          onClick={handleNextQuestion}
-                          className="h-8 px-2"
-                        >
-                          Next <ArrowRight className="h-3 w-3 ml-1" />
-                        </Button>
-                      )}
-                    </div>
-                  </CardHeader>
-
-                  <CardContent>
-                    <QuestionRenderer
-                      question={question}
-                      sectionId={section.id}
-                    />
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-
-            <TabsContent value="section-info">
-              <Card>
-                <CardHeader>
-                  <CardTitle>{section.title}</CardTitle>
-                </CardHeader>
-
-                <CardContent>
-                  <p className="mb-4">{section.description}</p>
-
-                  {section.audioUrl && (
-                    <Alert className="mb-4">
-                      <AlertDescription>
-                        This section includes an audio recording. You will only
-                        hear the recording once.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  {isReadingTest && (
-                    <Alert className="mb-4">
-                      <AlertDescription>
-                        This section includes a reading passage. You can toggle
-                        the passage visibility using the button above.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="font-medium">Questions</p>
-                      <p>{section.questions.length}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Time Allocated</p>
-                      <p>{Math.floor(section.duration / 60)} minutes</p>
-                    </div>
-                  </div>
-                </CardContent>
-
-                <CardFooter>
-                  <Button
-                    onClick={() => setActiveTab('questions')}
-                    className="w-full"
-                  >
-                    Return to Questions
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-          </Tabs>
         </div>
       </div>
     </div>
