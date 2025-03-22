@@ -14,7 +14,7 @@ const SectionQuestionsRenderer: React.FC<SectionQuestionsRendererProps> = ({ que
         <div key={question.id} className='border-b border-gray-300 pb-8'>
           <span className='flex gap-2'><p>
             {question.scoringStrategy === 'partial' ? `Question ${question.index} - ${question.partialEndingIndex}` : `Question ${question.index}`}
-          </p> [{question.type?.toUpperCase()}] [{question.scoringStrategy}]</span>
+          </p></span>
           <QuestionRenderer question={question} sectionId={sectionId} />
         </div>
       ))}
