@@ -1,32 +1,26 @@
-'use client';
+"use client";
 
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent
-} from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
-  SheetTitle
-} from '@/components/ui/sheet';
-import type { Question, Test } from '@/lib/types';
-import { useTestStore } from '@/store/test-store';
-import {
-  LayoutGrid,
-  SplitSquareVertical
-} from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
-import AudioPlayer from './audio-player';
-import NavigationButtons from './navigation-buttons';
-import ReadingPassageViewer from './reading-passage-viewer';
-import SectionQuestionsRenderer from './section-questions-renderer';
-import TestInstructions from './test-instructions';
-import TestResults from './test-results';
-import TestSidebar from './test-sidebar';
+  SheetTitle,
+} from "@/components/ui/sheet";
+import type { Test } from "@/lib/types";
+import { useTestStore } from "@/store/test-store";
+import { LayoutGrid, SplitSquareVertical } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import AudioPlayer from "./audio-player";
+import NavigationButtons from "./navigation-buttons";
+import ReadingPassageViewer from "./reading-passage-viewer";
+import SectionQuestionsRenderer from "./section-questions-renderer";
+import TestInstructions from "./test-instructions";
+import TestResults from "./test-results";
+import TestSidebar from "./test-sidebar";
 
 interface TestPlayerProps {
   test: Test;
@@ -39,7 +33,7 @@ export default function TestPlayer({
   test,
   loading,
   onBack,
-  onTestComplete
+  onTestComplete,
 }: TestPlayerProps) {
   const [showInstructions, setShowInstructions] = useState(true);
   const [showPassage, setShowPassage] = useState(true);
@@ -56,13 +50,12 @@ export default function TestPlayer({
     currentQuestion,
     isLastQuestion,
     completeTest,
-    resetTest
+    resetTest,
   } = useTestStore();
 
   // Load the test when component mounts
   useEffect(() => {
     if (loading) return;
-
 
     loadTest(test);
     return () => {
@@ -92,7 +85,8 @@ export default function TestPlayer({
   const handleNextSection = useCallback(() => {
     if (!progress || !test) return;
 
-    const isLastSection = progress.currentSectionIndex === test.sections.length - 1;
+    const isLastSection =
+      progress.currentSectionIndex === test.sections.length - 1;
     if (isLastSection) {
       // End of test
       handleCompleteTest();
@@ -101,7 +95,7 @@ export default function TestPlayer({
       const updatedProgress = {
         ...progress,
         currentSectionIndex: progress.currentSectionIndex + 1,
-        currentQuestionIndex: 0
+        currentQuestionIndex: 0,
       };
       useTestStore.setState({ progress: updatedProgress });
     }
@@ -120,7 +114,7 @@ export default function TestPlayer({
       const updatedProgress = {
         ...progress,
         currentSectionIndex: progress.currentSectionIndex - 1,
-        currentQuestionIndex: 0
+        currentQuestionIndex: 0,
       };
       useTestStore.setState({ progress: updatedProgress });
     }
@@ -140,7 +134,7 @@ export default function TestPlayer({
       const updatedProgress = {
         ...progress,
         currentSectionIndex: sectionIndex,
-        currentQuestionIndex: 0
+        currentQuestionIndex: 0,
       };
 
       useTestStore.setState({ progress: updatedProgress });
@@ -155,9 +149,11 @@ export default function TestPlayer({
       if (!progress || !test) return false;
 
       const section = test.sections[sectionIndex];
-      const sectionQuestionIds = section.questions.map(q => q.id);
+      const sectionQuestionIds = section.questions.map((q) => q.id);
 
-      return sectionQuestionIds.every(id => progress.answers[id] !== undefined);
+      return sectionQuestionIds.every(
+        (id) => progress.answers[id] !== undefined
+      );
     },
     [progress, test]
   );
@@ -168,9 +164,11 @@ export default function TestPlayer({
       if (!progress || !test) return false;
 
       const section = test.sections[sectionIndex];
-      const sectionQuestionIds = section.questions.map(q => q.id);
+      const sectionQuestionIds = section.questions.map((q) => q.id);
 
-      const answeredCount = sectionQuestionIds.filter(id => progress.answers[id] !== undefined).length;
+      const answeredCount = sectionQuestionIds.filter(
+        (id) => progress.answers[id] !== undefined
+      ).length;
 
       return answeredCount > 0 && answeredCount < sectionQuestionIds.length;
     },
@@ -203,7 +201,7 @@ export default function TestPlayer({
     return <TestResults />;
   }
 
-  // Get current section and question
+  // Get current section
   const section = currentSection();
 
   if (!progress || !section) {
@@ -214,8 +212,8 @@ export default function TestPlayer({
     );
   }
 
-  const isReadingTest = test.type === 'reading';
-  const isListeningTest = test.type === 'listening';
+  const isReadingTest = test.type === "reading";
+  const isListeningTest = test.type === "listening";
 
   return (
     <div className="container mx-auto py-6 px-4">
@@ -266,8 +264,8 @@ export default function TestPlayer({
           {!audioPlayed && (
             <Alert className="mt-2">
               <AlertDescription>
-                In a real IELTS test, you would only hear the recording
-                once. Listen carefully.
+                In a real IELTS test, you would only hear the recording once.
+                Listen carefully.
               </AlertDescription>
             </Alert>
           )}
@@ -277,7 +275,13 @@ export default function TestPlayer({
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Reading Passage - Full width on mobile, conditionally shown column on desktop */}
         {isReadingTest && section.readingPassage && (
-          <div className={`lg:transition-all lg:duration-300 ${showPassage ? 'lg:w-1/3 opacity-100' : 'lg:w-0 lg:opacity-0 lg:overflow-hidden'}`}>
+          <div
+            className={`lg:transition-all lg:duration-300 ${
+              showPassage
+                ? "lg:w-1/3 opacity-100"
+                : "lg:w-0 lg:opacity-0 lg:overflow-hidden"
+            }`}
+          >
             <div className="mb-6 lg:mb-0">
               <div className="sticky top-20 max-h-[calc(100vh-6rem)]">
                 <Card className="shadow-sm overflow-hidden h-full">
@@ -293,15 +297,20 @@ export default function TestPlayer({
         )}
 
         {/* Questions - Full width on mobile, expanded when passage is hidden */}
-        <div className={`lg:transition-all lg:duration-300 ${isReadingTest && section.readingPassage ?
-          (showPassage ? 'lg:w-5/12' : 'lg:w-8/12') :
-          'lg:w-8/12'
-          }`}>
+        <div
+          className={`lg:transition-all lg:duration-300 ${
+            isReadingTest && section.readingPassage
+              ? showPassage
+                ? "lg:w-5/12"
+                : "lg:w-8/12"
+              : "lg:w-8/12"
+          }`}
+        >
           {/* Toggle passage button - moved from passage section to questions section */}
           {isReadingTest && section.readingPassage && (
             <div className="flex justify-start mb-4">
               <Button variant="outline" size="sm" onClick={togglePassage}>
-                {showPassage ? 'Hide Passage' : 'Show Passage'}
+                {showPassage ? "Hide Passage" : "Show Passage"}
                 <SplitSquareVertical className="ml-2 h-4 w-4" />
               </Button>
             </div>
