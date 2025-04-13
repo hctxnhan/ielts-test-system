@@ -32,7 +32,7 @@ interface CreatorState {
     updates: Partial<Question>
   ) => void;
   removeQuestion: (sectionId: string, questionId: string) => void;
-  saveTest: () => void;
+  // saveTest: () => void;
   loadTest: (testId: string) => void;
   deleteTest: (testId: string) => void;
 
@@ -178,99 +178,179 @@ export const useCreatorStore = create<CreatorState>()(
 
         let newQuestion: Question;
 
-        // Create a new question based on the type
         switch (type) {
           case "multiple-choice":
             newQuestion = {
               id: uuidv4(),
-              type: "multiple-choice",
+              type: "multiple-choice" as const,
               text: "",
               points: 1,
-              scoringStrategy: "all-or-nothing", // Default for multiple choice
-              options: ["", "", "", ""],
-              correctAnswer: 0,
+              scoringStrategy: "all-or-nothing",
+              index: currentTest.sections[sectionIndex].questions.length + 1,
+              options: [
+                { id: uuidv4(), text: "", isCorrect: true },
+                { id: uuidv4(), text: "", isCorrect: false },
+                { id: uuidv4(), text: "", isCorrect: false },
+                { id: uuidv4(), text: "", isCorrect: false },
+              ],
             };
             break;
           case "completion":
             newQuestion = {
               id: uuidv4(),
-              type: "completion",
+              type: "completion" as const,
               text: "",
               points: 1,
-              scoringStrategy: "partial", // Default for completion
+              scoringStrategy: "partial",
+              index: currentTest.sections[sectionIndex].questions.length + 1,
               blanks: 1,
-              correctAnswers: [""],
+              subQuestions: [
+                {
+                  subId: uuidv4(),
+                  subIndex: 1,
+                  correctAnswer: "",
+                  points: 1,
+                },
+              ],
             };
             break;
           case "matching":
+            const itemIds = [uuidv4(), uuidv4()];
+            const optionIds = [uuidv4(), uuidv4()];
             newQuestion = {
               id: uuidv4(),
-              type: "matching",
+              type: "matching" as const,
               text: "",
               points: 1,
-              scoringStrategy: "partial", // Default for matching
-              items: ["", ""],
-              options: ["", ""],
-              correctMatches: { 0: 0, 1: 1 },
+              scoringStrategy: "partial",
+              index: currentTest.sections[sectionIndex].questions.length + 1,
+              items: itemIds.map((id) => ({ id, text: "" })),
+              options: optionIds.map((id) => ({ id, text: "" })),
+              subQuestions: [
+                {
+                  subId: uuidv4(),
+                  subIndex: 1,
+                  item: itemIds[0],
+                  correctAnswer: optionIds[0],
+                  points: 1,
+                },
+                {
+                  subId: uuidv4(),
+                  subIndex: 2,
+                  item: itemIds[1],
+                  correctAnswer: optionIds[1],
+                  points: 1,
+                },
+              ],
             };
             break;
           case "labeling":
+            const labelIds = [uuidv4(), uuidv4()];
+            const optionIdsForLabeling = [uuidv4(), uuidv4()];
+
             newQuestion = {
               id: uuidv4(),
-              type: "labeling",
+              type: "labeling" as const,
               text: "",
               points: 1,
-              scoringStrategy: "partial", // Default for labeling
+              scoringStrategy: "partial",
+              index: currentTest.sections[sectionIndex].questions.length + 1,
               imageUrl: "",
-              labels: ["", ""],
-              options: ["", ""],
-              correctLabels: { 0: 0, 1: 1 },
+              labels: labelIds.map((id) => ({ id, text: "" })),
+              options: optionIdsForLabeling.map((id) => ({
+                id,
+                text: "",
+              })),
+              subQuestions: labelIds.map((id, index) => ({
+                subId: uuidv4(),
+                subIndex: index,
+                item: id,
+                correctAnswer: optionIdsForLabeling[index],
+                points: 1,
+              })),
             };
             break;
           case "pick-from-list":
+            const itemIdsForPick = [uuidv4(), uuidv4()];
+            const optionIdsForPick = [uuidv4(), uuidv4(), uuidv4()];
+
             newQuestion = {
               id: uuidv4(),
               type: "pick-from-list",
               text: "",
               points: 1,
-              scoringStrategy: "partial", // Default for pick-from-list
-              items: ["", ""],
-              options: ["", "", ""],
-              correctAnswers: { 0: 0, 1: 1 },
+              scoringStrategy: "partial",
+              index: currentTest.sections[sectionIndex].questions.length + 1,
+              items: itemIdsForPick.map((id) => ({ id, text: "" })),
+              options: optionIdsForPick.map((id) => ({ id, text: "" })),
+              subQuestions: itemIdsForPick.map((id, index) => ({
+                subId: uuidv4(),
+                subIndex: index,
+                item: id,
+                correctAnswer: optionIdsForPick[index],
+                points: 1,
+              })),
             };
             break;
           case "true-false-not-given":
+            const stmtIds = [uuidv4(), uuidv4(), uuidv4()];
+
             newQuestion = {
               id: uuidv4(),
               type: "true-false-not-given",
               text: "",
               points: 1,
-              scoringStrategy: "partial", // Default for true-false-not-given
-              statements: [""],
-              correctAnswers: ["true"],
+              scoringStrategy: "partial",
+              index: currentTest.sections[sectionIndex].questions.length + 1,
+              statements: stmtIds.map((id) => ({ id, text: "" })),
+              subQuestions: stmtIds.map((id, index) => ({
+                subId: uuidv4(),
+                subIndex: index,
+                item: id,
+                correctAnswer: "true",
+                points: 1,
+              })),
             };
             break;
           case "matching-headings":
+            const headingIds = [uuidv4(), uuidv4()];
+            const paraIds = [uuidv4(), uuidv4()];
+
             newQuestion = {
               id: uuidv4(),
               type: "matching-headings",
               text: "",
               points: 1,
-              scoringStrategy: "partial", // Default for matching-headings
-              paragraphs: [""],
-              headings: [""],
-              correctMatches: { 0: 0 },
+              scoringStrategy: "partial",
+              index: currentTest.sections[sectionIndex].questions.length + 1,
+              paragraphs: paraIds.map((id) => ({ id, text: "" })),
+              headings: headingIds.map((id) => ({ id, text: "" })),
+              subQuestions: paraIds.map((id, index) => ({
+                subId: uuidv4(),
+                subIndex: index,
+                item: id,
+                correctAnswer: headingIds[index],
+                points: 1,
+              })),
             };
             break;
           case "short-answer":
+            const questionIds = [uuidv4(), uuidv4()];
             newQuestion = {
               id: uuidv4(),
               type: "short-answer",
               text: "",
               points: 1,
-              scoringStrategy: "partial", // Default for short-answer
-              questions: [""],
-              correctAnswers: [[""]],
+              scoringStrategy: "partial",
+              index: currentTest.sections[sectionIndex].questions.length + 1,
+              questions: questionIds.map((id) => ({ id, text: "" })),
+              subQuestions: questionIds.map((_, index) => ({
+                subId: uuidv4(),
+                subIndex: index,
+                item: questionIds[index],
+                acceptableAnswers: [],
+                points: 1,
+              })),
               wordLimit: 3,
             };
             break;
@@ -281,9 +361,12 @@ export const useCreatorStore = create<CreatorState>()(
               text: "Task 1",
               points: 8,
               scoringStrategy: "all-or-nothing", // Default for writing tasks
+              index: currentTest.sections[sectionIndex].questions.length + 1,
               prompt: "",
               wordLimit: 150,
               imageUrl: "",
+              sampleAnswer: "",
+              scoringPrompt: "",
             };
             break;
           case "writing-task2":
@@ -293,8 +376,11 @@ export const useCreatorStore = create<CreatorState>()(
               text: "Task 2",
               points: 12,
               scoringStrategy: "all-or-nothing", // Default for writing tasks
+              index: currentTest.sections[sectionIndex].questions.length + 1,
               prompt: "",
               wordLimit: 250,
+              sampleAnswer: "",
+              scoringPrompt: "",
             };
             break;
           default:
@@ -364,39 +450,39 @@ export const useCreatorStore = create<CreatorState>()(
         });
       },
 
-      saveTest: () => {
-        const { currentTest, savedTests } = get();
-        if (!currentTest) return;
+      // saveTest: () => {
+      //   const { currentTest, savedTests } = get();
+      //   if (!currentTest) return;
 
-        // Update total duration and questions
-        const testToSave = {
-          ...currentTest,
-          totalDuration: get().calculateTotalDuration(),
-          totalQuestions: get().calculateTotalQuestions(),
-        };
+      //   // Update total duration and questions
+      //   const testToSave = {
+      //     ...currentTest,
+      //     totalDuration: get().calculateTotalDuration(),
+      //     totalQuestions: get().calculateTotalQuestions(),
+      //   };
 
-        // Check if test already exists
-        const existingIndex = savedTests.findIndex(
-          (test) => test.id === currentTest.id
-        );
+      //   // Check if test already exists
+      //   const existingIndex = savedTests.findIndex(
+      //     (test) => test.id === currentTest.id
+      //   );
 
-        // Create a new array to ensure state update is detected
-        let updatedTests = [...savedTests];
+      //   // Create a new array to ensure state update is detected
+      //   let updatedTests = [...savedTests];
 
-        if (existingIndex !== -1) {
-          // Update existing test
-          updatedTests[existingIndex] = testToSave;
-        } else {
-          // Add new test
-          updatedTests = [...updatedTests, testToSave];
-        }
+      //   if (existingIndex !== -1) {
+      //     // Update existing test
+      //     updatedTests[existingIndex] = testToSave;
+      //   } else {
+      //     // Add new test
+      //     updatedTests = [...updatedTests, testToSave];
+      //   }
 
-        // Set the state with the new array
-        set({
-          savedTests: updatedTests,
-          currentTest: testToSave, // Update current test with calculated values
-        });
-      },
+      //   // Set the state with the new array
+      //   set({
+      //     savedTests: updatedTests,
+      //     currentTest: testToSave, // Update current test with calculated values
+      //   });
+      // },
 
       loadTest: (testId: string) => {
         const { savedTests } = get();

@@ -14,6 +14,8 @@ import type { Test } from "@/lib/types";
 import { useTestStore } from "@/store/test-store";
 import { LayoutGrid, SplitSquareVertical } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import AudioPlayer from "./audio-player";
 import NavigationButtons from "./navigation-buttons";
 import ReadingPassageViewer from "./reading-passage-viewer";
@@ -47,7 +49,6 @@ export default function TestPlayer({
     nextQuestion,
     previousQuestion,
     currentSection,
-    currentQuestion,
     isLastQuestion,
     completeTest,
     resetTest,
@@ -58,6 +59,7 @@ export default function TestPlayer({
     if (loading) return;
 
     loadTest(test);
+
     return () => {
       // Clean up when component unmounts
       resetTest();
@@ -143,6 +145,44 @@ export default function TestPlayer({
     [progress]
   );
 
+  // Jump to specific question (and optionally a specific sub-question)
+  const jumpToQuestion = useCallback(
+    (
+      sectionIndex: number,
+      questionIndex: number,
+      subQuestionIndex?: number
+    ) => {
+      if (!progress || !test) return;
+
+      // Update the test state to show the selected question
+      const updatedProgress = {
+        ...progress,
+        currentSectionIndex: sectionIndex,
+        currentQuestionIndex: questionIndex,
+      };
+
+      useTestStore.setState({ progress: updatedProgress });
+      setSidebarOpen(false);
+
+      // After state update, scroll to the specific sub-question if provided
+      if (subQuestionIndex !== undefined) {
+        // Use setTimeout to ensure the DOM has updated
+        setTimeout(() => {
+          const subQuestionElement = document.getElementById(
+            `question-${subQuestionIndex}`
+          );
+          if (subQuestionElement) {
+            subQuestionElement.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+          }
+        }, 100);
+      }
+    },
+    [progress, test]
+  );
+
   // Check if a section has been fully answered
   const isSectionFullyAnswered = useCallback(
     (sectionIndex: number) => {
@@ -216,139 +256,144 @@ export default function TestPlayer({
   const isListeningTest = test.type === "listening";
 
   return (
-    <div className="container mx-auto py-6 px-4">
-      {/* Floating button for mobile */}
-      <div className="fixed bottom-4 left-4 z-50 lg:hidden">
-        <Button
-          onClick={() => setSidebarOpen(true)}
-          size="icon"
-          className="h-12 w-12 rounded-full shadow-lg"
-        >
-          <LayoutGrid className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {/* Mobile sidebar as a sheet */}
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent
-          side="right"
-          className="w-full sm:max-w-md p-4 flex flex-col"
-        >
-          <SheetHeader className="flex-shrink-0">
-            <div className="flex justify-between items-center">
-              <SheetTitle>Test Navigation</SheetTitle>
-            </div>
-          </SheetHeader>
-          <div className="flex flex-col flex-1 mt-4">
-            <TestSidebar
-              test={test}
-              progress={progress}
-              currentSectionIndex={progress.currentSectionIndex}
-              onJumpToSection={jumpToSection}
-              onCompleteTest={handleCompleteTest}
-              isSectionFullyAnswered={isSectionFullyAnswered}
-              isSectionPartiallyAnswered={isSectionPartiallyAnswered}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">{test.title}</h1>
-      </div>
-
-      {isListeningTest && section.audioUrl && (
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-2">Listening Section</h2>
-          <AudioPlayer src={section.audioUrl} onEnded={handleAudioEnded} />
-          {!audioPlayed && (
-            <Alert className="mt-2">
-              <AlertDescription>
-                In a real IELTS test, you would only hear the recording once.
-                Listen carefully.
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
-      )}
-
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Reading Passage - Full width on mobile, conditionally shown column on desktop */}
-        {isReadingTest && section.readingPassage && (
-          <div
-            className={`lg:transition-all lg:duration-300 ${
-              showPassage
-                ? "lg:w-1/3 opacity-100"
-                : "lg:w-0 lg:opacity-0 lg:overflow-hidden"
-            }`}
+    <DndProvider backend={HTML5Backend}>
+      <div>
+        {/* Floating button for mobile */}
+        <div className="fixed bottom-4 left-4 z-50 lg:hidden">
+          <Button
+            onClick={() => setSidebarOpen(true)}
+            size="icon"
+            className="h-12 w-12 rounded-full shadow-lg"
           >
-            <div className="mb-6 lg:mb-0">
-              <div className="sticky top-20 max-h-[calc(100vh-6rem)]">
-                <Card className="shadow-sm overflow-hidden h-full">
-                  <ScrollArea className="h-[calc(100vh-8rem)]">
-                    <CardContent className="p-4">
-                      <ReadingPassageViewer passage={section.readingPassage} />
-                    </CardContent>
-                  </ScrollArea>
-                </Card>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Questions - Full width on mobile, expanded when passage is hidden */}
-        <div
-          className={`lg:transition-all lg:duration-300 ${
-            isReadingTest && section.readingPassage
-              ? showPassage
-                ? "lg:w-5/12"
-                : "lg:w-8/12"
-              : "lg:w-8/12"
-          }`}
-        >
-          {/* Toggle passage button - moved from passage section to questions section */}
-          {isReadingTest && section.readingPassage && (
-            <div className="flex justify-start mb-4">
-              <Button variant="outline" size="sm" onClick={togglePassage}>
-                {showPassage ? "Hide Passage" : "Show Passage"}
-                <SplitSquareVertical className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <SectionQuestionsRenderer
-              questions={section.questions}
-              sectionId={section.id}
-            />
-
-            <NavigationButtons
-              currentSectionIndex={progress.currentSectionIndex}
-              totalSections={test.sections.length}
-              onPreviousSection={handlePreviousSection}
-              onNextSection={handleNextSection}
-              onCompleteTest={handleCompleteTest}
-            />
-          </div>
+            <LayoutGrid className="h-5 w-5" />
+          </Button>
         </div>
 
-        {/* Sidebar - hidden on mobile, last column on desktop */}
-        <div className="lg:w-1/4 hidden lg:block">
-          <div className="sticky top-20">
-            <Card className="shadow-sm p-3 flex flex-col h-[calc(100vh-6rem)]">
+        {/* Mobile sidebar as a sheet */}
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetContent
+            side="right"
+            className="w-full sm:max-w-md p-4 flex flex-col"
+          >
+            <SheetHeader className="flex-shrink-0">
+              <div className="flex justify-between items-center">
+                <SheetTitle>Test Navigation</SheetTitle>
+              </div>
+            </SheetHeader>
+            <div className="flex flex-col flex-1 mt-4">
               <TestSidebar
                 test={test}
                 progress={progress}
                 currentSectionIndex={progress.currentSectionIndex}
                 onJumpToSection={jumpToSection}
+                onJumpToQuestion={jumpToQuestion}
                 onCompleteTest={handleCompleteTest}
                 isSectionFullyAnswered={isSectionFullyAnswered}
                 isSectionPartiallyAnswered={isSectionPartiallyAnswered}
               />
-            </Card>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">{test.title}</h1>
+        </div>
+
+        {isListeningTest && section.audioUrl && (
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-2">Listening Section</h2>
+            <AudioPlayer src={section.audioUrl} onEnded={handleAudioEnded} />
+            {!audioPlayed && (
+              <Alert className="mt-2">
+                <AlertDescription>
+                  In a real IELTS test, you would only hear the recording once.
+                  Listen carefully.
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+        )}
+
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Reading Passage - Full width on mobile, conditionally shown column on desktop */}
+          {isReadingTest && section.readingPassage && (
+            <div
+              className={`lg:transition-all lg:duration-300 ${
+                showPassage
+                  ? "lg:w-1/3 opacity-100"
+                  : "lg:w-0 lg:opacity-0 lg:overflow-hidden"
+              }`}
+            >
+              <div className="mb-6 lg:mb-0">
+                <div className="sticky top-20 max-h-[calc(100vh-6rem)]">
+                  <Card className="shadow-sm overflow-hidden h-full">
+                    <ScrollArea className="h-[calc(100vh-8rem)]">
+                      <CardContent className="p-4">
+                        <ReadingPassageViewer
+                          passage={section.readingPassage}
+                        />
+                      </CardContent>
+                    </ScrollArea>
+                  </Card>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Questions - Full width on mobile, expanded when passage is hidden */}
+          <div
+            className={`lg:transition-all lg:duration-300 ${
+              isReadingTest && section.readingPassage
+                ? showPassage
+                  ? "lg:w-5/12"
+                  : "lg:w-8/12"
+                : "lg:w-8/12"
+            }`}
+          >
+            {/* Toggle passage button - moved from passage section to questions section */}
+            {isReadingTest && section.readingPassage && (
+              <div className="flex justify-start mb-4">
+                <Button variant="outline" size="sm" onClick={togglePassage}>
+                  {showPassage ? "Hide Passage" : "Show Passage"}
+                  <SplitSquareVertical className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <SectionQuestionsRenderer
+                questions={section.questions}
+                sectionId={section.id}
+              />
+
+              <NavigationButtons
+                currentSectionIndex={progress.currentSectionIndex}
+                totalSections={test.sections.length}
+                onPreviousSection={handlePreviousSection}
+                onNextSection={handleNextSection}
+                onCompleteTest={handleCompleteTest}
+              />
+            </div>
+          </div>
+
+          {/* Sidebar - hidden on mobile, last column on desktop */}
+          <div className="lg:w-1/4 hidden lg:block">
+            <div className="sticky top-20">
+              <Card className="shadow-sm p-3 flex flex-col h-[calc(100vh-6rem)]">
+                <TestSidebar
+                  test={test}
+                  progress={progress}
+                  currentSectionIndex={progress.currentSectionIndex}
+                  onJumpToSection={jumpToSection}
+                  onCompleteTest={handleCompleteTest}
+                  isSectionFullyAnswered={isSectionFullyAnswered}
+                  isSectionPartiallyAnswered={isSectionPartiallyAnswered}
+                />
+              </Card>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </DndProvider>
   );
 }

@@ -1,106 +1,112 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
-import { DraggableItem, DroppableZone } from './shared/dnd-components';
-import { Label } from '@/components/ui/label';
+import { useState, useEffect } from "react";
+import { DraggableItem, DroppableZone } from "./shared/dnd-components";
+import { Label } from "@/components/ui/label";
+import type { MatchingHeadingsQuestion } from "@/lib/types";
 
-// Define the type for the question
-type MatchingHeadingsQuestion = {
-  headings: string[];
-  paragraphs: string[];
-};
-
-// Define the props for the component
-type MatchingHeadingsQuestionRendererProps = {
+interface MatchingHeadingsQuestionProps {
   question: MatchingHeadingsQuestion;
-  value: Record<number, number> | null;
-  onChange: (value: Record<number, number>) => void;
-};
+  value: Record<string, string> | null;
+  onChange: (value: Record<string, string>, subQuestionId?: string) => void;
+}
 
-const ITEM_TYPE = 'HEADING';
+const ITEM_TYPE = "HEADING";
 
 export default function MatchingHeadingsQuestionRenderer({
   question,
   value,
-  onChange
-}: MatchingHeadingsQuestionRendererProps) {
-  const [matches, setMatches] = useState<Record<number, number>>({}); // Stores paragraph -> heading mapping
+  onChange,
+}: MatchingHeadingsQuestionProps) {
+  const [matches, setMatches] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    // Initialize matches from the value prop
     if (value) {
       setMatches(value);
     }
   }, [value]);
 
-  const handleDrop = (headingIndex: number, paraIndex: number) => {
+  const handleDrop = (headingId: string, subQuestionId: string) => {
     setMatches((prevMatches) => {
-      // Remove existing match if the heading is already assigned
-      const updatedMatches = Object.fromEntries(
-        Object.entries(prevMatches).filter(
-          ([, hIndex]) => hIndex !== headingIndex
-        )
-      );
+      const updatedMatches = { ...prevMatches };
+      updatedMatches[subQuestionId] = headingId;
 
-      // Assign the heading to the paragraph
-      updatedMatches[paraIndex] = headingIndex;
-
-      // Notify the parent component of the change
-      onChange(updatedMatches);
+      if (question.scoringStrategy === "partial") {
+        onChange(updatedMatches, subQuestionId);
+      } else {
+        onChange(updatedMatches);
+      }
 
       return updatedMatches;
     });
   };
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div className="space-y-4">
-        <div className="space-y-2 w-fit">
-          <Label className="text-sm">Headings:</Label>
-          <div className="flex flex-col space-y-2">
-            {question.headings.map((heading, headingIndex) => (
-              <DraggableItem
-                key={headingIndex}
-                text={heading}
-                index={headingIndex}
-                itemType={ITEM_TYPE}
-                prefix={`${String.fromCharCode(65 + headingIndex)}. `}
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <Label className="text-sm">Paragraphs:</Label>
-          {question.paragraphs.map((paragraph, paraIndex) => (
-            <div key={paraIndex} className="space-y-2 w-fit min-w-[300px]">
-              <p className="text-xs text-gray-600 whitespace-pre-line">{
-                question.scoringStrategy === 'partial' 
-                  ? `Paragraph ${question.index + paraIndex}.` 
-                  : `${paraIndex + 1}.`} {paragraph}</p>
-              <DroppableZone
-                index={paraIndex}
-                itemType={ITEM_TYPE}
-                matchedIndex={matches[paraIndex]}
-                matchedText={
-                  matches[paraIndex] !== undefined
-                    ? question.headings[matches[paraIndex]]
-                    : null
-                }
-                onDrop={handleDrop}
-                prefix={
-                  matches[paraIndex] !== undefined
-                    ? `${String.fromCharCode(65 + matches[paraIndex])}. `
-                    : ''
-                }
-                placeholder="Drag heading here"
-              />
-            </div>
+    <div className="space-y-4">
+      <p className="font-medium">{question.text}</p>
+      <div className="space-y-2 w-fit">
+        <Label className="text-sm">Headings:</Label>
+        <div className="flex flex-col space-y-2">
+          {question.headings.map((heading, headingIndex) => (
+            <DraggableItem
+              key={heading.id}
+              text={heading.text}
+              index={heading.id}
+              itemType={ITEM_TYPE}
+              prefix={String.fromCharCode(65 + headingIndex) + "."}
+            />
           ))}
         </div>
       </div>
-    </DndProvider>
+
+      <div className="space-y-4">
+        <Label className="text-sm">Paragraphs:</Label>
+        {question.paragraphs.map((paragraph, paraIndex) => {
+          // Find the corresponding subQuestion
+          const subQuestion = question.subQuestions?.find(
+            (sq) => sq.item === paragraph.id
+          );
+
+          if (!subQuestion) {
+            console.error("No subQuestion found for paragraph:", paragraph.id);
+            return null;
+          }
+
+          const matchedHeading = question.headings.find(
+            (h) => h.id === matches[subQuestion.subId]
+          );
+
+          return (
+            <div key={paragraph.id} className="space-y-2 w-fit min-w-[300px]">
+              <p className="text-xs text-gray-600 whitespace-pre-line">
+                {question.scoringStrategy === "partial" && subQuestion
+                  ? `Question ${question.index + paraIndex + 1}.`
+                  : `Paragraph ${paraIndex + 1}.`}{" "}
+                {paragraph.text}
+              </p>
+              <DroppableZone
+                key={subQuestion.subId}
+                subQuestionId={subQuestion.subId}
+                matchedId={matches[subQuestion.subId]}
+                matchedText={matchedHeading?.text}
+                prefix={
+                  matchedHeading
+                    ? String.fromCharCode(
+                        65 +
+                          question.headings.findIndex(
+                            (h) => h.id === matchedHeading.id
+                          )
+                      ) + "."
+                    : ""
+                }
+                onDrop={handleDrop}
+                itemType={ITEM_TYPE}
+                placeholder="Drag heading here"
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

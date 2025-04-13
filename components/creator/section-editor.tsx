@@ -13,7 +13,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { PlusCircle } from "lucide-react";
+import {
+  PlusCircle,
+  ChevronDown,
+  ChevronUp,
+  Trash2,
+  Clock,
+  ClipboardList,
+  FilePlus,
+  X,
+} from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import type { Section, Test } from "@/lib/types";
 import QuestionList from "./question-list";
@@ -76,35 +85,7 @@ export default function SectionEditor({
           </div>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="h-7 w-7">
-              {collapsed ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="18 15 12 9 6 15"></polyline>
-                </svg>
-              )}
+              {collapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
             </Button>
             <Button
               variant="ghost"
@@ -115,57 +96,17 @@ export default function SectionEditor({
                 onRemoveSection(section.id);
               }}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M3 6h18"></path>
-                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-              </svg>
+              <Trash2 size={16} />
             </Button>
           </div>
         </CardTitle>
         <CardDescription className="text-xs flex items-center gap-3 mt-1">
           <span className="flex items-center gap-1">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
+            <Clock size={12} />
             {Math.floor(section.duration / 60)} min
           </span>
           <span className="flex items-center gap-1">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-              <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-            </svg>
+            <ClipboardList size={12} />
             {section.questions.length} questions
           </span>
         </CardDescription>
@@ -400,19 +341,7 @@ export default function SectionEditor({
                                 });
                               }}
                             >
-                              <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                              </svg>
+                              <X size={14} />
                             </Button>
                           </div>
                         )
@@ -448,20 +377,7 @@ export default function SectionEditor({
           <div className="pt-2">
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-sm font-medium flex items-center gap-1.5">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M8 3v4a2 2 0 0 1-2 2H2"></path>
-                  <path d="M16 3v4a2 2 0 0 0 2 2h4"></path>
-                  <rect x="4" y="8" width="16" height="12" rx="2"></rect>
-                </svg>
+                <FilePlus size={14} />
                 Questions
                 <span className="text-xs text-muted-foreground">
                   ({section.questions.length})

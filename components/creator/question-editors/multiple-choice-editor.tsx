@@ -3,15 +3,10 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import type { MultipleChoiceQuestion } from "@/lib/types";
-import { PlusCircle } from "lucide-react";
+import { List, X, PlusCircle } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
 
 interface MultipleChoiceEditorProps {
   question: MultipleChoiceQuestion;
@@ -32,43 +27,49 @@ export default function MultipleChoiceEditor({
     <div className="space-y-3">
       <div className="space-y-1.5">
         <Label className="text-xs font-medium flex items-center gap-1.5">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="8" y1="6" x2="21" y2="6"></line>
-            <line x1="8" y1="12" x2="21" y2="12"></line>
-            <line x1="8" y1="18" x2="21" y2="18"></line>
-            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-          </svg>
+          <List className="w-3 h-3" />
           Options
         </Label>
         <div className="space-y-1">
           {question.options.map((option, optIndex) => (
-            <div key={optIndex} className="flex gap-1.5 items-center">
+            <div key={option.id} className="flex gap-1.5 items-center">
               <div className="flex items-center justify-center h-5 w-5 rounded-full bg-muted/50 text-xs font-medium">
                 {optIndex + 1}
               </div>
               <Input
-                value={option}
+                value={option.text}
                 onChange={(e) => {
                   const newOptions = [...question.options];
-                  newOptions[optIndex] = e.target.value;
+                  newOptions[optIndex] = {
+                    ...option,
+                    text: e.target.value,
+                  };
                   onUpdateQuestion(sectionId, question.id, {
                     options: newOptions,
                   });
                 }}
                 placeholder={`Option ${optIndex + 1}`}
                 className="h-7 text-sm"
+              />
+              <Switch
+                checked={option.isCorrect}
+                onCheckedChange={(checked) => {
+                  const newOptions = [...question.options];
+                  // If this is being marked as correct, unmark others as we only allow one correct answer
+                  if (checked) {
+                    newOptions.forEach((opt) => {
+                      opt.isCorrect = false;
+                    });
+                  }
+                  newOptions[optIndex] = {
+                    ...option,
+                    isCorrect: checked,
+                  };
+                  onUpdateQuestion(sectionId, question.id, {
+                    options: newOptions,
+                  });
+                }}
+                className="data-[state=checked]:bg-green 500"
               />
               <Button
                 variant="ghost"
@@ -84,19 +85,7 @@ export default function MultipleChoiceEditor({
                 disabled={question.options.length <= 2}
                 className="h-6 w-6 text-muted-foreground hover:text-destructive"
               >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
+                <X className="w-3.5 h-3.5" />
               </Button>
             </div>
           ))}
@@ -105,7 +94,14 @@ export default function MultipleChoiceEditor({
           variant="ghost"
           size="sm"
           onClick={() => {
-            const newOptions = [...question.options, ""];
+            const newOptions = [
+              ...question.options,
+              {
+                id: `opt_${question.options.length + 1}`,
+                text: "",
+                is_correct: false,
+              },
+            ];
             onUpdateQuestion(sectionId, question.id, { options: newOptions });
           }}
           className="h-7 text-xs w-full justify-start bg-muted/30 hover:bg-muted/50 mt-1"
@@ -113,62 +109,6 @@ export default function MultipleChoiceEditor({
           <PlusCircle className="mr-1 h-3.5 w-3.5" />
           Add Option
         </Button>
-      </div>
-
-      <div className="space-y-1.5">
-        <Label
-          htmlFor={`correct-answer-${question.id}`}
-          className="text-xs font-medium flex items-center gap-1.5"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-          Correct Answer
-        </Label>
-        <Select
-          value={question.correctAnswer.toString()}
-          onValueChange={(value) =>
-            onUpdateQuestion(sectionId, question.id, {
-              correctAnswer: Number.parseInt(value),
-            })
-          }
-        >
-          <SelectTrigger
-            id={`correct-answer-${question.id}`}
-            className="h-7 text-sm"
-          >
-            <SelectValue placeholder="Select correct option" />
-          </SelectTrigger>
-          <SelectContent>
-            {question.options.map((option, optIndex) => (
-              <SelectItem
-                key={optIndex}
-                value={optIndex.toString()}
-                className="text-sm py-1 px-2"
-              >
-                <div className="flex items-center gap-1.5">
-                  <div className="flex items-center justify-center h-4 w-4 rounded-full bg-muted/50 text-xs font-medium">
-                    {optIndex + 1}
-                  </div>
-                  <span>
-                    {option.substring(0, 25)}
-                    {option.length > 25 ? "..." : ""}
-                  </span>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
     </div>
   );

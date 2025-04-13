@@ -1,320 +1,456 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useTestStore } from "@/store/test-store"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { CheckCircle2, Clock, BarChart3, ArrowLeft, AlertCircle, X, HelpCircle } from "lucide-react"
-import Link from "next/link"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import TestResultsQuestionReview from "./test-results-question-review"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import {
+  getSectionStats,
+  getStatusColorClass,
+  getTestStats,
+} from "@/lib/test-utils";
+import { useTestStore } from "@/store/test-store";
+import { BarChart3, CheckCircle2, Clock } from "lucide-react";
+import { useMemo } from "react";
+
+// Helper function to determine color based on percentage score
+const getScoreColorClass = (percentage: number) => {
+  if (percentage >= 70) return "text-green-500";
+  if (percentage >= 50) return "text-amber-500";
+  return "text-rose-500";
+};
+
+// Helper function to determine background color based on percentage score
+const getScoreBgClass = (percentage: number) => {
+  if (percentage >= 70) return "bg-green-500";
+  if (percentage >= 50) return "bg-amber-500";
+  return "bg-rose-500";
+};
+
+// ScoreCircle component for the circular progress visualization
+const ScoreCircle = ({ percentage }: { percentage: number }) => {
+  const colorClass = getScoreColorClass(percentage);
+
+  return (
+    <div className="relative w-28 h-28 lg:w-32 lg:h-32">
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-3xl font-bold">{percentage}%</span>
+        <span className="text-xs text-muted-foreground">Your Score</span>
+      </div>
+      <svg className="w-full h-full" viewBox="0 0 100 100">
+        <circle
+          className="text-muted stroke-current"
+          strokeWidth="8"
+          fill="transparent"
+          r="46"
+          cx="50"
+          cy="50"
+        />
+        <circle
+          className={`${colorClass} stroke-current transition-all duration-1000 ease-out`}
+          strokeWidth="8"
+          strokeLinecap="round"
+          fill="transparent"
+          r="46"
+          cx="50"
+          cy="50"
+          strokeDasharray={`${2 * Math.PI * 46}`}
+          strokeDashoffset={`${2 * Math.PI * 46 * (1 - percentage / 100)}`}
+          transform="rotate(-90 50 50)"
+        />
+      </svg>
+    </div>
+  );
+};
+
+// MetricCard component for the time, accuracy, and completion metrics
+const MetricCard = ({
+  icon: Icon,
+  title,
+  value,
+  iconColor = "text-primary",
+}: {
+  icon: React.ElementType;
+  title: string;
+  value: React.ReactNode;
+  iconColor?: string;
+}) => (
+  <div className="flex items-center gap-2 bg-muted p-2 rounded-md">
+    <Icon className={`h-5 w-5 ${iconColor} shrink-0`} />
+    <div className="text-sm">
+      <div className="font-medium">{title}</div>
+      <div className="text-muted-foreground">{value}</div>
+    </div>
+  </div>
+);
+
+// StatusBadge component for section question stats
+const StatusBadge = ({
+  count,
+  type,
+}: {
+  count: number;
+  type: "correct" | "incorrect" | "unanswered";
+}) => {
+  if (count <= 0) return null;
+
+  const config = {
+    correct: {
+      bg: "bg-green-100 dark:bg-green-900",
+      text: "text-green-800 dark:text-green-100",
+      symbol: "✓",
+    },
+    incorrect: {
+      bg: "bg-red-100 dark:bg-red-900",
+      text: "text-red-800 dark:text-red-100",
+      symbol: "✗",
+    },
+    unanswered: {
+      bg: "bg-gray-100 dark:bg-gray-700",
+      text: "text-gray-800 dark:text-gray-300",
+      symbol: "-",
+    },
+  };
+
+  const { bg, text, symbol } = config[type];
+
+  return (
+    <span className={`${bg} ${text} text-xs px-1.5 py-0.5 rounded`}>
+      {count} {symbol}
+    </span>
+  );
+};
+
+// QuestionButton component for individual question state buttons
+const QuestionButton = ({
+  displayNumber,
+  status,
+}: {
+  displayNumber: number;
+  status: string;
+}) => {
+  const statusColor = getStatusColorClass(status);
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className="relative h-8 w-9 flex items-center justify-center p-0 overflow-hidden hover:bg-muted group"
+    >
+      <div className="flex flex-col items-center justify-center">
+        <span className="text-xs transition-opacity">{displayNumber}</span>
+      </div>
+      <span
+        className={`absolute bottom-0 left-0 right-0 h-1 ${statusColor}`}
+      ></span>
+    </Button>
+  );
+};
+
+// SectionPerformance component for section score visualization
+const SectionPerformance = ({ section, answers }) => {
+  const {
+    sectionAnswers,
+    sectionScore,
+    sectionTotalScore,
+    sectionPercentage,
+    sectionTotalQuestions,
+  } = getSectionStats(section, answers);
+
+  return (
+    <div
+      key={section.id}
+      className="p-2 border rounded-md flex flex-col sm:flex-row sm:items-center"
+    >
+      <div className="sm:w-1/4 mb-1 sm:mb-0">
+        <h4 className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
+          {section.title}
+        </h4>
+      </div>
+
+      <div className="flex-1">
+        <div className="flex items-center gap-1 mb-1">
+          <Progress
+            value={sectionPercentage}
+            className={`h-2 flex-1 bg-muted ${getScoreColorClass(
+              sectionPercentage
+            )}`}
+          />
+          <span className="text-xs font-medium w-8 text-right">
+            {sectionPercentage}%
+          </span>
+        </div>
+
+        <div className="flex justify-between items-center text-xs text-muted-foreground">
+          <div>
+            {sectionScore}/{sectionTotalScore} points
+          </div>
+          <div>
+            {sectionAnswers.length}/{sectionTotalQuestions} answered
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// SectionAccordionItem component for the question review accordion
+const SectionAccordionItem = ({ section, answers, getAnswerStatus }) => {
+  const {
+    sectionCorrectAnswers: correctCount,
+    sectionIncorrectAnswers: incorrectCount,
+    sectionUnansweredQuestions: unansweredCount,
+  } = getSectionStats(section, answers);
+
+  return (
+    <AccordionItem
+      key={section.id}
+      value={section.id}
+      className="border rounded-md overflow-hidden"
+    >
+      <AccordionTrigger className="hover:bg-muted px-3 py-2 text-sm font-medium">
+        <div className="flex justify-between items-center w-full">
+          <span>{section.title}</span>
+          <div className="flex gap-1 mr-8">
+            <StatusBadge count={correctCount} type="correct" />
+            <StatusBadge count={incorrectCount} type="incorrect" />
+            <StatusBadge count={unansweredCount} type="unanswered" />
+          </div>
+        </div>
+      </AccordionTrigger>
+      <AccordionContent className="pt-1 pb-2">
+        <div className="grid grid-cols-6 sm:grid-cols-10 gap-1.5 p-2">
+          {section.questions.map((question, qIndex) => {
+            // Check if this is a partial question with a range
+            if (
+              question.partialEndingIndex !== undefined &&
+              question.index !== undefined &&
+              question.partialEndingIndex > question.index
+            ) {
+              // Handle partial questions with range (multiple numbered questions)
+              const individualQuestions = [];
+              const startIndex = question.index;
+              const endIndex = question.partialEndingIndex;
+
+              for (let i = startIndex; i <= endIndex; i++) {
+                const j = i - startIndex;
+                const subQuestion = question.subQuestions?.[j];
+                const subId = subQuestion?.subId;
+
+                // Determine question status for this specific sub-question
+                const status = subId
+                  ? answers[subId]
+                    ? answers[subId].isCorrect
+                      ? "correct"
+                      : "incorrect"
+                    : "untouched"
+                  : "untouched";
+
+                individualQuestions.push(
+                  <QuestionButton
+                    key={`${qIndex}-${i}`}
+                    displayNumber={i + 1}
+                    status={status}
+                  />
+                );
+              }
+
+              return individualQuestions;
+            }
+
+            // For standard questions, render as a single question with its index
+            const status = getAnswerStatus(question.id);
+            const displayNumber =
+              (question.index !== undefined ? question.index : 0) + 1;
+
+            return (
+              <QuestionButton
+                key={question.id}
+                displayNumber={displayNumber}
+                status={status}
+              />
+            );
+          })}
+        </div>
+        <div className="flex justify-end text-xs text-muted-foreground mt-1 px-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1">
+              <span className="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
+              <span>Correct</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="inline-block w-2 h-2 bg-red-500 rounded-full"></span>
+              <span>Incorrect</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="inline-block w-2 h-2 bg-gray-300 rounded-full"></span>
+              <span>Unanswered</span>
+            </div>
+          </div>
+        </div>
+      </AccordionContent>
+    </AccordionItem>
+  );
+};
 
 export default function TestResults() {
-  const { currentTest, progress, resetTest } = useTestStore()
-  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null)
-  const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
+  const { currentTest, progress, resetTest } = useTestStore();
 
   if (!currentTest || !progress) {
     return (
       <div className="flex justify-center items-center h-96">
         <p>No test results available.</p>
       </div>
-    )
+    );
   }
-
-  const score = progress.score || 0
-  const totalPossibleScore = currentTest.sections.reduce(
-    (total, section) => total + section.questions.reduce((sum, q) => sum + q.points, 0),
-    0,
-  )
-
-  const scorePercentage = Math.round((score / totalPossibleScore) * 100)
 
   // Calculate time taken
-  const startTime = new Date(progress.startedAt).getTime()
-  const endTime = progress.completedAt ? new Date(progress.completedAt).getTime() : new Date().getTime()
+  const startTime = new Date(progress.startedAt).getTime();
+  const endTime = progress.completedAt
+    ? new Date(progress.completedAt).getTime()
+    : new Date().getTime();
 
-  const timeTakenSeconds = Math.floor((endTime - startTime) / 1000)
-  const timeTakenMinutes = Math.floor(timeTakenSeconds / 60)
-  const remainingSeconds = timeTakenSeconds % 60
+  const timeTakenSeconds = Math.floor((endTime - startTime) / 1000);
+  const timeTakenMinutes = Math.floor(timeTakenSeconds / 60);
+  const remainingSeconds = timeTakenSeconds % 60;
 
-  // Calculate questions answered
-  const totalQuestions = currentTest.totalQuestions
-  const answeredQuestions = Object.keys(progress.answers).length
+  // Calculate test statistics using our utility function
+  const testStats = useMemo(() => {
+    return getTestStats(currentTest, progress.answers);
+  }, [currentTest, progress.answers]);
 
-  // Calculate correct answers
-  const correctAnswers = Object.values(progress.answers).filter((answer) => answer.isCorrect).length
+  const {
+    totalQuestions,
+    answeredQuestions,
+    correctAnswers,
+    totalScore,
+    maxPossibleScore,
+    percentageScore: scorePercentage,
+  } = testStats;
 
-  // Calculate partially correct answers
-  const partiallyCorrectAnswers = Object.values(progress.answers).filter((answer) => answer.partiallyCorrect).length
+  // Estimate band score
+  const estimatedBandScore = useMemo(() => {
+    return Math.min(9, Math.max(1, Math.round(scorePercentage / 11.1)));
+  }, [scorePercentage]);
 
-  // Get all questions from all sections
-  const allQuestions = currentTest.sections.flatMap((section) =>
-    section.questions.map((question) => ({
-      ...question,
-      sectionId: section.id,
-      sectionTitle: section.title,
-    })),
-  )
-
-  // Find the selected question for review
-  const selectedQuestion = selectedQuestionId ? allQuestions.find((q) => q.id === selectedQuestionId) : null
-
-  const selectedQuestionAnswer =
-    selectedQuestionId && progress.answers[selectedQuestionId] ? progress.answers[selectedQuestionId] : null
-
-  // Handle opening the review dialog
-  const handleReviewQuestion = (questionId: string) => {
-    setSelectedQuestionId(questionId)
-    setReviewDialogOpen(true)
-  }
-
-  // Get answer status for a question
+  // Get answer status for a question or sub-question using our utility functions
   const getAnswerStatus = (questionId: string) => {
-    if (!progress.answers[questionId]) return "unanswered"
-    if (progress.answers[questionId].isCorrect) return "correct"
-    if (progress.answers[questionId].partiallyCorrect) return "partial"
-    return "incorrect"
-  }
-
-  // Get status color class
-  const getStatusColorClass = (status: string) => {
-    switch (status) {
-      case "correct":
-        return "bg-green-500"
-      case "partial":
-        return "bg-amber-500"
-      case "incorrect":
-        return "bg-red-500"
-      default:
-        return "bg-gray-300"
-    }
-  }
-
-  // Get status icon
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "correct":
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />
-      case "partial":
-        return <AlertCircle className="h-4 w-4 text-amber-500" />
-      case "incorrect":
-        return <X className="h-4 w-4 text-red-500" />
-      default:
-        return <HelpCircle className="h-4 w-4 text-gray-400" />
-    }
-  }
+    if (!progress.answers[questionId]) return "untouched";
+    if (progress.answers[questionId].isCorrect) return "correct";
+    return "incorrect";
+  };
 
   return (
-    <div className="container mx-auto py-10 px-4 max-w-4xl">
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Test Results</CardTitle>
+    <div className="container mx-auto py-6 px-4 max-w-4xl">
+      <Card className="overflow-hidden border-2 shadow-md">
+        <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 pb-2">
+          <CardTitle className="text-xl flex items-center justify-center">
+            <span className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center mr-2">
+              <BarChart3 className="h-4 w-4" />
+            </span>
+            {currentTest.title} - {currentTest.type.toUpperCase()}
+          </CardTitle>
         </CardHeader>
 
-        <CardContent className="space-y-6">
-          <div className="flex flex-col items-center">
-            <div className="relative w-40 h-40 mb-4">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-4xl font-bold">{scorePercentage}%</span>
-              </div>
-              <svg className="w-full h-full" viewBox="0 0 100 100">
-                <circle
-                  className="text-muted stroke-current"
-                  strokeWidth="10"
-                  fill="transparent"
-                  r="40"
-                  cx="50"
-                  cy="50"
-                />
-                <circle
-                  className="text-primary stroke-current"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                  fill="transparent"
-                  r="40"
-                  cx="50"
-                  cy="50"
-                  strokeDasharray={`${2 * Math.PI * 40}`}
-                  strokeDashoffset={`${2 * Math.PI * 40 * (1 - scorePercentage / 100)}`}
-                  transform="rotate(-90 50 50)"
-                />
-              </svg>
-            </div>
+        <CardContent className="space-y-5 pt-5">
+          {/* Stats Summary */}
 
-            <h2 className="text-xl font-bold mb-1">
-              {score} / {totalPossibleScore} points
-            </h2>
-            <p className="text-muted-foreground">
-              {currentTest.title} - {currentTest.type.toUpperCase()}
-            </p>
+          <div className="flex flex-col justify-between items-center gap-6">
+            <ScoreCircle percentage={scorePercentage} />
+
+            <div className="grid grid-cols-3 gap-3 w-full">
+              <MetricCard
+                icon={Clock}
+                title="Time"
+                value={`${timeTakenMinutes}m ${remainingSeconds}s`}
+              />
+              <MetricCard
+                icon={CheckCircle2}
+                title="Accuracy"
+                value={`${correctAnswers}/${answeredQuestions}`}
+                iconColor="text-green-500"
+              />
+              <MetricCard
+                icon={BarChart3}
+                title="Completion"
+                value={`${answeredQuestions}/${totalQuestions}`}
+              />
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex flex-col items-center p-4 bg-muted rounded-lg">
-              <Clock className="h-8 w-8 mb-2 text-primary" />
-              <h3 className="font-medium">Time Taken</h3>
-              <p>
-                {timeTakenMinutes}m {remainingSeconds}s
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center p-4 bg-muted rounded-lg">
-              <CheckCircle2 className="h-8 w-8 mb-2 text-green-500" />
-              <h3 className="font-medium">Correct Answers</h3>
-              <p>
-                {correctAnswers} / {answeredQuestions}
-              </p>
-              {partiallyCorrectAnswers > 0 && (
-                <span className="text-xs text-amber-500 flex items-center mt-1">
-                  <AlertCircle className="h-3 w-3 mr-1" />
-                  {partiallyCorrectAnswers} partially correct
+          {/* Score Summary */}
+          <div className="bg-muted/40 rounded-lg p-3 flex items-center justify-between">
+            <div className="text-sm">
+              <h3 className="font-medium">Final Score</h3>
+              <div className="text-lg font-semibold mt-1">
+                {totalScore} / {maxPossibleScore}
+                <span className="text-xs text-muted-foreground ml-2">
+                  points
                 </span>
-              )}
+              </div>
             </div>
 
-            <div className="flex flex-col items-center p-4 bg-muted rounded-lg">
-              <BarChart3 className="h-8 w-8 mb-2 text-primary" />
-              <h3 className="font-medium">Completion</h3>
-              <p>
-                {answeredQuestions} / {totalQuestions} questions
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-medium mb-2">Section Breakdown</h3>
-            <div className="space-y-4">
-              {currentTest.sections.map((section, index) => {
-                // Calculate section score
-                const sectionQuestionIds = section.questions.map((q) => q.id)
-                const sectionAnswers = Object.values(progress.answers).filter((answer) =>
-                  sectionQuestionIds.includes(answer.questionId),
-                )
-
-                const sectionScore = sectionAnswers.reduce((sum, answer) => sum + (answer.score || 0), 0)
-
-                const sectionTotalScore = section.questions.reduce((sum, q) => sum + q.points, 0)
-
-                const sectionPercentage = Math.round((sectionScore / sectionTotalScore) * 100) || 0
-
-                return (
-                  <div key={section.id} className="p-4 border rounded-lg">
-                    <div className="flex justify-between mb-2">
-                      <h4 className="font-medium">{section.title}</h4>
-                      <span className="font-medium">
-                        {sectionScore} / {sectionTotalScore}
-                      </span>
-                    </div>
-                    <Progress value={sectionPercentage} className="h-2 mb-2" />
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>
-                        {sectionAnswers.length} / {section.questions.length} questions answered
-                      </span>
-                      <span>{sectionPercentage}% correct</span>
-                    </div>
-                  </div>
-                )
-              })}
+            <div className="space-y-1 flex-1 max-w-xs mx-auto px-2">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Band Score Estimate</span>
+                <span>{estimatedBandScore}/9</span>
+              </div>
+              <div className="bg-muted h-2 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-1000 ease-out ${getScoreBgClass(
+                    scorePercentage
+                  )}`}
+                  style={{ width: `${scorePercentage}%` }}
+                ></div>
+              </div>
             </div>
           </div>
 
-          {/* Question List */}
+          {/* Section Breakdown */}
           <div>
-            <h3 className="text-lg font-medium mb-4">Question Review</h3>
-            <Accordion type="single" collapsible className="w-full">
+            <h3 className="text-sm font-medium mb-2 flex items-center">
+              <BarChart3 className="h-4 w-4 mr-1 text-primary" />
+              Section Performance
+            </h3>
+            <div className="space-y-2 text-sm">
               {currentTest.sections.map((section) => (
-                <AccordionItem key={section.id} value={section.id}>
-                  <AccordionTrigger className="hover:bg-muted px-4 rounded-md">{section.title}</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 p-2">
-                      {section.questions.map((question, qIndex) => {
-                        const status = getAnswerStatus(question.id)
-                        const statusColor = getStatusColorClass(status)
+                <SectionPerformance
+                  key={section.id}
+                  section={section}
+                  answers={progress.answers}
+                />
+              ))}
+            </div>
+          </div>
 
-                        return (
-                          <Button
-                            key={question.id}
-                            variant="outline"
-                            size="sm"
-                            className="relative p-0 h-10 w-10 flex items-center justify-center"
-                            onClick={() => handleReviewQuestion(question.id)}
-                          >
-                            <span className="text-sm">{qIndex + 1}</span>
-                            <span className={`absolute bottom-0 left-0 right-0 h-1.5 ${statusColor}`}></span>
-                          </Button>
-                        )
-                      })}
-                    </div>
-                    <div className="flex items-center justify-between text-sm mt-3 px-2">
-                      <div className="flex flex-wrap items-center gap-4">
-                        <div className="flex items-center gap-1">
-                          <span className="inline-block w-3 h-3 bg-green-500 rounded-full"></span>
-                          <span>Correct</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="inline-block w-3 h-3 bg-amber-500 rounded-full"></span>
-                          <span>Partially Correct</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="inline-block w-3 h-3 bg-red-500 rounded-full"></span>
-                          <span>Incorrect</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="inline-block w-3 h-3 bg-gray-300 rounded-full"></span>
-                          <span>Not Answered</span>
-                        </div>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+          {/* Question Review */}
+          <div>
+            <h3 className="text-sm font-medium mb-3 flex items-center">
+              <CheckCircle2 className="h-4 w-4 mr-1 text-primary" />
+              Question Review
+            </h3>
+            <Accordion
+              type="multiple"
+              defaultValue={currentTest.sections.map((section) => section.id)}
+              className="w-full space-y-2"
+            >
+              {currentTest.sections.map((section) => (
+                <SectionAccordionItem
+                  key={section.id}
+                  section={section}
+                  answers={progress.answers}
+                  getAnswerStatus={getAnswerStatus}
+                />
               ))}
             </Accordion>
           </div>
-
-          <div className="p-4 bg-muted rounded-lg">
-            <h3 className="text-lg font-medium mb-2">Performance Analysis</h3>
-            <p>
-              {scorePercentage >= 70
-                ? "Great job! You've demonstrated a good understanding of the material."
-                : scorePercentage >= 50
-                  ? "You're on the right track. With more practice, you can improve your score."
-                  : "This test identified some areas where you need more practice. Don't worry, keep studying!"}
-            </p>
-
-            <div className="mt-4">
-              <h4 className="font-medium mb-1">Suggested Next Steps:</h4>
-              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                <li>Review your incorrect answers to identify knowledge gaps</li>
-                <li>Practice with more {currentTest.type} tests</li>
-                <li>Focus on time management during the test</li>
-              </ul>
-            </div>
-          </div>
         </CardContent>
-
-        <CardFooter className="flex flex-col sm:flex-row gap-4">
-          <Button variant="outline" className="w-full sm:w-auto" onClick={resetTest}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Try Again
-          </Button>
-
-          <Link href="/tests" className="w-full sm:w-auto">
-            <Button className="w-full">Back to Tests</Button>
-          </Link>
-        </CardFooter>
       </Card>
-
-      {/* Question Review Dialog */}
-      {selectedQuestion && (
-        <TestResultsQuestionReview
-          question={selectedQuestion}
-          answer={selectedQuestionAnswer}
-          open={reviewDialogOpen}
-          onOpenChange={setReviewDialogOpen}
-        />
-      )}
     </div>
-  )
+  );
 }
-

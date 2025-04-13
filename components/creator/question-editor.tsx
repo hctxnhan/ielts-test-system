@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { Question, ScoringStrategy } from "@/lib/types";
+import { BarChart2, MessageSquare } from "lucide-react";
 import MultipleChoiceEditor from "./question-editors/multiple-choice-editor";
 import CompletionEditor from "./question-editors/completion-editor";
 import MatchingEditor from "./question-editors/matching-editor";
@@ -42,6 +43,7 @@ export default function QuestionEditor({
   // Determine if the question type supports partial scoring
   const supportsPartialScoring = [
     "completion",
+    "multiple-choice",
     "matching",
     "labeling",
     "pick-from-list",
@@ -64,19 +66,7 @@ export default function QuestionEditor({
             htmlFor={`question-text-${question.id}`}
             className="text-xs font-medium flex items-center gap-1.5"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-            </svg>
+            <MessageSquare className="h-3 w-3" />
             Question Text
           </Label>
           <Textarea
@@ -96,23 +86,7 @@ export default function QuestionEditor({
         {supportsPartialScoring && (
           <div className="space-y-1.5">
             <Label className="text-xs font-medium flex items-center gap-1.5">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M2 20h.01"></path>
-                <path d="M7 20v-4"></path>
-                <path d="M12 20v-8"></path>
-                <path d="M17 20v-6"></path>
-                <path d="M22 20V8"></path>
-              </svg>
+              <BarChart2 className="h-3 w-3" />
               Scoring Strategy
             </Label>
             <RadioGroup

@@ -5,7 +5,7 @@ export type ReadingVariant = "academic" | "general";
 // Add scoring strategy type
 export type ScoringStrategy = "partial" | "all-or-nothing";
 
-// Add writing-specific question types
+// Question types
 export type QuestionType =
   | "multiple-choice"
   | "completion"
@@ -18,71 +18,99 @@ export type QuestionType =
   | "writing-task1"
   | "writing-task2";
 
-// Base interfaces
+export interface SubQuestionMeta {
+  // subIndex: number;
+  subId: string;
+  item?: string;
+  correctAnswer?: any;
+  points: number;
+}
+
+export interface MultipleChoiceOption {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+}
+
 export interface BaseQuestion {
   id: string;
   type: QuestionType;
   text: string;
   points: number;
-  // Add scoring strategy
   scoringStrategy: ScoringStrategy;
+  subQuestions?: SubQuestionMeta[];
+
   index: number;
-  partialEndingIndex?: number; // For partial scoring
+  partialEndingIndex: number;
 }
 
 export interface MultipleChoiceQuestion extends BaseQuestion {
   type: "multiple-choice";
-  options: string[];
-  correctAnswer: number;
+  options: MultipleChoiceOption[];
 }
 
 export interface CompletionQuestion extends BaseQuestion {
   type: "completion";
   blanks: number;
-  correctAnswers: string[];
+  subQuestions: SubQuestionMeta[];
+}
+
+export interface MatchingItem {
+  id: string;
+  text: string;
+}
+
+export interface MatchingOption {
+  id: string;
+  text: string;
 }
 
 export interface MatchingQuestion extends BaseQuestion {
   type: "matching";
-  items: string[];
-  options: string[];
-  correctMatches: Record<number, number>; // index of item -> index of option
+  items: MatchingItem[];
+  options: MatchingOption[];
+  subQuestions: SubQuestionMeta[];
 }
 
-// Updated Labeling Question
 export interface LabelingQuestion extends BaseQuestion {
   type: "labeling";
   imageUrl: string;
-  labels: string[]; // Labels that are already on the image
-  options: string[]; // Options to choose from
-  correctLabels: Record<number, number>; // label index -> option index
+  labels: { id: string; text: string }[];
+  options: { id: string; text: string }[];
+  subQuestions: SubQuestionMeta[];
 }
 
-// Updated Pick From List Question
 export interface PickFromListQuestion extends BaseQuestion {
   type: "pick-from-list";
-  items: string[]; // Items to match (e.g., "Local shop", "Restaurant")
-  options: string[]; // Options to choose from (e.g., "A The shop will move...")
-  correctAnswers: Record<number, number>; // item index -> option index
+  items: { id: string; text: string }[];
+  options: { id: string; text: string }[];
+  subQuestions: SubQuestionMeta[];
+}
+
+export interface TFNGStatement {
+  id: string;
+  text: string;
 }
 
 export interface TrueFalseNotGivenQuestion extends BaseQuestion {
   type: "true-false-not-given";
-  statements: string[];
-  correctAnswers: ("true" | "false" | "not-given")[];
+  statements: TFNGStatement[];
+  subQuestions: SubQuestionMeta[];
 }
 
 export interface MatchingHeadingsQuestion extends BaseQuestion {
   type: "matching-headings";
-  paragraphs: string[];
-  headings: string[];
-  correctMatches: Record<number, number>; // paragraph index -> heading index
+  paragraphs: { id: string; text: string }[];
+  headings: { id: string; text: string }[];
+  subQuestions: SubQuestionMeta[];
 }
 
 export interface ShortAnswerQuestion extends BaseQuestion {
   type: "short-answer";
-  questions: string[];
-  correctAnswers: string[][]; // Array of acceptable answers for each question
+  questions: { id: string; text: string }[];
+  subQuestions: (Omit<SubQuestionMeta, "correctAnswer"> & {
+    acceptableAnswers: string[];
+  })[];
   wordLimit?: number;
 }
 
@@ -93,7 +121,7 @@ export interface WritingTask1Question extends BaseQuestion {
   imageUrl?: string;
   wordLimit: number;
   sampleAnswer?: string;
-  scoringPrompt?: string; // Prompt for AI scoring
+  scoringPrompt?: string;
 }
 
 export interface WritingTask2Question extends BaseQuestion {
@@ -101,10 +129,9 @@ export interface WritingTask2Question extends BaseQuestion {
   prompt: string;
   wordLimit: number;
   sampleAnswer?: string;
-  scoringPrompt?: string; // Prompt for AI scoring
+  scoringPrompt?: string;
 }
 
-// Update Question type union
 export type Question =
   | MultipleChoiceQuestion
   | CompletionQuestion
@@ -130,33 +157,36 @@ export interface Section {
   id: string;
   title: string;
   description: string;
-  audioUrl?: string; // For listening tests
-  readingPassage?: ReadingPassage; // For reading tests
+  audioUrl?: string;
+  readingPassage?: ReadingPassage;
   questions: Question[];
-  duration: number; // in seconds
+  duration: number;
 }
 
 export interface Test {
   id: string;
   title: string;
   type: TestType;
-  readingVariant?: ReadingVariant; // For reading tests
+  readingVariant?: ReadingVariant;
   description: string;
   sections: Section[];
-  totalDuration: number; // in seconds
+  totalDuration: number;
   totalQuestions: number;
   instructions: string;
 }
 
-// User progress and answers
 export interface UserAnswer {
   questionId: string;
-  answer: any; // Type depends on question type
+  answer: any;
   isCorrect?: boolean;
   score?: number;
-  maxScore?: number; // Add maximum possible score
-  partiallyCorrect?: boolean; // Add flag for partially correct answers
-  feedback?: string; // Add feedback field for AI-scored questions
+  maxScore?: number;
+  feedback?: string;
+  subQuestionId?: string;
+  sectionId: string;
+  questionType: QuestionType;
+  questionIndex: number;
+  parentQuestionId?: string; // For subquestions, to link back to the parent
 }
 
 export interface TestProgress {
@@ -165,13 +195,13 @@ export interface TestProgress {
   currentQuestionIndex: number;
   timeRemaining: number;
   answers: Record<string, UserAnswer>;
+  answerMap?: Record<string, any>; // New field for { subquestionId: answerId } format
   completed: boolean;
   startedAt: string;
   completedAt?: string;
   score?: number;
 }
 
-// Test creator types
 export interface TestTemplate {
   id: string;
   title: string;

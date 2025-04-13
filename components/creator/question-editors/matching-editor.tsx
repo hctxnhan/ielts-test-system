@@ -10,8 +10,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PlusCircle } from "lucide-react";
-import type { MatchingQuestion } from "@/lib/types";
+import type {
+  MatchingItem,
+  MatchingOption,
+  MatchingQuestion,
+} from "@/lib/types";
+import { ArrowRight, Check, Globe, List, PlusCircle, X } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
 
 interface MatchingEditorProps {
   question: MatchingQuestion;
@@ -28,91 +33,183 @@ export default function MatchingEditor({
   sectionId,
   onUpdateQuestion,
 }: MatchingEditorProps) {
+  const [isUsingStructuredFormat, setIsUsingStructuredFormat] = useState(
+    () =>
+      Array.isArray(question.items) &&
+      question.items.length > 0 &&
+      typeof question.items[0] !== "string"
+  );
+
+  const initializeItems = useCallback(() => {
+    if (
+      !question.items ||
+      !Array.isArray(question.items) ||
+      question.items.length === 0
+    ) {
+      return [
+        { id: "item_1", text: "" },
+        { id: "item_2", text: "" },
+      ];
+    }
+    return question.items as MatchingItem[];
+  }, [question.items]);
+
+  const initializeOptions = useCallback(() => {
+    if (
+      !question.options ||
+      !Array.isArray(question.options) ||
+      question.options.length === 0
+    ) {
+      return [
+        { id: "opt_1", text: "" },
+        { id: "opt_2", text: "" },
+      ];
+    }
+    return question.options as MatchingOption[];
+  }, [question.options]);
+
+  const initializeSubQuestions = useCallback(() => {
+    return initializeItems().map((item, index) => {
+      const existingSubQuestion = question.subQuestions?.find(
+        (sq) => sq.item === item.id
+      );
+
+      return {
+        subId: existingSubQuestion?.subId || `${question.id}_${index + 1}`,
+        subIndex: index,
+        item: item.id,
+        correctAnswer:
+          existingSubQuestion?.correctAnswer ||
+          initializeOptions()[0]?.id ||
+          "",
+        points: 1,
+      };
+    });
+  }, [initializeItems, initializeOptions, question.id, question.subQuestions]);
+
+  const [items, setItems] = useState<MatchingItem[]>(initializeItems);
+  const [options, setOptions] = useState<MatchingOption[]>(initializeOptions);
+  const [subQuestions, setSubQuestions] = useState<
+    MatchingQuestion["subQuestions"]
+  >(initializeSubQuestions);
+
+  useEffect(() => {
+    const formattedSubQuestions = items.map((item, index) => {
+      const existingSubQuestion = subQuestions.find(
+        (sq) => sq.item === item.id
+      );
+
+      return {
+        subId: existingSubQuestion?.subId || `${question.id}_${index + 1}`,
+        subIndex: index + 1,
+        item: item.id,
+        correctAnswer:
+          existingSubQuestion?.correctAnswer || options[0]?.id || "",
+        points: existingSubQuestion?.points || 1,
+      };
+    });
+
+    onUpdateQuestion(sectionId, question.id, {
+      items,
+      options,
+      subQuestions: formattedSubQuestions,
+    });
+  }, [items, options, subQuestions, sectionId, question.id, onUpdateQuestion]);
+
+  const addItem = useCallback(() => {
+    const newItemId = `item_${items.length + 1}`;
+    const newItem: MatchingItem = { id: newItemId, text: "" };
+    setItems((prevItems) => [...prevItems, newItem]);
+
+    setSubQuestions((prevSubQuestions) => [
+      ...prevSubQuestions,
+      {
+        subId: `${question.id}_${items.length + 1}`,
+        subIndex: items.length + 1,
+        item: newItemId,
+        correctAnswer: options[0]?.id || "",
+        points: 1,
+      },
+    ]);
+  }, [items.length, options, question.id]);
+
+  const removeItem = useCallback((itemId: string) => {
+    setItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
+    setSubQuestions((prevSubQuestions) => {
+      const filteredSubQuestions = prevSubQuestions.filter(
+        (sq) => sq.item !== itemId
+      );
+      return filteredSubQuestions.map((sq, idx) => ({
+        ...sq,
+        subIndex: idx + 1,
+      }));
+    });
+  }, []);
+
+  const updateItemText = useCallback((itemId: string, newText: string) => {
+    setItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === itemId ? { ...item, text: newText } : item
+      )
+    );
+    setSubQuestions((prevSubQuestions) =>
+      prevSubQuestions.map((sq) =>
+        sq.item === itemId ? { ...sq, itemContent: newText } : sq
+      )
+    );
+  }, []);
+
+  const addOption = useCallback(() => {
+    const newOptionId = `opt_${options.length + 1}`;
+    const newOption: MatchingOption = { id: newOptionId, text: "" };
+    setOptions((prevOptions) => [...prevOptions, newOption]);
+  }, [options.length]);
+
+  const removeOption = useCallback(
+    (optionId: string) => {
+      setOptions((prevOptions) =>
+        prevOptions.filter((option) => option.id !== optionId)
+      );
+      setSubQuestions((prevSubQuestions) =>
+        prevSubQuestions.map((sq) => {
+          if (sq.correctAnswer === optionId) {
+            return { ...sq, correctAnswer: options[0]?.id || "" };
+          }
+          return sq;
+        })
+      );
+    },
+    [options]
+  );
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label className="text-xs font-medium flex items-center gap-1.5">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="8" y1="6" x2="21" y2="6"></line>
-              <line x1="8" y1="12" x2="21" y2="12"></line>
-              <line x1="8" y1="18" x2="21" y2="18"></line>
-              <line x1="3" y1="6" x2="3.01" y2="6"></line>
-              <line x1="3" y1="12" x2="3.01" y2="12"></line>
-              <line x1="3" y1="18" x2="3.01" y2="18"></line>
-            </svg>
+            <List className="h-3 w-3" />
             Items
           </Label>
           <div className="space-y-1">
-            {question.items.map((item, itemIndex) => (
-              <div key={itemIndex} className="flex gap-1.5 items-center">
+            {items.map((item, itemIndex) => (
+              <div key={item.id} className="flex gap-1.5 items-center">
                 <div className="flex items-center justify-center h-5 w-5 rounded-full bg-muted/50 text-xs font-medium">
                   {itemIndex + 1}
                 </div>
                 <Input
-                  value={item}
-                  onChange={(e) => {
-                    const newItems = [...question.items];
-                    newItems[itemIndex] = e.target.value;
-                    onUpdateQuestion(sectionId, question.id, {
-                      items: newItems,
-                    });
-                  }}
+                  value={item.text}
+                  onChange={(e) => updateItemText(item.id, e.target.value)}
                   placeholder={`Item ${itemIndex + 1}`}
                   className="h-7 text-sm"
                 />
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => {
-                    const newItems = question.items.filter(
-                      (_, i) => i !== itemIndex
-                    );
-                    // Also update correctMatches
-                    const newMatches = { ...question.correctMatches };
-                    delete newMatches[itemIndex];
-                    // Renumber keys
-                    const updatedMatches: Record<number, number> = {};
-                    Object.entries(newMatches).forEach(([key, value]) => {
-                      const keyNum = Number.parseInt(key);
-                      if (keyNum > itemIndex) {
-                        updatedMatches[keyNum - 1] = value;
-                      } else {
-                        updatedMatches[keyNum] = value;
-                      }
-                    });
-
-                    onUpdateQuestion(sectionId, question.id, {
-                      items: newItems,
-                      correctMatches: updatedMatches,
-                    });
-                  }}
-                  disabled={question.items.length <= 2}
+                  onClick={() => removeItem(item.id)}
+                  disabled={items.length <= 2}
                   className="h-6 w-6 text-muted-foreground hover:text-destructive"
                 >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
+                  <X className="h-3.5 w-3.5" />
                 </Button>
               </div>
             ))}
@@ -120,15 +217,7 @@ export default function MatchingEditor({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => {
-              const newItems = [...question.items, ""];
-              const newIndex = question.items.length;
-              const newMatches = { ...question.correctMatches, [newIndex]: 0 };
-              onUpdateQuestion(sectionId, question.id, {
-                items: newItems,
-                correctMatches: newMatches,
-              });
-            }}
+            onClick={addItem}
             className="h-7 text-xs w-full justify-start bg-muted/30 hover:bg-muted/50 mt-1"
           >
             <PlusCircle className="mr-1 h-3.5 w-3.5" />
@@ -138,37 +227,21 @@ export default function MatchingEditor({
 
         <div className="space-y-1.5">
           <Label className="text-xs font-medium flex items-center gap-1.5">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="2" y1="12" x2="22" y2="12"></line>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-            </svg>
+            <Globe className="h-3 w-3" />
             Options
           </Label>
           <div className="space-y-1">
-            {question.options.map((option, optIndex) => (
-              <div key={optIndex} className="flex gap-1.5 items-center">
+            {options.map((option, optIndex) => (
+              <div key={option.id} className="flex gap-1.5 items-center">
                 <div className="flex items-center justify-center h-5 w-5 rounded-full bg-muted/50 text-xs font-medium">
                   {String.fromCharCode(65 + optIndex)}
                 </div>
                 <Input
-                  value={option}
+                  value={option.text}
                   onChange={(e) => {
-                    const newOptions = [...question.options];
-                    newOptions[optIndex] = e.target.value;
-                    onUpdateQuestion(sectionId, question.id, {
-                      options: newOptions,
-                    });
+                    const newOptions = [...options];
+                    newOptions[optIndex].text = e.target.value;
+                    setOptions(newOptions);
                   }}
                   placeholder={`Option ${optIndex + 1}`}
                   className="h-7 text-sm"
@@ -176,30 +249,11 @@ export default function MatchingEditor({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => {
-                    const newOptions = question.options.filter(
-                      (_, i) => i !== optIndex
-                    );
-                    onUpdateQuestion(sectionId, question.id, {
-                      options: newOptions,
-                    });
-                  }}
-                  disabled={question.options.length <= 2}
+                  onClick={() => removeOption(option.id)}
+                  disabled={options.length <= 2}
                   className="h-6 w-6 text-muted-foreground hover:text-destructive"
                 >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
+                  <X className="h-3.5 w-3.5" />
                 </Button>
               </div>
             ))}
@@ -207,10 +261,7 @@ export default function MatchingEditor({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => {
-              const newOptions = [...question.options, ""];
-              onUpdateQuestion(sectionId, question.id, { options: newOptions });
-            }}
+            onClick={addOption}
             className="h-7 text-xs w-full justify-start bg-muted/30 hover:bg-muted/50 mt-1"
           >
             <PlusCircle className="mr-1 h-3.5 w-3.5" />
@@ -221,77 +272,74 @@ export default function MatchingEditor({
 
       <div className="space-y-1.5">
         <Label className="text-xs font-medium flex items-center gap-1.5">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
+          <Check className="h-3 w-3" />
           Correct Matches
         </Label>
         <div className="space-y-1 bg-muted/20 p-2 rounded-md">
-          {question.items.map((item, itemIndex) => (
-            <div key={itemIndex} className="flex items-center gap-1.5 text-sm">
-              <div className="flex items-center justify-center h-5 w-5 shrink-0 rounded-full bg-muted/50 text-xs font-medium">
-                {itemIndex + 1}
-              </div>
-              <span className="w-1/3 text-xs truncate">
-                {item || `Item ${itemIndex + 1}`}
-              </span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="shrink-0"
-              >
-                <path d="M5 12h14"></path>
-                <path d="M12 5l7 7-7 7"></path>
-              </svg>
-              <Select
-                value={(question.correctMatches[itemIndex] || 0).toString()}
-                onValueChange={(value) => {
-                  const newMatches = { ...question.correctMatches };
-                  newMatches[itemIndex] = Number.parseInt(value);
-                  onUpdateQuestion(sectionId, question.id, {
-                    correctMatches: newMatches,
-                  });
-                }}
-              >
-                <SelectTrigger className="flex-1 h-7 text-xs">
-                  <SelectValue placeholder="Select matching option" />
-                </SelectTrigger>
-                <SelectContent>
-                  {question.options.map((option, optIndex) => (
-                    <SelectItem
-                      key={optIndex}
-                      value={optIndex.toString()}
-                      className="text-sm py-1.5 px-2"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <div className="flex items-center justify-center h-4 w-4 rounded-full bg-muted/50 text-xs font-medium">
-                          {String.fromCharCode(65 + optIndex)}
+          {items.map((item, itemIndex) => {
+            // Find corresponding subQuestion for this item
+            const subQuestion = subQuestions.find((sq) => sq.item === item.id);
+            const correctOptionId =
+              subQuestion?.correctAnswer || options[0]?.id || "";
+
+            return (
+              <div key={item.id} className="flex items-center gap-1.5 text-sm">
+                <div className="flex items-center justify-center h-5 w-5 shrink-0 rounded-full bg-muted/50 text-xs font-medium">
+                  {itemIndex + 1}
+                </div>
+                <span className="w-1/3 text-xs truncate">
+                  {item.text || `Item ${itemIndex + 1}`}
+                </span>
+                <ArrowRight className="h-3 w-3 shrink-0" />
+                <Select
+                  value={correctOptionId}
+                  onValueChange={(optionId) => {
+                    const newSubQuestions = [...subQuestions];
+                    const subQuestionIndex = newSubQuestions.findIndex(
+                      (sq) => sq.item === item.id
+                    );
+
+                    if (subQuestionIndex >= 0) {
+                      newSubQuestions[subQuestionIndex] = {
+                        ...newSubQuestions[subQuestionIndex],
+                        correctAnswer: optionId,
+                      };
+                    } else {
+                      // Create new subQuestion if it doesn't exist
+                      newSubQuestions.push({
+                        subId: `${question.id}_${itemIndex + 1}`,
+                        item: item.id,
+                        correctAnswer: optionId,
+                        points: 1,
+                      });
+                    }
+
+                    setSubQuestions(newSubQuestions);
+                  }}
+                >
+                  <SelectTrigger className="flex-1 h-7 text-xs">
+                    <SelectValue placeholder="Select matching option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {options.map((option, optIndex) => (
+                      <SelectItem
+                        key={option.id}
+                        value={option.id}
+                        className="text-sm py-1.5 px-2"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <div className="flex items-center justify-center h-4 w-4 rounded-full bg-muted/50 text-xs font-medium">
+                            {String.fromCharCode(65 + optIndex)}
+                          </div>
+                          <span>{option.text || `Option ${optIndex + 1}`}</span>
                         </div>
-                        <span>{option || `Option ${optIndex + 1}`}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ))}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

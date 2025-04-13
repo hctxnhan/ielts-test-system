@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useCreatorStore } from "@/store/creator-store";
+import SectionEditor from "@/components/creator/section-editor";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,20 +9,67 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Save,
-  ArrowLeft,
-  ChevronDown,
-  ChevronUp,
-  PlusCircle,
-} from "lucide-react";
-import Link from "next/link";
-import type { TestType, Test } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import SectionEditor from "@/components/creator/section-editor";
 import { useToast } from "@/components/ui/use-toast";
+import type { Test, TestType } from "@/lib/types";
+import { useCreatorStore } from "@/store/creator-store";
+import {
+  ArrowLeft,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  FileText,
+  Package,
+  PlusCircle,
+  Save,
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { z } from "zod";
+
+// Define Zod schema for test validation
+const QuestionSchema = z
+  .object({
+    id: z.string().min(1),
+    type: z.string(),
+    text: z.string(),
+    points: z.number().int().positive(),
+    scoringStrategy: z.string(),
+  })
+  .passthrough();
+
+const SectionSchema = z
+  .object({
+    id: z.string().min(1),
+    title: z.string().min(1, "Section title is required"),
+    description: z.string(),
+    questions: z
+      .array(QuestionSchema)
+      .min(1, "Section must have at least one question"),
+    duration: z.number().int().positive("Duration must be a positive number"),
+  })
+  .passthrough();
+
+const TestSchema = z
+  .object({
+    id: z.string().min(1),
+    title: z.string().min(1, "Test title is required"),
+    type: z.enum(["listening", "reading", "writing", "speaking"]),
+    description: z.string(),
+    sections: z
+      .array(SectionSchema)
+      .min(1, "Test must have at least one section"),
+    totalDuration: z
+      .number()
+      .int()
+      .positive("Total duration must be a positive number"),
+    totalQuestions: z.number().int().min(0),
+    instructions: z.string(),
+  })
+  .passthrough();
 
 interface TestCreatorProps {
   defaultTest?: Test;
@@ -38,12 +84,15 @@ export function TestCreator({
 }: TestCreatorProps) {
   const [testDetailsCollapsed, setTestDetailsCollapsed] = useState(false);
   const { toast } = useToast();
+  const [validationErrors, setValidationErrors] = useState<
+    Array<{ field: string; message: string }>
+  >([]); // Changed to store field name with message
 
   const {
     currentTest,
     createNewTest,
     updateTestDetails,
-    saveTest,
+    // saveTest,
     loadTest,
     addSection,
     removeSection,
@@ -66,16 +115,68 @@ export function TestCreator({
 
   // Save the current test
   const handleSaveTest = () => {
-    const savedTest = saveTest();
+    try {
+      setValidationErrors([]);
+      const validatedTest = TestSchema.parse(currentTest);
+      // const savedTest = saveTest();
 
-    if (onTestCreateSubmit && savedTest) {
-      onTestCreateSubmit(savedTest);
+      if (onTestCreateSubmit && currentTest) {
+        onTestCreateSubmit(currentTest);
+      }
+
+      toast({
+        title: "Test saved",
+        description: "Your test has been saved successfully.",
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // Format errors to include both field path and message
+        const formattedErrors = error.errors.map((err) => {
+          // Get the field path from error
+          const fieldPath = err.path.join(".");
+
+          // Map error paths to user-friendly field names
+          let fieldName = fieldPath;
+          if (fieldPath.startsWith("title")) {
+            fieldName = "Test Title";
+          } else if (fieldPath.startsWith("sections")) {
+            // Extract section index if available
+            const match = fieldPath.match(/sections\[(\d+)\]/);
+            if (match) {
+              const sectionIndex = parseInt(match[1]);
+
+              if (fieldPath.includes("title")) {
+                fieldName = `Section ${sectionIndex + 1} Title`;
+              } else if (fieldPath.includes("duration")) {
+                fieldName = `Section ${sectionIndex + 1} Duration`;
+              } else if (fieldPath.includes("questions")) {
+                fieldName = `Section ${sectionIndex + 1} Questions`;
+              } else {
+                fieldName = `Section ${sectionIndex + 1}`;
+              }
+            } else {
+              fieldName = "Sections";
+            }
+          } else if (fieldPath.startsWith("totalDuration")) {
+            fieldName = "Total Duration";
+          }
+
+          return {
+            field: fieldName,
+            message: err.message,
+          };
+        });
+
+        setValidationErrors(formattedErrors);
+      } else {
+        setValidationErrors([
+          {
+            field: "General",
+            message: "An unexpected error occurred while saving the test.",
+          },
+        ]);
+      }
     }
-
-    toast({
-      title: "Test saved",
-      description: "Your test has been saved successfully.",
-    });
   };
 
   return (
@@ -83,19 +184,7 @@ export function TestCreator({
       <div className="flex justify-between items-center mb-3">
         <div>
           <h1 className="text-xl font-bold flex items-center gap-1.5">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1-3-3h7z"></path>
-            </svg>
+            <BookOpen className="w-4.5 h-4.5" />
             Test Creator
           </h1>
           <p className="text-xs text-muted-foreground">
@@ -103,17 +192,36 @@ export function TestCreator({
           </p>
         </div>
 
-        <div className="flex gap-1.5">
-          <Link href="/">
-            <Button variant="outline" size="sm" className="h-7 text-xs">
-              <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back
-            </Button>
-          </Link>
+        <div className="flex flex-col items-end gap-1.5">
+          <div className="flex gap-1.5">
+            <Link href="/">
+              <Button variant="outline" size="sm" className="h-7 text-xs">
+                <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back
+              </Button>
+            </Link>
 
-          {currentTest && (
-            <Button size="sm" className="h-7 text-xs" onClick={handleSaveTest}>
-              <Save className="mr-1 h-3.5 w-3.5" /> Save
-            </Button>
+            {currentTest && (
+              <Button
+                size="sm"
+                className="h-7 text-xs"
+                onClick={handleSaveTest}
+              >
+                <Save className="mr-1 h-3.5 w-3.5" /> Save
+              </Button>
+            )}
+          </div>
+
+          {validationErrors.length > 0 && (
+            <div className="mt-1 text-xs text-destructive">
+              <ul className="list-disc pl-4">
+                {validationErrors.map((error, idx) => (
+                  <li key={idx}>
+                    <span className="font-medium">{error.field}:</span>{" "}
+                    {error.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
       </div>
@@ -166,27 +274,7 @@ export function TestCreator({
                     <div className="space-y-1.5">
                       <Label className="text-xs font-medium">Test Type</Label>
                       <div className="flex items-center h-8 text-xs border rounded bg-muted/20 px-2.5 capitalize">
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="mr-1.5"
-                        >
-                          <path d="M8 3v4a2 2 0 0 1-2 2H2"></path>
-                          <path d="M16 3v4a2 2 0 0 0-2 2h4"></path>
-                          <rect
-                            x="4"
-                            y="8"
-                            width="16"
-                            height="12"
-                            rx="2"
-                          ></rect>
-                        </svg>
+                        <FileText className="w-3.5 h-3.5 mr-1.5" />
                         {currentTest.type}
                         {currentTest.readingVariant &&
                           ` (${currentTest.readingVariant})`}
@@ -195,20 +283,7 @@ export function TestCreator({
                     <div className="space-y-1.5">
                       <Label className="text-xs font-medium">Duration</Label>
                       <div className="flex items-center h-8 text-xs border rounded bg-muted/20 px-2.5">
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="mr-1.5"
-                        >
-                          <circle cx="12" cy="12" r="10"></circle>
-                          <polyline points="12 6 12 12 16 14"></polyline>
-                        </svg>
+                        <Clock className="w-3.5 h-3.5 mr-1.5" />
                         {Math.floor(currentTest.totalDuration / 60)} minutes
                       </div>
                     </div>
@@ -258,22 +333,7 @@ export function TestCreator({
 
           <div className="flex justify-between items-center px-1">
             <h2 className="text-sm font-semibold flex items-center gap-1.5">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M16.5 9.4 7.5 4.21"></path>
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                <circle cx="3.5" cy="9.5" r=".5"></circle>
-                <circle cx="3.5" cy="14.5" r=".5"></circle>
-                <path d="M3.5 9.5V14"></path>
-              </svg>
+              <Package className="w-4 h-4" />
               Sections{" "}
               <span className="text-xs text-muted-foreground ml-1">
                 ({currentTest.sections.length})

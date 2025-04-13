@@ -1,5 +1,4 @@
 "use client";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,8 +9,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PlusCircle } from "lucide-react";
 import type { TrueFalseNotGivenQuestion } from "@/lib/types";
+import { List, PlusCircle, X } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
 
 interface TrueFalseNotGivenEditorProps {
   question: TrueFalseNotGivenQuestion;
@@ -19,7 +19,7 @@ interface TrueFalseNotGivenEditorProps {
   onUpdateQuestion: (
     sectionId: string,
     questionId: string,
-    updates: any
+    updates: Partial<TrueFalseNotGivenQuestion>
   ) => void;
 }
 
@@ -28,60 +28,90 @@ export default function TrueFalseNotGivenEditor({
   sectionId,
   onUpdateQuestion,
 }: TrueFalseNotGivenEditorProps) {
+  const generateStmtId = () => uuidv4();
+  const generateSubId = () => uuidv4();
+
+  const handleStatementChange = (index: number, text: string) => {
+    const updatedStatements = [...question.statements];
+    updatedStatements[index] = { ...updatedStatements[index], text };
+    onUpdateQuestion(sectionId, question.id, { statements: updatedStatements });
+  };
+
+  const handleAnswerChange = (
+    index: number,
+    value: "true" | "false" | "not-given"
+  ) => {
+    const updatedSubQuestions = [...(question.subQuestions || [])];
+    updatedSubQuestions[index] = {
+      subId: generateSubId(),
+      item: question.statements[index].id,
+      correctAnswer: value,
+      points: 1,
+    };
+    onUpdateQuestion(sectionId, question.id, {
+      subQuestions: updatedSubQuestions,
+    });
+  };
+
+  const handleRemoveStatement = (index: number) => {
+    const updatedStatements = question.statements.filter((_, i) => i !== index);
+    const updatedSubQuestions =
+      question.subQuestions?.filter((_, i) => i !== index) || [];
+    onUpdateQuestion(sectionId, question.id, {
+      statements: updatedStatements,
+      subQuestions: updatedSubQuestions,
+    });
+  };
+
+  const handleAddStatement = () => {
+    const newStmtId = generateStmtId();
+    const updatedStatements = [
+      ...question.statements,
+      { id: newStmtId, text: "" },
+    ];
+    const updatedSubQuestions = [
+      ...(question.subQuestions || []),
+      {
+        subId: generateSubId(),
+        subIndex: updatedStatements.length,
+        item: newStmtId,
+        correctAnswer: "true",
+        points: 1,
+      },
+    ];
+    onUpdateQuestion(sectionId, question.id, {
+      statements: updatedStatements,
+      subQuestions: updatedSubQuestions,
+    });
+  };
+
   return (
     <div className="space-y-3">
       <div className="space-y-1.5">
         <Label className="text-xs font-medium flex items-center gap-1.5">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="8" y1="6" x2="21" y2="6"></line>
-            <line x1="8" y1="12" x2="21" y2="12"></line>
-            <line x1="8" y1="18" x2="21" y2="18"></line>
-            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-          </svg>
+          <List className="w-3 h-3" />
           Statements
         </Label>
         <div className="space-y-1">
-          {question.statements?.map((statement, stmtIndex) => (
-            <div key={stmtIndex} className="flex gap-1.5 items-center">
+          {question.statements.map((statement, index) => (
+            <div key={statement.id} className="flex gap-1.5 items-center">
               <div className="flex items-center justify-center h-5 w-5 rounded-full bg-muted/50 text-xs font-medium">
-                {stmtIndex + 1}
+                {index + 1}
               </div>
               <Input
-                value={statement}
-                onChange={(e) => {
-                  const newStatements = [...(question.statements || [])];
-                  newStatements[stmtIndex] = e.target.value;
-                  onUpdateQuestion(sectionId, question.id, {
-                    statements: newStatements,
-                  });
-                }}
-                placeholder={`Statement ${stmtIndex + 1}`}
+                value={statement.text}
+                onChange={(e) => handleStatementChange(index, e.target.value)}
+                placeholder={`Statement ${index + 1}`}
                 className="h-7 text-sm"
               />
               <Select
-                value={question.correctAnswers?.[stmtIndex] || "true"}
-                onValueChange={(value) => {
-                  const newAnswers = [...(question.correctAnswers || [])];
-                  newAnswers[stmtIndex] = value as
-                    | "true"
-                    | "false"
-                    | "not-given";
-                  onUpdateQuestion(sectionId, question.id, {
-                    correctAnswers: newAnswers,
-                  });
-                }}
+                value={question.subQuestions?.[index]?.correctAnswer || "true"}
+                onValueChange={(value) =>
+                  handleAnswerChange(
+                    index,
+                    value as "true" | "false" | "not-given"
+                  )
+                }
               >
                 <SelectTrigger className="w-24 h-7 text-xs">
                   <SelectValue placeholder="Answer" />
@@ -101,35 +131,11 @@ export default function TrueFalseNotGivenEditor({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => {
-                  const newStatements = question.statements.filter(
-                    (_, i) => i !== stmtIndex
-                  );
-                  const newCorrectAnswers = [
-                    ...(question.correctAnswers || []),
-                  ];
-                  newCorrectAnswers.splice(stmtIndex, 1);
-                  onUpdateQuestion(sectionId, question.id, {
-                    statements: newStatements,
-                    correctAnswers: newCorrectAnswers,
-                  });
-                }}
+                onClick={() => handleRemoveStatement(index)}
                 disabled={question.statements.length <= 1}
                 className="h-6 w-6 text-muted-foreground hover:text-destructive"
               >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
+                <X className="w-3.5 h-3.5" />
               </Button>
             </div>
           ))}
@@ -137,17 +143,7 @@ export default function TrueFalseNotGivenEditor({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => {
-            const newStatements = [...(question.statements || []), ""];
-            const newCorrectAnswers = [
-              ...(question.correctAnswers || []),
-              "true",
-            ];
-            onUpdateQuestion(sectionId, question.id, {
-              statements: newStatements,
-              correctAnswers: newCorrectAnswers,
-            });
-          }}
+          onClick={handleAddStatement}
           className="h-7 text-xs w-full justify-start bg-muted/30 hover:bg-muted/50 mt-1"
         >
           <PlusCircle className="mr-1 h-3.5 w-3.5" />

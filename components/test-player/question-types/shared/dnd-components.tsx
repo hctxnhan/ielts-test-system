@@ -1,38 +1,44 @@
-'use client';
+"use client";
 
-import { useDrag, useDrop } from 'react-dnd';
+import { useDrag, useDrop } from "react-dnd";
+import type { RefCallback } from "react";
 
 interface DraggableItemProps {
   text: string;
-  index: number;
+  index: string | number;
   itemType: string;
   prefix?: string;
 }
 
 interface DroppableZoneProps {
-  index: number;
-  matchedIndex?: number;
+  subQuestionId: string;
+  matchedId?: string;
   matchedText?: string | null;
   prefix?: string;
-  onDrop: (sourceIndex: number, targetIndex: number) => void;
+  onDrop: (sourceId: string, targetId: string) => void;
   itemType: string;
   placeholder?: string;
 }
 
-export function DraggableItem({ text, index, itemType, prefix = '' }: DraggableItemProps) {
-  const [{ isDragging }, drag] = useDrag(() => ({
+export function DraggableItem({
+  text,
+  index,
+  itemType,
+  prefix = "",
+}: DraggableItemProps) {
+  const [{ isDragging }, dragRef] = useDrag(() => ({
     type: itemType,
     item: { index },
     collect: (monitor) => ({
-      isDragging: !!monitor.isDragging()
-    })
+      isDragging: !!monitor.isDragging(),
+    }),
   }));
 
   return (
     <div
-      ref={drag}
+      ref={dragRef as unknown as RefCallback<HTMLDivElement>}
       className={`border px-2 py-1 rounded cursor-move text-xs ${
-        isDragging ? 'opacity-50' : 'opacity-100'
+        isDragging ? "opacity-50" : "opacity-100"
       }`}
     >
       {prefix && <span className="font-bold">{prefix}</span>}
@@ -42,27 +48,27 @@ export function DraggableItem({ text, index, itemType, prefix = '' }: DraggableI
 }
 
 export function DroppableZone({
-  index,
-  matchedIndex,
+  subQuestionId,
+  matchedId,
   matchedText,
-  prefix = '',
+  prefix = "",
   onDrop,
   itemType,
-  placeholder = 'Drop here'
+  placeholder = "Drop here",
 }: DroppableZoneProps) {
-  const [{ isOver }, drop] = useDrop(() => ({
+  const [{ isOver }, dropRef] = useDrop(() => ({
     accept: itemType,
-    drop: (item: { index: number }) => onDrop(item.index, index),
+    drop: (item: { index: string }) => onDrop(item.index, subQuestionId),
     collect: (monitor) => ({
-      isOver: !!monitor.isOver()
-    })
+      isOver: !!monitor.isOver(),
+    }),
   }));
 
   return (
     <div
-      ref={drop}
+      ref={dropRef as unknown as RefCallback<HTMLDivElement>}
       className={`border rounded px-2 py-1 min-h-[1.75rem] ${
-        isOver ? 'bg-gray-100' : matchedText ? 'bg-gray-200' : 'bg-white'
+        isOver ? "bg-gray-100" : matchedText ? "bg-gray-200" : "bg-white"
       }`}
     >
       {matchedText ? (
