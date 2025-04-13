@@ -19,7 +19,6 @@ export type QuestionType =
   | "writing-task2";
 
 export interface SubQuestionMeta {
-  // subIndex: number;
   subId: string;
   item?: string;
   correctAnswer?: any;

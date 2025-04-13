@@ -106,7 +106,7 @@ export function TestCreator({
   useEffect(() => {
     if (defaultTest) {
       // Load the default test into the store
-      loadTest(defaultTest.id);
+      loadTest(defaultTest);
     } else {
       // Create a default empty test
       createNewTest(testType, "New Test");

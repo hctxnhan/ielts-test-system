@@ -160,7 +160,7 @@ export default function SectionNavigationButton({
                       : "untouched";
 
                     // Display number is i (from index to partialEndingIndex)
-                    const displayNumber = i;
+                    const displayNumber = i + 1;
 
                     individualQuestions.push(
                       <TooltipProvider key={`${qIndex}-${i}`}>
@@ -205,7 +205,7 @@ export default function SectionNavigationButton({
                 // For standard questions, render as a single question with its index
                 // Status is determined based on the whole question ID
                 const status = getQuestionStatus(question.id, answers);
-                const displayNumber = question.index;
+                const displayNumber = question.index + 1;
 
                 return (
                   <TooltipProvider key={qIndex}>
