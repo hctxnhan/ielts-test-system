@@ -3,7 +3,7 @@
 export async function scoreEssayWithAI(
   prompt: string,
   essay: string,
-  scoringPrompt?: string
+  scoringPrompt?: string,
 ) {
   try {
     const defaultPrompt = `You are an IELTS examiner. Score the following essay on a scale of 1-9 based on the official IELTS Writing Task scoring criteria:
@@ -16,27 +16,27 @@ export async function scoreEssayWithAI(
     Provide a single overall band score (e.g., 6.5) followed by a brief explanation of the score.`;
 
     const response = await fetch(
-      'https://openrouter.ai/api/v1/chat/completions',
+      "https://openrouter.ai/api/v1/chat/completions",
       {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`
+          "Content-Type": "application/json",
+          // Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`
         },
         body: JSON.stringify({
-          model: process.env.OPENROUTER_MODEL_ID,
+          // model: process.env.OPENROUTER_MODEL_ID,
           messages: [
             {
-              role: 'system',
-              content: scoringPrompt || defaultPrompt
+              role: "system",
+              content: scoringPrompt || defaultPrompt,
             },
             {
-              role: 'user',
-              content: `Task: ${prompt}\n\nEssay: ${essay}`
-            }
-          ]
-        })
-      }
+              role: "user",
+              content: `Task: ${prompt}\n\nEssay: ${essay}`,
+            },
+          ],
+        }),
+      },
     );
 
     if (!response.ok) {
@@ -54,13 +54,13 @@ export async function scoreEssayWithAI(
       const validScore = Math.min(Math.max(score, 1), 9);
       return {
         score: validScore,
-        feedback: scoreText
+        feedback: scoreText,
       };
     }
 
-    throw new Error('Could not extract score from AI response');
+    throw new Error("Could not extract score from AI response");
   } catch (error) {
-    console.error('Error scoring essay:', error);
+    console.error("Error scoring essay:", error);
     throw error;
   }
 }

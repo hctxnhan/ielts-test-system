@@ -1,5 +1,4 @@
 "use client";
-
 import SectionEditor from "@/components/creator/section-editor";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +15,6 @@ import { useToast } from "@/components/ui/use-toast";
 import type { Test, TestType } from "@/lib/types";
 import { useCreatorStore } from "@/store/creator-store";
 import {
-  ArrowLeft,
   BookOpen,
   ChevronDown,
   ChevronUp,
@@ -26,9 +24,15 @@ import {
   PlusCircle,
   Save,
 } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { z } from "zod";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 // Define Zod schema for test validation
 const QuestionSchema = z
@@ -55,7 +59,6 @@ const SectionSchema = z
 
 const TestSchema = z
   .object({
-    id: z.string().min(1),
     title: z.string().min(1, "Test title is required"),
     type: z.enum(["listening", "reading", "writing", "speaking"]),
     description: z.string(),
@@ -68,6 +71,7 @@ const TestSchema = z
       .positive("Total duration must be a positive number"),
     totalQuestions: z.number().int().min(0),
     instructions: z.string(),
+    skillLevel: z.enum(["A1", "A2", "B1", "B2", "C1", "C2"]),
   })
   .passthrough();
 
@@ -180,7 +184,7 @@ export function TestCreator({
   };
 
   return (
-    <div className="container mx-auto py-4 px-3">
+    <div className="mx-auto py-4 px-3">
       <div className="flex justify-between items-center mb-3">
         <div>
           <h1 className="text-xl font-bold flex items-center gap-1.5">
@@ -194,12 +198,6 @@ export function TestCreator({
 
         <div className="flex flex-col items-end gap-1.5">
           <div className="flex gap-1.5">
-            <Link href="/">
-              <Button variant="outline" size="sm" className="h-7 text-xs">
-                <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back
-              </Button>
-            </Link>
-
             {currentTest && (
               <Button
                 size="sm"
@@ -270,7 +268,7 @@ export function TestCreator({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1.5">
                       <Label className="text-xs font-medium">Test Type</Label>
                       <div className="flex items-center h-8 text-xs border rounded bg-muted/20 px-2.5 capitalize">
@@ -286,6 +284,34 @@ export function TestCreator({
                         <Clock className="w-3.5 h-3.5 mr-1.5" />
                         {Math.floor(currentTest.totalDuration / 60)} minutes
                       </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="skill-level"
+                        className="text-xs font-medium"
+                      >
+                        Skill Level
+                      </Label>
+                      <Select
+                        value={currentTest.skillLevel || ""}
+                        onValueChange={(value) =>
+                          updateTestDetails({ skillLevel: value })
+                        }
+                      >
+                        <SelectTrigger id="skill-level" className="h-8 text-xs">
+                          <SelectValue placeholder="Select level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="A1">A1 (Beginner)</SelectItem>
+                          <SelectItem value="A2">A2 (Elementary)</SelectItem>
+                          <SelectItem value="B1">B1 (Intermediate)</SelectItem>
+                          <SelectItem value="B2">
+                            B2 (Upper Intermediate)
+                          </SelectItem>
+                          <SelectItem value="C1">C1 (Advanced)</SelectItem>
+                          <SelectItem value="C2">C2 (Proficient)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 

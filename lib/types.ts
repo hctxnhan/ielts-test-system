@@ -163,7 +163,6 @@ export interface Section {
 }
 
 export interface Test {
-  id: string;
   title: string;
   type: TestType;
   readingVariant?: ReadingVariant;
@@ -172,6 +171,7 @@ export interface Test {
   totalDuration: number;
   totalQuestions: number;
   instructions: string;
+  skillLevel?: "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
 }
 
 export interface UserAnswer {
