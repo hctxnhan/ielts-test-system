@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@testComponents/components/ui/button";
+import { Input } from "@testComponents/components/ui/input";
+import { Label } from "@testComponents/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -11,15 +11,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@testComponents/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import type { TestType } from "@/lib/types";
+} from "@testComponents/components/ui/select";
+import type { TestType } from "@testComponents/lib/types";
 
 interface TestCreationDialogProps {
   open: boolean;

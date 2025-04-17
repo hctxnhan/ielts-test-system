@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import type { Test } from "@/lib/types";
+import { Button } from "@testComponents/components/ui/button";
+import { ScrollArea } from "@testComponents/components/ui/scroll-area";
+import type { Test } from "@testComponents/lib/types";
 import SectionNavigationButton from "./section-navigation-button";
 import TestTimer from "./test-timer";
 interface TestSidebarProps {

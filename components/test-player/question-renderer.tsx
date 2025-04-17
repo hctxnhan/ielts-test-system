@@ -5,8 +5,8 @@ import type {
   UserAnswer,
   QuestionType,
   TFNGStatement,
-} from "@/lib/types";
-import { useTestStore } from "@/store/test-store";
+} from "@testComponents/lib/types";
+import { useTestStore } from "@testComponents/store/test-store";
 import { useEffect, useRef, useState } from "react";
 import CompletionQuestion from "./question-types/completion-question";
 import LabelingQuestion from "./question-types/labeling-question";

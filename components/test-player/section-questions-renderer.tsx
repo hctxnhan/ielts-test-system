@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import QuestionRenderer from "./question-renderer";
-import type { Question } from "@/lib/types";
+import type { Question } from "@testComponents/lib/types";
 
 interface SectionQuestionsRendererProps {
   questions: Question[];

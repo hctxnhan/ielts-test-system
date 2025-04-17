@@ -1,15 +1,15 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@testComponents/components/ui/button";
+import { Input } from "@testComponents/components/ui/input";
+import { Label } from "@testComponents/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@testComponents/components/ui/select";
 import {
   List,
   X,
@@ -18,7 +18,7 @@ import {
   ArrowRight,
   PlusCircle,
 } from "lucide-react";
-import type { PickFromListQuestion } from "@/lib/types";
+import type { PickFromListQuestion } from "@testComponents/lib/types";
 
 interface PickFromListEditorProps {
   question: PickFromListQuestion;

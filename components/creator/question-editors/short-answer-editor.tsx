@@ -1,10 +1,13 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@testComponents/components/ui/button";
+import { Input } from "@testComponents/components/ui/input";
+import { Label } from "@testComponents/components/ui/label";
 import { PlusCircle, X } from "lucide-react";
-import type { ShortAnswerQuestion, SubQuestionMeta } from "@/lib/types";
+import type {
+  ShortAnswerQuestion,
+  SubQuestionMeta,
+} from "@testComponents/lib/types";
 import { v4 as uuidv4 } from "uuid";
 
 interface ShortAnswerEditorProps {

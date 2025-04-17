@@ -1,16 +1,16 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@testComponents/components/ui/button";
+import { Input } from "@testComponents/components/ui/input";
+import { Label } from "@testComponents/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import type { LabelingQuestion } from "@/lib/types";
+} from "@testComponents/components/ui/select";
+import type { LabelingQuestion } from "@testComponents/lib/types";
 import {
   Image,
   BookOpen,
@@ -20,8 +20,8 @@ import {
   CheckCircle,
   ArrowRight,
 } from "lucide-react";
-import FilePicker from "@/components/file-picker";
-import type { FileObject } from "@/lib/supabase-storage";
+import FilePicker from "@testComponents/components/file-picker";
+import type { FileObject } from "@testComponents/lib/supabase-storage";
 
 interface LabelingEditorProps {
   question: LabelingQuestion;

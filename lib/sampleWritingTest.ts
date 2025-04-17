@@ -1,4 +1,4 @@
-import type { Test } from "@/lib/types";
+import type { Test } from "@testComponents/lib/types";
 import { v4 as uuidv4 } from "uuid";
 
 // Add a sample writing test

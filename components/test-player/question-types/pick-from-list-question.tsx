@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Label } from "@/components/ui/label";
-import type { PickFromListQuestion } from "@/lib/types";
+import { Label } from "@testComponents/components/ui/label";
+import type { PickFromListQuestion } from "@testComponents/lib/types";
 import { DraggableItem, DroppableZone } from "./shared/dnd-components";
 
 interface PickFromListQuestionProps {

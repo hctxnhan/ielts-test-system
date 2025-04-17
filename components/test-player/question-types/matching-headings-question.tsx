@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { DraggableItem, DroppableZone } from "./shared/dnd-components";
-import { Label } from "@/components/ui/label";
-import type { MatchingHeadingsQuestion } from "@/lib/types";
+import { Label } from "@testComponents/components/ui/label";
+import type { MatchingHeadingsQuestion } from "@testComponents/lib/types";
 
 interface MatchingHeadingsQuestionProps {
   question: MatchingHeadingsQuestion;

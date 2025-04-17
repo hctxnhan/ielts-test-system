@@ -1,10 +1,10 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import type { MultipleChoiceQuestion } from "@/lib/types";
+import { Button } from "@testComponents/components/ui/button";
+import { Input } from "@testComponents/components/ui/input";
+import { Label } from "@testComponents/components/ui/label";
+import { Switch } from "@testComponents/components/ui/switch";
+import type { MultipleChoiceQuestion } from "@testComponents/lib/types";
 import { List, X, PlusCircle } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 

@@ -1,9 +1,9 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import type { Question } from "@/lib/types";
+import { Button } from "@testComponents/components/ui/button";
+import { Dialog, DialogTrigger } from "@testComponents/components/ui/dialog";
+import { Badge } from "@testComponents/components/ui/badge";
+import type { Question } from "@testComponents/lib/types";
 import QuestionEditor from "./question-editor";
 import { X, Edit } from "lucide-react";
 

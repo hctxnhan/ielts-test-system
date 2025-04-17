@@ -1,9 +1,9 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import type { WritingTask2Question } from "@/lib/types";
+import { Input } from "@testComponents/components/ui/input";
+import { Label } from "@testComponents/components/ui/label";
+import { Textarea } from "@testComponents/components/ui/textarea";
+import type { WritingTask2Question } from "@testComponents/lib/types";
 
 interface WritingTask2EditorProps {
   question: WritingTask2Question;

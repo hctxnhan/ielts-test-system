@@ -1,33 +1,41 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Clock, Eye, EyeOff, Award } from "lucide-react"
-import type { WritingTask1Question } from "@/lib/types"
+import { useState, useEffect } from "react";
+import { Textarea } from "@testComponents/components/ui/textarea";
+import { Button } from "@testComponents/components/ui/button";
+import { Card } from "@testComponents/components/ui/card";
+import { Clock, Eye, EyeOff, Award } from "lucide-react";
+import type { WritingTask1Question } from "@testComponents/lib/types";
 
 interface WritingTask1QuestionProps {
-  question: WritingTask1Question
-  value: string | null
-  onChange: (value: { text: string | null; score?: number; feedback?: string }) => void
+  question: WritingTask1Question;
+  value: string | null;
+  onChange: (value: {
+    text: string | null;
+    score?: number;
+    feedback?: string;
+  }) => void;
 }
 
 interface ScoringResult {
-  score: number
-  feedback: string
+  score: number;
+  feedback: string;
 }
 
-export default function WritingTask1QuestionRenderer({ question, value, onChange }: WritingTask1QuestionProps) {
-  const [wordCount, setWordCount] = useState(0)
-  const [showSampleAnswer, setShowSampleAnswer] = useState(false)
-  const [timeRemaining, setTimeRemaining] = useState(20 * 60) // 20 minutes in seconds
-  const [timerActive, setTimerActive] = useState(false)
-  const [aiScore, setAiScore] = useState<ScoringResult | null>(null)
-  const [isScoring, setIsScoring] = useState(false)
-  const [showFeedback, setShowFeedback] = useState(false)
+export default function WritingTask1QuestionRenderer({
+  question,
+  value,
+  onChange,
+}: WritingTask1QuestionProps) {
+  const [wordCount, setWordCount] = useState(0);
+  const [showSampleAnswer, setShowSampleAnswer] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(20 * 60); // 20 minutes in seconds
+  const [timerActive, setTimerActive] = useState(false);
+  const [aiScore, setAiScore] = useState<ScoringResult | null>(null);
+  const [isScoring, setIsScoring] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   // Calculate word count when answer changes
   useEffect(() => {
@@ -35,41 +43,43 @@ export default function WritingTask1QuestionRenderer({ question, value, onChange
       const words = (value as any).text
         .trim()
         .split(/\s+/)
-        .filter((word) => word.length > 0)
-      setWordCount(words.length)
+        .filter((word) => word.length > 0);
+      setWordCount(words.length);
     } else {
-      setWordCount(0)
+      setWordCount(0);
     }
-  }, [value])
+  }, [value]);
 
   // Timer functionality
   useEffect(() => {
-    let interval: NodeJS.Timeout
+    let interval: NodeJS.Timeout;
 
     if (timerActive && timeRemaining > 0) {
       interval = setInterval(() => {
-        setTimeRemaining((prev) => prev - 1)
-      }, 1000)
+        setTimeRemaining((prev) => prev - 1);
+      }, 1000);
     }
 
-    return () => clearInterval(interval)
-  }, [timerActive, timeRemaining])
+    return () => clearInterval(interval);
+  }, [timerActive, timeRemaining]);
 
   // Format time as MM:SS
   const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
-    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`
-  }
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
+      .toString()
+      .padStart(2, "0")}`;
+  };
 
   // Function to score the essay using OpenRouter
   const scoreEssay = async () => {
     if (!value || (value as any).text.trim().length < 50) {
-      alert("Please write more content before scoring.")
-      return
+      alert("Please write more content before scoring.");
+      return;
     }
 
-    setIsScoring(true)
+    setIsScoring(true);
 
     try {
       const response = await fetch("/api/score-essay", {
@@ -82,44 +92,50 @@ export default function WritingTask1QuestionRenderer({ question, value, onChange
           essay: (value as any).text,
           scoringPrompt: question.scoringPrompt,
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to score essay")
+        throw new Error("Failed to score essay");
       }
 
-      const result = await response.json()
-      setAiScore(result)
+      const result = await response.json();
+      setAiScore(result);
 
       // Store the score and feedback in the test store
       onChange({
         text: (value as any).text,
         score: result.score,
         feedback: result.feedback,
-      })
+      });
 
-      setIsScoring(false)
+      setIsScoring(false);
     } catch (error) {
-      console.error("Error scoring essay:", error)
-      setIsScoring(false)
-      alert("There was an error scoring your essay. Please try again later.")
+      console.error("Error scoring essay:", error);
+      setIsScoring(false);
+      alert("There was an error scoring your essay. Please try again later.");
     }
-  }
+  };
 
   // Update the onChange handler to properly handle the text value
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onChange({
       text: e.target.value,
-      ...(value && "score" in value ? { score: (value as any).score, feedback: (value as any).feedback } : {}),
-    })
-  }
+      ...(value && "score" in value
+        ? { score: (value as any).score, feedback: (value as any).feedback }
+        : {}),
+    });
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Writing Task 1</h3>
         <div className="flex items-center gap-2">
-          <Button variant={timerActive ? "default" : "outline"} size="sm" onClick={() => setTimerActive(!timerActive)}>
+          <Button
+            variant={timerActive ? "default" : "outline"}
+            size="sm"
+            onClick={() => setTimerActive(!timerActive)}
+          >
             <Clock className="mr-2 h-4 w-4" />
             {formatTime(timeRemaining)}
           </Button>
@@ -139,18 +155,28 @@ export default function WritingTask1QuestionRenderer({ question, value, onChange
           </div>
         )}
 
-        <p className="text-sm text-muted-foreground mb-4">Write at least {question.wordLimit} words.</p>
+        <p className="text-sm text-muted-foreground mb-4">
+          Write at least {question.wordLimit} words.
+        </p>
       </Card>
 
       <Textarea
-        value={typeof value === "object" && value !== null ? (value as any).text || "" : ""}
+        value={
+          typeof value === "object" && value !== null
+            ? (value as any).text || ""
+            : ""
+        }
         onChange={handleTextChange}
         placeholder="Write your answer here..."
         className="min-h-[300px]"
       />
 
       <div className="flex justify-between items-center">
-        <p className={`text-sm ${wordCount < question.wordLimit ? "text-amber-600" : "text-green-600"}`}>
+        <p
+          className={`text-sm ${
+            wordCount < question.wordLimit ? "text-amber-600" : "text-green-600"
+          }`}
+        >
           Word count: {wordCount} / {question.wordLimit} minimum
         </p>
 
@@ -159,14 +185,20 @@ export default function WritingTask1QuestionRenderer({ question, value, onChange
             variant="outline"
             size="sm"
             onClick={scoreEssay}
-            disabled={isScoring || !value || (value as any).text.trim().length < 50}
+            disabled={
+              isScoring || !value || (value as any).text.trim().length < 50
+            }
           >
             <Award className="mr-2 h-4 w-4" />
             {isScoring ? "Scoring..." : "Get AI Score"}
           </Button>
 
           {question.sampleAnswer && (
-            <Button variant="outline" size="sm" onClick={() => setShowSampleAnswer(!showSampleAnswer)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSampleAnswer(!showSampleAnswer)}
+            >
               {showSampleAnswer ? (
                 <>
                   <EyeOff className="mr-2 h-4 w-4" /> Hide Sample Answer
@@ -206,8 +238,8 @@ export default function WritingTask1QuestionRenderer({ question, value, onChange
           </div>
 
           <p className="text-sm text-muted-foreground mt-2">
-            This is an automated score generated by AI. In a real IELTS test, your writing would be scored by human
-            examiners.
+            This is an automated score generated by AI. In a real IELTS test,
+            your writing would be scored by human examiners.
           </p>
         </Card>
       )}
@@ -219,6 +251,5 @@ export default function WritingTask1QuestionRenderer({ question, value, onChange
         </Card>
       )}
     </div>
-  )
+  );
 }
-

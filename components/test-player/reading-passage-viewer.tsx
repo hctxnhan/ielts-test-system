@@ -1,20 +1,20 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@testComponents/components/ui/badge";
+import { Button } from "@testComponents/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@testComponents/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogClose,
-} from "@/components/ui/dialog";
-import type { ReadingPassage } from "@/lib/types";
+} from "@testComponents/components/ui/dialog";
+import type { ReadingPassage } from "@testComponents/lib/types";
 import {
   Bookmark,
   BookmarkCheck,

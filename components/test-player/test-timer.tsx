@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useTestStore } from "@/store/test-store";
-import { Button } from "@/components/ui/button";
+import { useTestStore } from "@testComponents/store/test-store";
+import { Button } from "@testComponents/components/ui/button";
 import { Clock } from "lucide-react";
 
 interface TestTimerProps {

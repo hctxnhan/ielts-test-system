@@ -1,8 +1,8 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import type { CompletionQuestion } from "@/lib/types";
+import { Input } from "@testComponents/components/ui/input";
+import { Label } from "@testComponents/components/ui/label";
+import type { CompletionQuestion } from "@testComponents/lib/types";
 
 interface CompletionQuestionProps {
   question: CompletionQuestion;

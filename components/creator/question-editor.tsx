@@ -1,16 +1,19 @@
 "use client";
 
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@testComponents/components/ui/label";
+import { Input } from "@testComponents/components/ui/input";
+import { Textarea } from "@testComponents/components/ui/textarea";
 import {
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import type { Question, ScoringStrategy } from "@/lib/types";
+} from "@testComponents/components/ui/dialog";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@testComponents/components/ui/radio-group";
+import type { Question, ScoringStrategy } from "@testComponents/lib/types";
 import { BarChart2, MessageSquare } from "lucide-react";
 import MultipleChoiceEditor from "./question-editors/multiple-choice-editor";
 import CompletionEditor from "./question-editors/completion-editor";

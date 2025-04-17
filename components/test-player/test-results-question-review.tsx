@@ -4,16 +4,21 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+} from "@testComponents/components/ui/dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@testComponents/components/ui/tabs";
+import { Badge } from "@testComponents/components/ui/badge";
 import { Award } from "lucide-react";
-import type { Question, UserAnswer } from "@/lib/types";
+import type { Question, UserAnswer } from "@testComponents/lib/types";
 import QuestionRenderer from "./question-renderer";
 import {
   formatAnswerForDisplay,
   formatCorrectAnswerForDisplay,
-} from "@/lib/test-utils";
+} from "@testComponents/lib/test-utils";
 
 interface TestResultsQuestionReviewProps {
   question: Question & {

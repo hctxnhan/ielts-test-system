@@ -3,21 +3,21 @@
 import type React from "react";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@testComponents/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@testComponents/components/ui/dialog";
+import { Input } from "@testComponents/components/ui/input";
+import { Label } from "@testComponents/components/ui/label";
 import {
   type FileType,
   type FileObject,
   supabaseStorage,
-} from "@/lib/supabase-storage";
+} from "@testComponents/lib/supabase-storage";
 import {
   Loader2,
   Upload,
@@ -64,7 +64,7 @@ export default function FilePicker({
   const [newFolderName, setNewFolderName] = useState<string>("");
   const [showFolderInput, setShowFolderInput] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | undefined>(
-    currentFileUrl,
+    currentFileUrl
   );
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -164,7 +164,7 @@ export default function FilePicker({
       const uploadedFile = await supabaseStorage.uploadFile(
         uploadFile,
         fileType,
-        currentFolder || undefined,
+        currentFolder || undefined
       );
 
       // Add the new file to the current files array
@@ -217,7 +217,7 @@ export default function FilePicker({
   const handleSortChange = () => {
     // Cycle through sort options: name -> date -> size -> name
     setSortOrder((current) =>
-      current === "name" ? "date" : current === "date" ? "size" : "name",
+      current === "name" ? "date" : current === "date" ? "size" : "name"
     );
   };
 
@@ -226,7 +226,7 @@ export default function FilePicker({
     try {
       const files = await supabaseStorage.listFiles(
         fileType,
-        currentFolder || undefined,
+        currentFolder || undefined
       );
 
       // folder is files that doesn't have id
@@ -453,7 +453,9 @@ export default function FilePicker({
                         <div className="col-span-5 text-center py-6 text-xs text-muted-foreground">
                           {searchQuery
                             ? `No ${fileType} files found matching "${searchQuery}"`
-                            : `No ${fileType} files found${currentFolder ? ` in ${currentFolder}` : ""}`}
+                            : `No ${fileType} files found${
+                                currentFolder ? ` in ${currentFolder}` : ""
+                              }`}
                         </div>
                       ) : (
                         filteredFiles.map((file) => (
@@ -492,7 +494,7 @@ export default function FilePicker({
                                     {
                                       month: "short",
                                       day: "numeric",
-                                    },
+                                    }
                                   )}
                                 </p>
                               </div>

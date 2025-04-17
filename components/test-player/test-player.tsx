@@ -1,17 +1,17 @@
 "use client";
 
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Alert, AlertDescription } from "@testComponents/components/ui/alert";
+import { Button } from "@testComponents/components/ui/button";
+import { Card, CardContent } from "@testComponents/components/ui/card";
+import { ScrollArea } from "@testComponents/components/ui/scroll-area";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet";
-import type { Test } from "@/lib/types";
-import { useTestStore } from "@/store/test-store";
+} from "@testComponents/components/ui/sheet";
+import type { Test } from "@testComponents/lib/types";
+import { useTestStore } from "@testComponents/store/test-store";
 import { LayoutGrid, SplitSquareVertical, GripVertical } from "lucide-react";
 import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { DndProvider } from "react-dnd";
@@ -23,7 +23,7 @@ import SectionQuestionsRenderer from "./section-questions-renderer";
 import TestInstructions from "./test-instructions";
 import TestResults from "./test-results";
 import TestSidebar from "./test-sidebar";
-import { updateQuestionIndexes } from "@/lib/test";
+import { updateQuestionIndexes } from "@testComponents/lib/test";
 
 interface TestPlayerProps {
   test: Test;

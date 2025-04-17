@@ -5,16 +5,21 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+} from "@testComponents/components/ui/accordion";
+import { Button } from "@testComponents/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@testComponents/components/ui/card";
+import { Progress } from "@testComponents/components/ui/progress";
 import {
   getSectionStats,
   getStatusColorClass,
   getTestStats,
-} from "@/lib/test-utils";
-import { useTestStore } from "@/store/test-store";
+} from "@testComponents/lib/test-utils";
+import { useTestStore } from "@testComponents/store/test-store";
 import { BarChart3, CheckCircle2, Clock } from "lucide-react";
 import { useMemo } from "react";
 

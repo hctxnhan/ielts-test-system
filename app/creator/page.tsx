@@ -1,9 +1,9 @@
 "use client";
 
-import { TestCreator } from "@/components/creator/test-creator";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Test } from "@/lib/types";
+import { TestCreator } from "@testComponents/components/creator/test-creator";
+import { Input } from "@testComponents/components/ui/input";
+import { Textarea } from "@testComponents/components/ui/textarea";
+import { Test } from "@testComponents/lib/types";
 import { useState } from "react";
 
 export default function CreatorPage() {

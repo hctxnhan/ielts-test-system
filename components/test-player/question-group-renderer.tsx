@@ -1,27 +1,45 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useTestStore } from "@/store/test-store"
-import type { Question, QuestionGroup } from "@/lib/types"
-import QuestionRenderer from "./question-renderer"
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@testComponents/components/ui/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@testComponents/components/ui/tabs";
+import { useTestStore } from "@testComponents/store/test-store";
+import type { Question, QuestionGroup } from "@testComponents/lib/types";
+import QuestionRenderer from "./question-renderer";
 
 interface QuestionGroupRendererProps {
-  group: QuestionGroup
-  questions: Question[]
-  sectionId: string
+  group: QuestionGroup;
+  questions: Question[];
+  sectionId: string;
 }
 
-export default function QuestionGroupRenderer({ group, questions, sectionId }: QuestionGroupRendererProps) {
-  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0)
-  const { progress } = useTestStore()
+export default function QuestionGroupRenderer({
+  group,
+  questions,
+  sectionId,
+}: QuestionGroupRendererProps) {
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
+  const { progress } = useTestStore();
 
   // Sort questions by their position in the group
-  const sortedQuestions = [...questions].sort((a, b) => (a.groupPosition || 0) - (b.groupPosition || 0))
+  const sortedQuestions = [...questions].sort(
+    (a, b) => (a.groupPosition || 0) - (b.groupPosition || 0)
+  );
 
   // Check if all questions in the group have been answered
-  const allAnswered = sortedQuestions.every((question) => progress?.answers[question.id] !== undefined)
+  const allAnswered = sortedQuestions.every(
+    (question) => progress?.answers[question.id] !== undefined
+  );
 
   return (
     <Card>
@@ -32,21 +50,25 @@ export default function QuestionGroupRenderer({ group, questions, sectionId }: Q
       <CardContent>
         <Tabs
           value={activeQuestionIndex.toString()}
-          onValueChange={(value) => setActiveQuestionIndex(Number.parseInt(value))}
+          onValueChange={(value) =>
+            setActiveQuestionIndex(Number.parseInt(value))
+          }
           className="w-full"
         >
           <TabsList className="grid grid-cols-5 sm:grid-cols-10 mb-4">
             {sortedQuestions.map((question, index) => {
-              const isAnswered = progress?.answers[question.id] !== undefined
+              const isAnswered = progress?.answers[question.id] !== undefined;
               return (
                 <TabsTrigger
                   key={question.id}
                   value={index.toString()}
-                  className={isAnswered ? "bg-green-100 dark:bg-green-900/20" : ""}
+                  className={
+                    isAnswered ? "bg-green-100 dark:bg-green-900/20" : ""
+                  }
                 >
                   {question.groupPosition || index + 1}
                 </TabsTrigger>
-              )
+              );
             })}
           </TabsList>
 
@@ -58,6 +80,5 @@ export default function QuestionGroupRenderer({ group, questions, sectionId }: Q
         </Tabs>
       </CardContent>
     </Card>
-  )
+  );
 }
-

@@ -1,11 +1,11 @@
-import { getTestStats } from "@/lib/test-utils";
+import { getTestStats } from "@testComponents/lib/test-utils";
 import type {
   MultipleChoiceOption,
   SubQuestionMeta,
   Test,
   TestProgress,
   UserAnswer,
-} from "@/lib/types";
+} from "@testComponents/lib/types";
 import { create } from "zustand";
 
 // Type for the submission function

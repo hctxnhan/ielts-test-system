@@ -1,19 +1,19 @@
 "use client";
-import SectionEditor from "@/components/creator/section-editor";
-import { Button } from "@/components/ui/button";
+import SectionEditor from "@testComponents/components/creator/section-editor";
+import { Button } from "@testComponents/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
-import type { Test, TestType } from "@/lib/types";
-import { useCreatorStore } from "@/store/creator-store";
+} from "@testComponents/components/ui/card";
+import { Input } from "@testComponents/components/ui/input";
+import { Label } from "@testComponents/components/ui/label";
+import { Textarea } from "@testComponents/components/ui/textarea";
+import { useToast } from "@testComponents/components/ui/use-toast";
+import type { Test, TestType } from "@testComponents/lib/types";
+import { useCreatorStore } from "@testComponents/store/creator-store";
 import {
   BookOpen,
   ChevronDown,

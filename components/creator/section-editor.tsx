@@ -1,21 +1,25 @@
 "use client";
 
-import FilePicker from "@/components/file-picker";
-import { Button } from "@/components/ui/button";
+import FilePicker from "@testComponents/components/file-picker";
+import { Button } from "@testComponents/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import type { FileObject } from "@/lib/supabase-storage";
-import type { Section, Test } from "@/lib/types";
+} from "@testComponents/components/ui/card";
+import { Checkbox } from "@testComponents/components/ui/checkbox";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+} from "@testComponents/components/ui/dialog";
+import { Input } from "@testComponents/components/ui/input";
+import { Label } from "@testComponents/components/ui/label";
+import { Textarea } from "@testComponents/components/ui/textarea";
+import type { FileObject } from "@testComponents/lib/supabase-storage";
+import type { Section, Test } from "@testComponents/lib/types";
 import {
   ChevronDown,
   ChevronUp,
@@ -41,7 +45,7 @@ interface SectionEditorProps {
   onUpdateQuestion: (
     sectionId: string,
     questionId: string,
-    updates: any,
+    updates: any
   ) => void;
   onRemoveQuestion: (sectionId: string, questionId: string) => void;
 }
@@ -361,7 +365,7 @@ export default function SectionEditor({
                                 <X size={14} />
                               </Button>
                             </div>
-                          ),
+                          )
                         )}
                         <FilePicker
                           fileType="image"

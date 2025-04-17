@@ -1,8 +1,8 @@
 "use client";
 
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import type { ShortAnswerQuestion } from "@/lib/types";
+import { Textarea } from "@testComponents/components/ui/textarea";
+import { Label } from "@testComponents/components/ui/label";
+import type { ShortAnswerQuestion } from "@testComponents/lib/types";
 
 interface ShortAnswerQuestionProps {
   question: ShortAnswerQuestion;

@@ -1,17 +1,22 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@testComponents/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@testComponents/components/ui/card";
+import { Textarea } from "@testComponents/components/ui/textarea";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
-import { useToast } from "@/components/ui/use-toast";
-import { useCreatorStore } from "@/store/creator-store";
-import type { Test } from "@/lib/types";
-import TestPlayer from "@/components/test-player/test-player";
-import { updateQuestionIndexes } from "@/lib/test";
-import { useTestStore } from "@/store/test-store";
+import { useToast } from "@testComponents/components/ui/use-toast";
+import { useCreatorStore } from "@testComponents/store/creator-store";
+import type { Test } from "@testComponents/lib/types";
+import TestPlayer from "@testComponents/components/test-player/test-player";
+import { updateQuestionIndexes } from "@testComponents/lib/test";
+import { useTestStore } from "@testComponents/store/test-store";
 
 export default function TestsPage() {
   const [testJson, setTestJson] = useState("");

@@ -1,8 +1,11 @@
 "use client";
 
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import type { TrueFalseNotGivenQuestion } from "@/lib/types";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@testComponents/components/ui/radio-group";
+import { Label } from "@testComponents/components/ui/label";
+import type { TrueFalseNotGivenQuestion } from "@testComponents/lib/types";
 
 interface TrueFalseNotGivenQuestionProps {
   question: TrueFalseNotGivenQuestion;

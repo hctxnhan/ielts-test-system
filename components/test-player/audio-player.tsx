@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { Slider } from '@/components/ui/slider';
+import { useState, useRef, useEffect } from "react";
+import { Slider } from "@testComponents/components/ui/slider";
 import {
   Play,
   Pause,
   SkipBack,
   SkipForward,
   Volume2,
-  VolumeX
-} from 'lucide-react';
+  VolumeX,
+} from "lucide-react";
 
 interface AudioPlayerProps {
   src: string;
@@ -37,9 +37,9 @@ export default function AudioPlayer({ src, onEnded }: AudioPlayerProps) {
         if (onEnded) onEnded();
       },
       error: () => {
-        setError('Audio error');
+        setError("Audio error");
         setIsPlaying(false);
-      }
+      },
     };
 
     Object.entries(handlers).forEach(([event, handler]) => {
@@ -88,12 +88,12 @@ export default function AudioPlayer({ src, onEnded }: AudioPlayerProps) {
       isPlaying
         ? audio.pause()
         : audio.play().catch((e) => {
-            console.error('Audio error:', e);
-            setError('Audio error');
+            console.error("Audio error:", e);
+            setError("Audio error");
           });
       setIsPlaying(!isPlaying);
     } catch (e) {
-      setError('Audio error');
+      setError("Audio error");
       setIsPlaying(!isPlaying);
     }
   };
@@ -146,7 +146,7 @@ export default function AudioPlayer({ src, onEnded }: AudioPlayerProps) {
   const formatTime = (time: number) => {
     const min = Math.floor(time / 60);
     const sec = Math.floor(time % 60);
-    return `${min}:${sec.toString().padStart(2, '0')}`;
+    return `${min}:${sec.toString().padStart(2, "0")}`;
   };
 
   const skip = (seconds: number) => {
@@ -178,7 +178,7 @@ export default function AudioPlayer({ src, onEnded }: AudioPlayerProps) {
       <button
         onClick={togglePlay}
         className="p-1 hover:bg-muted rounded-sm"
-        aria-label={isPlaying ? 'Pause' : 'Play'}
+        aria-label={isPlaying ? "Pause" : "Play"}
       >
         {isPlaying ? (
           <Pause className="h-3 w-3" />
@@ -212,7 +212,7 @@ export default function AudioPlayer({ src, onEnded }: AudioPlayerProps) {
       <button
         onClick={toggleMute}
         className="p-1 hover:bg-muted rounded-sm"
-        aria-label={isMuted ? 'Unmute' : 'Mute'}
+        aria-label={isMuted ? "Unmute" : "Mute"}
       >
         {isMuted ? (
           <VolumeX className="h-3 w-3" />

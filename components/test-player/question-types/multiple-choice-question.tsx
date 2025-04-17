@@ -1,7 +1,10 @@
 "use client";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import type { MultipleChoiceQuestion } from "@/lib/types";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@testComponents/components/ui/radio-group";
+import { Label } from "@testComponents/components/ui/label";
+import type { MultipleChoiceQuestion } from "@testComponents/lib/types";
 
 interface MultipleChoiceQuestionProps {
   question: MultipleChoiceQuestion;

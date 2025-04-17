@@ -1,9 +1,13 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { countSectionQuestion } from "@/lib/test-utils";
-import type { Test } from "@/lib/types";
+import { Button } from "@testComponents/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+} from "@testComponents/components/ui/card";
+import { countSectionQuestion } from "@testComponents/lib/test-utils";
+import type { Test } from "@testComponents/lib/types";
 import {
   AlertCircle,
   BookOpen,

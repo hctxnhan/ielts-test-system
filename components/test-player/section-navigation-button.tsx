@@ -1,13 +1,16 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@testComponents/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { getQuestionStatus, getSectionStats } from "@/lib/test-utils";
+} from "@testComponents/components/ui/tooltip";
+import {
+  getQuestionStatus,
+  getSectionStats,
+} from "@testComponents/lib/test-utils";
 import { CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 

@@ -1,9 +1,9 @@
 "use client";
 
-import type { LabelingQuestion } from "@/lib/types";
+import type { LabelingQuestion } from "@testComponents/lib/types";
 import { useEffect, useState } from "react";
 import { DraggableItem, DroppableZone } from "./shared/dnd-components";
-import { Label } from "@/components/ui/label";
+import { Label } from "@testComponents/components/ui/label";
 
 interface LabelingQuestionProps {
   question: LabelingQuestion;

@@ -1,15 +1,15 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@testComponents/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import type { TestType, QuestionType } from "@/lib/types";
-import { Badge } from "@/components/ui/badge";
+} from "@testComponents/components/ui/dialog";
+import type { TestType, QuestionType } from "@testComponents/lib/types";
+import { Badge } from "@testComponents/components/ui/badge";
 
 interface QuestionTypeDialogProps {
   open: boolean;

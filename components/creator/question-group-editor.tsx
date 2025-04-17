@@ -1,21 +1,26 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
-import type { QuestionGroup, Question } from "@/lib/types"
-import { v4 as uuidv4 } from "uuid"
+import { useState } from "react";
+import { Button } from "@testComponents/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@testComponents/components/ui/card";
+import { Input } from "@testComponents/components/ui/input";
+import { Label } from "@testComponents/components/ui/label";
+import { Textarea } from "@testComponents/components/ui/textarea";
+import { Checkbox } from "@testComponents/components/ui/checkbox";
+import type { QuestionGroup, Question } from "@testComponents/lib/types";
+import { v4 as uuidv4 } from "uuid";
 
 interface QuestionGroupEditorProps {
-  group?: QuestionGroup
-  sectionId: string
-  availableQuestions: Question[]
-  onSave: (sectionId: string, group: QuestionGroup) => void
-  onCancel: () => void
+  group?: QuestionGroup;
+  sectionId: string;
+  availableQuestions: Question[];
+  onSave: (sectionId: string, group: QuestionGroup) => void;
+  onCancel: () => void;
 }
 
 export default function QuestionGroupEditor({
@@ -25,9 +30,11 @@ export default function QuestionGroupEditor({
   onSave,
   onCancel,
 }: QuestionGroupEditorProps) {
-  const [title, setTitle] = useState(group?.title || "")
-  const [instructions, setInstructions] = useState(group?.instructions || "")
-  const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>(group?.questionIds || [])
+  const [title, setTitle] = useState(group?.title || "");
+  const [instructions, setInstructions] = useState(group?.instructions || "");
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>(
+    group?.questionIds || []
+  );
 
   const handleSave = () => {
     const newGroup: QuestionGroup = {
@@ -35,27 +42,31 @@ export default function QuestionGroupEditor({
       title,
       instructions,
       questionIds: selectedQuestionIds,
-    }
-    onSave(sectionId, newGroup)
-  }
+    };
+    onSave(sectionId, newGroup);
+  };
 
   const toggleQuestionSelection = (questionId: string) => {
     if (selectedQuestionIds.includes(questionId)) {
-      setSelectedQuestionIds(selectedQuestionIds.filter((id) => id !== questionId))
+      setSelectedQuestionIds(
+        selectedQuestionIds.filter((id) => id !== questionId)
+      );
     } else {
-      setSelectedQuestionIds([...selectedQuestionIds, questionId])
+      setSelectedQuestionIds([...selectedQuestionIds, questionId]);
     }
-  }
+  };
 
   // Filter out questions that are already part of other groups
   const eligibleQuestions = availableQuestions.filter(
-    (q) => !q.isPartOfGroup || (group && group.questionIds.includes(q.id)),
-  )
+    (q) => !q.isPartOfGroup || (group && group.questionIds.includes(q.id))
+  );
 
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>{group ? "Edit Question Group" : "Create Question Group"}</CardTitle>
+        <CardTitle>
+          {group ? "Edit Question Group" : "Create Question Group"}
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
@@ -90,14 +101,20 @@ export default function QuestionGroupEditor({
                     checked={selectedQuestionIds.includes(question.id)}
                     onCheckedChange={() => toggleQuestionSelection(question.id)}
                   />
-                  <Label htmlFor={`question-${question.id}`} className="flex-1 cursor-pointer">
-                    <span className="font-medium">{question.type}</span>: {question.text.substring(0, 50)}
+                  <Label
+                    htmlFor={`question-${question.id}`}
+                    className="flex-1 cursor-pointer"
+                  >
+                    <span className="font-medium">{question.type}</span>:{" "}
+                    {question.text.substring(0, 50)}
                     {question.text.length > 50 ? "..." : ""}
                   </Label>
                 </div>
               ))
             ) : (
-              <p className="text-muted-foreground text-center py-2">No eligible questions available</p>
+              <p className="text-muted-foreground text-center py-2">
+                No eligible questions available
+              </p>
             )}
           </div>
         </div>
@@ -106,12 +123,14 @@ export default function QuestionGroupEditor({
           <Button variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!title || selectedQuestionIds.length === 0}>
+          <Button
+            onClick={handleSave}
+            disabled={!title || selectedQuestionIds.length === 0}
+          >
             {group ? "Update Group" : "Create Group"}
           </Button>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-

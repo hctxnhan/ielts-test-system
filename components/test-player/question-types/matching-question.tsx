@@ -1,8 +1,8 @@
 "use client";
-import type { MatchingQuestion } from "@/lib/types";
+import type { MatchingQuestion } from "@testComponents/lib/types";
 import { useEffect, useState } from "react";
 import { DraggableItem, DroppableZone } from "./shared/dnd-components";
-import { Label } from "@/components/ui/label";
+import { Label } from "@testComponents/components/ui/label";
 
 interface MatchingQuestionProps {
   question: MatchingQuestion;
