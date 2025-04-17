@@ -21,12 +21,18 @@ const SectionQuestionsRenderer: React.FC<SectionQuestionsRendererProps> = ({
         >
           <span className="flex gap-2">
             <p>
-              {question.scoringStrategy === "partial"
+              {question.scoringStrategy === "partial" &&
+              question.partialEndingIndex !== question.index
                 ? `Question ${question.index + 1} - ${
                     question.partialEndingIndex + 1
                   }`
                 : `Question ${question.index + 1}`}
             </p>
+            {question.scoringStrategy === "partial" && (
+              <p className="text-sm text-gray-500">
+                (Partial question with range)
+              </p>
+            )}
           </span>
           <QuestionRenderer question={question} sectionId={sectionId} />
         </div>

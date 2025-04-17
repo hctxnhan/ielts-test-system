@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/sheet";
 import type { Test } from "@/lib/types";
 import { useTestStore } from "@/store/test-store";
-import { LayoutGrid, SplitSquareVertical } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { LayoutGrid, SplitSquareVertical, GripVertical } from "lucide-react";
+import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import AudioPlayer from "./audio-player";
@@ -23,6 +23,7 @@ import SectionQuestionsRenderer from "./section-questions-renderer";
 import TestInstructions from "./test-instructions";
 import TestResults from "./test-results";
 import TestSidebar from "./test-sidebar";
+import { updateQuestionIndexes } from "@/lib/test";
 
 interface TestPlayerProps {
   test: Test;
@@ -41,6 +42,13 @@ export default function TestPlayer({
   const [showPassage, setShowPassage] = useState(true);
   const [audioPlayed, setAudioPlayed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const resizingRef = useRef(false);
+  const passageContainerRef = useRef<HTMLDivElement>(null);
+  const contentContainerRef = useRef<HTMLDivElement>(null);
+
+  const updatedTest = useMemo(() => {
+    return updateQuestionIndexes(test);
+  }, [test]);
 
   const {
     loadTest,
@@ -58,13 +66,13 @@ export default function TestPlayer({
   useEffect(() => {
     if (loading) return;
 
-    loadTest(test);
+    loadTest(updatedTest);
 
     return () => {
       // Clean up when component unmounts
       resetTest();
     };
-  }, [test, loadTest, resetTest, loading]);
+  }, [updatedTest, loadTest, resetTest, loading]);
 
   // Start the test when instructions are dismissed
   const handleStartTest = useCallback(() => {
@@ -85,10 +93,10 @@ export default function TestPlayer({
 
   // Navigation between sections
   const handleNextSection = useCallback(() => {
-    if (!progress || !test) return;
+    if (!progress || !updatedTest) return;
 
     const isLastSection =
-      progress.currentSectionIndex === test.sections.length - 1;
+      progress.currentSectionIndex === updatedTest.sections.length - 1;
     if (isLastSection) {
       // End of test
       handleCompleteTest();
@@ -102,10 +110,10 @@ export default function TestPlayer({
       useTestStore.setState({ progress: updatedProgress });
     }
     setSidebarOpen(false);
-  }, [progress, test, handleCompleteTest]);
+  }, [progress, updatedTest, handleCompleteTest]);
 
   const handlePreviousSection = useCallback(() => {
-    if (!progress || !test) return;
+    if (!progress || !updatedTest) return;
 
     const isFirstSection = progress.currentSectionIndex === 0;
     if (isFirstSection) {
@@ -121,7 +129,7 @@ export default function TestPlayer({
       useTestStore.setState({ progress: updatedProgress });
     }
     setSidebarOpen(false);
-  }, [progress, test]);
+  }, [progress, updatedTest]);
 
   // Handle audio ended
   const handleAudioEnded = useCallback(() => {
@@ -152,7 +160,7 @@ export default function TestPlayer({
       questionIndex: number,
       subQuestionIndex?: number
     ) => {
-      if (!progress || !test) return;
+      if (!progress || !updatedTest) return;
 
       // Update the test state to show the selected question
       const updatedProgress = {
@@ -180,30 +188,30 @@ export default function TestPlayer({
         }, 100);
       }
     },
-    [progress, test]
+    [progress, updatedTest]
   );
 
   // Check if a section has been fully answered
   const isSectionFullyAnswered = useCallback(
     (sectionIndex: number) => {
-      if (!progress || !test) return false;
+      if (!progress || !updatedTest) return false;
 
-      const section = test.sections[sectionIndex];
+      const section = updatedTest.sections[sectionIndex];
       const sectionQuestionIds = section.questions.map((q) => q.id);
 
       return sectionQuestionIds.every(
         (id) => progress.answers[id] !== undefined
       );
     },
-    [progress, test]
+    [progress, updatedTest]
   );
 
   // Check if a section has been partially answered
   const isSectionPartiallyAnswered = useCallback(
     (sectionIndex: number) => {
-      if (!progress || !test) return false;
+      if (!progress || !updatedTest) return false;
 
-      const section = test.sections[sectionIndex];
+      const section = updatedTest.sections[sectionIndex];
       const sectionQuestionIds = section.questions.map((q) => q.id);
 
       const answeredCount = sectionQuestionIds.filter(
@@ -212,11 +220,11 @@ export default function TestPlayer({
 
       return answeredCount > 0 && answeredCount < sectionQuestionIds.length;
     },
-    [progress, test]
+    [progress, updatedTest]
   );
 
   // If test is not loaded yet, show loading
-  if (!test) {
+  if (!updatedTest) {
     return (
       <div className="flex justify-center items-center h-96">
         <p>Loading test...</p>
@@ -230,7 +238,7 @@ export default function TestPlayer({
       <TestInstructions
         loading={loading}
         onBack={onBack}
-        test={test}
+        test={updatedTest}
         onStart={handleStartTest}
       />
     );
@@ -252,8 +260,8 @@ export default function TestPlayer({
     );
   }
 
-  const isReadingTest = test.type === "reading";
-  const isListeningTest = test.type === "listening";
+  const isReadingTest = updatedTest.type === "reading";
+  const isListeningTest = updatedTest.type === "listening";
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -282,7 +290,7 @@ export default function TestPlayer({
             </SheetHeader>
             <div className="flex flex-col flex-1 mt-4">
               <TestSidebar
-                test={test}
+                test={updatedTest}
                 progress={progress}
                 currentSectionIndex={progress.currentSectionIndex}
                 onJumpToSection={jumpToSection}
@@ -296,7 +304,7 @@ export default function TestPlayer({
         </Sheet>
 
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">{test.title}</h1>
+          <h1 className="text-2xl font-bold">{updatedTest.title}</h1>
         </div>
 
         {isListeningTest && section.audioUrl && (
@@ -314,45 +322,40 @@ export default function TestPlayer({
           </div>
         )}
 
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Reading Passage - Full width on mobile, conditionally shown column on desktop */}
+        <div
+          ref={contentContainerRef}
+          className="flex flex-col lg:flex-row gap-6 relative"
+        >
+          {/* Reading Passage - Full width on mobile, conditionally shown column on desktop with sticky top */}
           {isReadingTest && section.readingPassage && (
             <div
+              ref={passageContainerRef}
               className={`lg:transition-all lg:duration-300 ${
                 showPassage
                   ? "lg:w-1/3 opacity-100"
                   : "lg:w-0 lg:opacity-0 lg:overflow-hidden"
               }`}
             >
-              <div className="mb-6 lg:mb-0">
-                <div className="sticky top-20 max-h-[calc(100vh-6rem)]">
-                  <Card className="shadow-sm overflow-hidden h-full">
-                    <ScrollArea className="h-[calc(100vh-8rem)]">
-                      <CardContent className="p-4">
-                        <ReadingPassageViewer
-                          passage={section.readingPassage}
-                        />
-                      </CardContent>
-                    </ScrollArea>
-                  </Card>
-                </div>
+              <div className="sticky top-20 z-20 h-[calc(100vh-65px-2rem)]">
+                <Card className="shadow-sm overflow-hidden h-full">
+                  <ScrollArea className="h-[calc(100vh-65px-2rem)]">
+                    <CardContent className="p-4">
+                      <ReadingPassageViewer
+                        passage={section.readingPassage}
+                        containerRef={passageContainerRef}
+                      />
+                    </CardContent>
+                  </ScrollArea>
+                </Card>
               </div>
             </div>
           )}
 
           {/* Questions - Full width on mobile, expanded when passage is hidden */}
-          <div
-            className={`lg:transition-all lg:duration-300 ${
-              isReadingTest && section.readingPassage
-                ? showPassage
-                  ? "lg:w-5/12"
-                  : "lg:w-8/12"
-                : "lg:w-8/12"
-            }`}
-          >
+          <div className={`lg:transition-all lg:duration-300 flex-1`}>
             {/* Toggle passage button - moved from passage section to questions section */}
             {isReadingTest && section.readingPassage && (
-              <div className="flex justify-start mb-4">
+              <div className="justify-start mb-4  lg:flex hidden">
                 <Button variant="outline" size="sm" onClick={togglePassage}>
                   {showPassage ? "Hide Passage" : "Show Passage"}
                   <SplitSquareVertical className="ml-2 h-4 w-4" />
@@ -368,7 +371,7 @@ export default function TestPlayer({
 
               <NavigationButtons
                 currentSectionIndex={progress.currentSectionIndex}
-                totalSections={test.sections.length}
+                totalSections={updatedTest.sections.length}
                 onPreviousSection={handlePreviousSection}
                 onNextSection={handleNextSection}
                 onCompleteTest={handleCompleteTest}
@@ -378,10 +381,10 @@ export default function TestPlayer({
 
           {/* Sidebar - hidden on mobile, last column on desktop */}
           <div className="lg:w-1/4 hidden lg:block">
-            <div className="sticky top-20">
-              <Card className="shadow-sm p-3 flex flex-col h-[calc(100vh-6rem)]">
+            <div className="sticky top-20 z-20">
+              <Card className="shadow-sm p-3 flex flex-col h-[calc(100vh-65px-2rem)]">
                 <TestSidebar
-                  test={test}
+                  test={updatedTest}
                   progress={progress}
                   currentSectionIndex={progress.currentSectionIndex}
                   onJumpToSection={jumpToSection}

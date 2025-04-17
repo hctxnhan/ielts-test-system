@@ -18,6 +18,7 @@ export function countSectionQuestion(questions: Question[]): number {
     questions[questions.length - 1].partialEndingIndex ||
     questions[questions.length - 1].index ||
     0;
+
   return endQuestionIndex - startQuestionIndex + 1;
 }
 

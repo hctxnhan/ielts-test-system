@@ -40,10 +40,8 @@ export default function QuestionEditor({
   sectionId,
   onUpdateQuestion,
 }: QuestionEditorProps) {
-  // Determine if the question type supports partial scoring
   const supportsPartialScoring = [
     "completion",
-    "multiple-choice",
     "matching",
     "labeling",
     "pick-from-list",
@@ -90,7 +88,7 @@ export default function QuestionEditor({
               Scoring Strategy
             </Label>
             <RadioGroup
-              value={question.scoringStrategy || "partial"}
+              value={question.scoringStrategy || "all-or-nothing"}
               onValueChange={(value: ScoringStrategy) =>
                 onUpdateQuestion(sectionId, question.id, {
                   scoringStrategy: value,
