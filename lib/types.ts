@@ -163,6 +163,7 @@ export interface Section {
 }
 
 export interface Test {
+  id?: number;
   title: string;
   type: TestType;
   readingVariant?: ReadingVariant;

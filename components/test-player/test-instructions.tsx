@@ -156,16 +156,13 @@ interface TestInstructionsProps {
   test: Test;
   onStart: () => void;
   onBack?: () => void;
-  loading: boolean;
 }
 
 export default function TestInstructions({
   test,
-  loading,
   onBack,
   onStart,
 }: TestInstructionsProps) {
-  if (loading) return <LoadingState />;
   if (!test) return <ErrorState onBack={onBack} />;
 
   const totalQuestions = test.sections.reduce(

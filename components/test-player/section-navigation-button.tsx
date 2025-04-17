@@ -30,8 +30,6 @@ export default function SectionNavigationButton({
 
   const sectionStatus = getSectionStats(section, answers);
 
-  console.log({ sectionStatus });
-
   const toggleExpand = (e: React.MouseEvent) => {
     e.stopPropagation();
     setExpanded(!expanded);
@@ -161,8 +159,6 @@ export default function SectionNavigationButton({
                     const status = subQuestion
                       ? getQuestionStatus(subQuestion.subId, answers)
                       : "untouched";
-
-                    console.log(status, question.id, question.type);
 
                     // Display number is i (from index to partialEndingIndex)
                     const displayNumber = i + 1;

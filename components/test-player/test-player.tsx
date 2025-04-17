@@ -27,24 +27,18 @@ import { updateQuestionIndexes } from "@/lib/test";
 
 interface TestPlayerProps {
   test: Test;
-  loading: boolean;
   onBack?: () => void;
-  onTestComplete?: () => Promise<void>;
 }
 
-export default function TestPlayer({
-  test,
-  loading,
-  onBack,
-  onTestComplete,
-}: TestPlayerProps) {
+export default function TestPlayer({ test, onBack }: TestPlayerProps) {
   const [showInstructions, setShowInstructions] = useState(true);
   const [showPassage, setShowPassage] = useState(true);
   const [audioPlayed, setAudioPlayed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const resizingRef = useRef(false);
   const passageContainerRef = useRef<HTMLDivElement>(null);
   const contentContainerRef = useRef<HTMLDivElement>(null);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const updatedTest = useMemo(() => {
     return updateQuestionIndexes(test);
@@ -54,37 +48,43 @@ export default function TestPlayer({
     loadTest,
     startTest,
     progress,
-    nextQuestion,
-    previousQuestion,
     currentSection,
-    isLastQuestion,
     completeTest,
     resetTest,
   } = useTestStore();
 
   // Load the test when component mounts
   useEffect(() => {
-    if (loading) return;
-
     loadTest(updatedTest);
 
     return () => {
       // Clean up when component unmounts
       resetTest();
     };
-  }, [updatedTest, loadTest, resetTest, loading]);
+  }, [updatedTest, loadTest, resetTest]);
 
   // Start the test when instructions are dismissed
   const handleStartTest = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
     setShowInstructions(false);
     startTest();
   }, [startTest]);
 
   // Handle test completion
   const handleCompleteTest = useCallback(async () => {
-    await onTestComplete?.();
-    completeTest();
-  }, [completeTest, onTestComplete]);
+    // If we have a testId in the current test, try submitting the results
+    if (updatedTest?.id) {
+      try {
+        setIsSubmitting(true);
+        await useTestStore.getState().submitTestResults(updatedTest.id);
+        completeTest();
+      } catch (error) {
+        console.error("Error submitting test results:", error);
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  }, [completeTest, updatedTest]);
 
   // Toggle reading passage visibility
   const togglePassage = useCallback(() => {
@@ -108,6 +108,7 @@ export default function TestPlayer({
         currentQuestionIndex: 0,
       };
       useTestStore.setState({ progress: updatedProgress });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
     setSidebarOpen(false);
   }, [progress, updatedTest, handleCompleteTest]);
@@ -236,7 +237,6 @@ export default function TestPlayer({
   if (showInstructions) {
     return (
       <TestInstructions
-        loading={loading}
         onBack={onBack}
         test={updatedTest}
         onStart={handleStartTest}
@@ -290,14 +290,13 @@ export default function TestPlayer({
             </SheetHeader>
             <div className="flex flex-col flex-1 mt-4">
               <TestSidebar
+                isSubmitting={isSubmitting}
                 test={updatedTest}
                 progress={progress}
                 currentSectionIndex={progress.currentSectionIndex}
                 onJumpToSection={jumpToSection}
                 onJumpToQuestion={jumpToQuestion}
                 onCompleteTest={handleCompleteTest}
-                isSectionFullyAnswered={isSectionFullyAnswered}
-                isSectionPartiallyAnswered={isSectionPartiallyAnswered}
               />
             </div>
           </SheetContent>
@@ -384,13 +383,12 @@ export default function TestPlayer({
             <div className="sticky top-20 z-20">
               <Card className="shadow-sm p-3 flex flex-col h-[calc(100vh-65px-2rem)]">
                 <TestSidebar
+                  isSubmitting={isSubmitting}
                   test={updatedTest}
                   progress={progress}
                   currentSectionIndex={progress.currentSectionIndex}
                   onJumpToSection={jumpToSection}
                   onCompleteTest={handleCompleteTest}
-                  isSectionFullyAnswered={isSectionFullyAnswered}
-                  isSectionPartiallyAnswered={isSectionPartiallyAnswered}
                 />
               </Card>
             </div>

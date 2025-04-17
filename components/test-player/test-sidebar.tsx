@@ -5,7 +5,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Test } from "@/lib/types";
 import SectionNavigationButton from "./section-navigation-button";
 import TestTimer from "./test-timer";
-
 interface TestSidebarProps {
   test: Test;
   progress: any;
@@ -17,8 +16,7 @@ interface TestSidebarProps {
     subQuestionIndex?: number
   ) => void;
   onCompleteTest: () => void;
-  isSectionFullyAnswered: (index: number) => boolean;
-  isSectionPartiallyAnswered: (index: number) => boolean;
+  isSubmitting: boolean;
 }
 
 export default function TestSidebar({
@@ -28,8 +26,7 @@ export default function TestSidebar({
   onJumpToSection,
   onJumpToQuestion,
   onCompleteTest,
-  isSectionFullyAnswered,
-  isSectionPartiallyAnswered,
+  isSubmitting,
 }: TestSidebarProps) {
   return (
     <>
@@ -38,8 +35,13 @@ export default function TestSidebar({
           initialTime={progress.timeRemaining}
           onTimeEnd={onCompleteTest}
         />
-        <Button variant="destructive" size="sm" onClick={onCompleteTest}>
-          End Test
+        <Button
+          disabled={isSubmitting}
+          variant="destructive"
+          size="sm"
+          onClick={onCompleteTest}
+        >
+          {isSubmitting ? "Submitting..." : "Finish Test"}
         </Button>
       </div>
 

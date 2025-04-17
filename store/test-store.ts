@@ -1,3 +1,4 @@
+import { getTestStats } from "@/lib/test-utils";
 import type {
   MultipleChoiceOption,
   SubQuestionMeta,
@@ -7,9 +8,19 @@ import type {
 } from "@/lib/types";
 import { create } from "zustand";
 
+// Type for the submission function
+type SubmitResultFn = (
+  testId: number,
+  results: {
+    totalScore: number;
+    maxPossibleScore: number;
+  }
+) => Promise<any>;
+
 interface TestState {
   currentTest: Test | null;
   progress: TestProgress | null;
+  submitResultFn: SubmitResultFn | null;
 
   // Actions
   loadTest: (test: Test) => void;
@@ -17,13 +28,15 @@ interface TestState {
   submitAnswer: (
     questionId: string,
     answer: any,
-    subQuestionId?: string,
+    subQuestionId?: string
   ) => void;
   nextQuestion: () => void;
   previousQuestion: () => void;
   completeTest: () => void;
   resetTest: () => void;
   updateTimeRemaining: (time: number) => void;
+  setSubmitResultFn: (fn: SubmitResultFn) => void;
+  submitTestResults: (testId: number) => Promise<boolean>;
   // Getters
   questionById: (id: string, subId?: string) => any;
   // Computed
@@ -34,6 +47,7 @@ interface TestState {
 export const useTestStore = create<TestState>()((set, get) => ({
   currentTest: null,
   progress: null,
+  submitResultFn: null,
 
   loadTest: (test: Test) => {
     set({ currentTest: test });
@@ -56,6 +70,38 @@ export const useTestStore = create<TestState>()((set, get) => ({
     });
   },
 
+  setSubmitResultFn: (fn: SubmitResultFn) => {
+    set({ submitResultFn: fn });
+  },
+
+  submitTestResults: async (testId: number): Promise<boolean> => {
+    const { currentTest, progress, submitResultFn } = get();
+
+    if (!currentTest || !progress || !progress.answers || !submitResultFn) {
+      console.error(
+        "Cannot submit test results: missing test data or submission function"
+      );
+      return false;
+    }
+
+    try {
+      const testStats = getTestStats(currentTest, progress.answers);
+      const totalScore = testStats.totalScore;
+      const maxPossibleScore = testStats.maxPossibleScore;
+
+      // Call the submission function
+      await submitResultFn(testId, {
+        totalScore,
+        maxPossibleScore,
+      });
+
+      return true;
+    } catch (error) {
+      console.error("Error submitting test results:", error);
+      return false;
+    }
+  },
+
   submitAnswer: (questionId: string, answer: any, subQuestionId?: string) => {
     const { progress, currentTest } = get();
     if (!progress || !currentTest) return;
@@ -70,7 +116,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
     // Find the relevant subQuestion if one exists
     const subQuestion = question.subQuestions?.find(
-      (sq: { subId: string }) => sq.subId === subQuestionId,
+      (sq: { subId: string }) => sq.subId === subQuestionId
     );
 
     // Find the question index in the test
@@ -80,7 +126,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
       for (let i = 0; i < currentTest.sections.length; i++) {
         const section = currentTest.sections[i];
         const indexInSection = section.questions.findIndex(
-          (q) => q.id === questionId,
+          (q) => q.id === questionId
         );
         if (indexInSection !== -1) {
           questionIndex = indexInSection;
@@ -106,7 +152,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
         case "multiple-choice":
           isCorrect = question.options.some(
             (option: MultipleChoiceOption) =>
-              option.id === answer && option.isCorrect,
+              option.id === answer && option.isCorrect
           );
 
           score = isCorrect ? question.points : 0;
@@ -118,7 +164,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
             if (scoringStrategy === "partial") {
               // Partial credit based on number of correct answers
               const subQuestion = question.subQuestions?.find(
-                (sq: { subId: string }) => sq.subId === subQuestionId,
+                (sq: { subId: string }) => sq.subId === subQuestionId
               );
 
               isCorrect = subQuestion.correctAnswer === answer;
@@ -130,8 +176,8 @@ export const useTestStore = create<TestState>()((set, get) => ({
                 ([key, value]) =>
                   question.subQuestions?.some(
                     (sq: SubQuestionMeta) =>
-                      sq.subId === key && sq.correctAnswer === value,
-                  ),
+                      sq.subId === key && sq.correctAnswer === value
+                  )
               ).length;
               isCorrect = correctCount === totalSubQuestions;
               score = isCorrect ? question.points : 0;
@@ -146,7 +192,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
             if (scoringStrategy === "partial") {
               // Partial credit based on number of correct matches
               const subQuestion = question.subQuestions?.find(
-                (sq: { subId: string }) => sq.subId === subQuestionId,
+                (sq: { subId: string }) => sq.subId === subQuestionId
               );
 
               isCorrect = subQuestion?.correctAnswer === answer;
@@ -157,8 +203,8 @@ export const useTestStore = create<TestState>()((set, get) => ({
                 ([key, value]) =>
                   question.subQuestions?.some(
                     (sq: SubQuestionMeta) =>
-                      sq.subId === key && sq.correctAnswer === value,
-                  ),
+                      sq.subId === key && sq.correctAnswer === value
+                  )
               ).length;
               isCorrect = correctCount === totalSubQuestions;
               score = isCorrect ? question.points : 0;
@@ -173,14 +219,14 @@ export const useTestStore = create<TestState>()((set, get) => ({
             const correctCount = Object.entries(answer).filter(
               ([key, value]) =>
                 question.statements[Number.parseInt(key)].correctAnswer ===
-                value,
+                value
             ).length;
 
             // Calculate score based on scoring strategy
             if (scoringStrategy === "partial") {
               // Partial credit based on number of correct answers
               score = Math.round(
-                (correctCount / totalStatements) * question.points,
+                (correctCount / totalStatements) * question.points
               );
               isCorrect = correctCount === totalStatements;
             } else {
@@ -198,14 +244,14 @@ export const useTestStore = create<TestState>()((set, get) => ({
             const totalHeadings = question.headings.length;
             const correctCount = Object.entries(answer).filter(
               ([key, value]) =>
-                question.headings[Number.parseInt(key)].correctAnswer === value,
+                question.headings[Number.parseInt(key)].correctAnswer === value
             ).length;
 
             // Calculate score based on scoring strategy
             if (scoringStrategy === "partial") {
               // Partial credit based on number of correct answers
               score = Math.round(
-                (correctCount / totalHeadings) * question.points,
+                (correctCount / totalHeadings) * question.points
               );
               isCorrect = correctCount === totalHeadings;
             } else {
@@ -221,14 +267,14 @@ export const useTestStore = create<TestState>()((set, get) => ({
             const totalAnswers = Object.keys(question.questions).length;
             const correctCount = Object.entries(answer).filter(
               ([key, value]) =>
-                question.correctAnswers[Number.parseInt(key)] === value,
+                question.correctAnswers[Number.parseInt(key)] === value
             ).length;
 
             // Calculate score based on scoring strategy
             if (scoringStrategy === "partial") {
               // Partial credit based on number of correct answers
               score = Math.round(
-                (correctCount / totalAnswers) * question.points,
+                (correctCount / totalAnswers) * question.points
               );
               isCorrect = correctCount === totalAnswers;
             } else {
@@ -244,14 +290,14 @@ export const useTestStore = create<TestState>()((set, get) => ({
             const totalLabels = question.labels.length;
             const correctCount = Object.entries(answer).filter(
               ([key, value]) =>
-                question.labels[Number.parseInt(key)].correctAnswer === value,
+                question.labels[Number.parseInt(key)].correctAnswer === value
             ).length;
 
             // Calculate score based on scoring strategy
             if (scoringStrategy === "partial") {
               // Partial credit based on number of correct answers
               score = Math.round(
-                (correctCount / totalLabels) * question.points,
+                (correctCount / totalLabels) * question.points
               );
               isCorrect = correctCount === totalLabels;
             } else {
@@ -268,7 +314,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
             const totalPicks = question.picks.length;
             const correctCount = Object.entries(answer).filter(
               ([key, value]) =>
-                question.picks[Number.parseInt(key)].correctAnswer === value,
+                question.picks[Number.parseInt(key)].correctAnswer === value
             ).length;
 
             // Calculate score based on scoring strategy
@@ -406,16 +452,11 @@ export const useTestStore = create<TestState>()((set, get) => ({
     const { progress, currentTest } = get();
     if (!progress || !currentTest) return;
 
-    // Get all questions across all sections
-    const allQuestions = currentTest.sections.flatMap(
-      (section) => section.questions,
-    );
-
     // Calculate total score using our utility function for consistency
     // This ensures we properly account for both main questions and sub-questions
     const totalScore = Object.values(progress.answers).reduce(
       (sum, answer) => sum + (answer.score || 0),
-      0,
+      0
     );
 
     set({

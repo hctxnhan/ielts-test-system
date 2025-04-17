@@ -78,7 +78,7 @@ export default function MatchingHeadingsQuestionRenderer({
 
           return (
             <div key={paragraph.id} className="space-y-2 w-fit min-w-[300px]">
-              <p className="text-xs text-gray-600 whitespace-pre-line">
+              <p className="text-sm text-gray-600 whitespace-pre-line font-medium">
                 {question.scoringStrategy === "partial" && subQuestion
                   ? `Question ${question.index + paraIndex + 1}.`
                   : `Paragraph ${paraIndex + 1}.`}{" "}

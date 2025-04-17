@@ -35,15 +35,13 @@ export const supabaseStorage = {
   // List files of a specific type
   listFiles: async (
     type: FileType,
-    folder: string = "",
+    folder: string = ""
   ): Promise<FileObject[]> => {
     try {
       // List files in the specified folder
       const { data: fileList, error: listError } = await supabase.storage
         .from(STORAGE_BUCKET)
         .list(folder, { limit: 100 });
-
-      console.log("File list:", fileList);
 
       if (listError) {
         console.error("Error listing files:", listError);
@@ -79,10 +77,8 @@ export const supabaseStorage = {
 
       const files = await Promise.all(filePromises);
 
-      console.log("Filtered files:", files);
-
       return files.filter(
-        (item) => item.id === null || item.type.startsWith(type),
+        (item) => item.id === null || item.type.startsWith(type)
       );
     } catch (error) {
       console.error("Error in listFiles:", error);
@@ -92,7 +88,7 @@ export const supabaseStorage = {
   uploadFile: async (
     file: File,
     type: FileType,
-    folder?: string,
+    folder?: string
   ): Promise<FileObject> => {
     try {
       const timestamp = new Date().getTime();
@@ -100,7 +96,9 @@ export const supabaseStorage = {
       const fileNameParts = file.name.split(".");
       const fileExt = fileNameParts.length > 1 ? fileNameParts.pop() : ""; // Handle files with no extension
       const baseFileName = fileNameParts.join("."); // Handle filenames with multiple periods
-      const fileName = `${baseFileName}-${timestamp}${fileExt ? `.${fileExt}` : ""}`;
+      const fileName = `${baseFileName}-${timestamp}${
+        fileExt ? `.${fileExt}` : ""
+      }`;
 
       // Store the type as metadata in the filename prefix
       const typedFileName = `${type}_${fileName}`;
