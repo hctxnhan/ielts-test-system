@@ -3,28 +3,31 @@
 import type {
   Question,
   UserAnswer,
-  QuestionType,
-  TFNGStatement,
-} from "@testComponents/lib/types";
+  WritingTaskAnswer,
+  AnswerType,
+  WritingTask1Question,
+  WritingTask2Question,
+} from "@testComponents/lib/types"; // Import types
+// Import actual components
+import MultipleChoiceQuestionComponent from "./question-types/multiple-choice-question";
+import CompletionQuestionComponent from "./question-types/completion-question";
+import MatchingQuestionComponent from "./question-types/matching-question";
+import LabelingQuestionComponent from "./question-types/labeling-question";
+import PickFromListQuestionComponent from "./question-types/pick-from-list-question";
+import TrueFalseNotGivenQuestionComponent from "./question-types/true-false-not-given-question";
+import MatchingHeadingsQuestionComponent from "./question-types/matching-headings-question";
+import ShortAnswerQuestionComponent from "./question-types/short-answer-question";
+import WritingTask1QuestionRenderer from "./question-types/writing-task1-question"; // Correct component import
+import WritingTask2QuestionRenderer from "./question-types/writing-task2-question"; // Correct component import
+
 import { useTestStore } from "@testComponents/store/test-store";
 import { useEffect, useRef, useState } from "react";
-import CompletionQuestion from "./question-types/completion-question";
-import LabelingQuestion from "./question-types/labeling-question";
-import MatchingHeadingsQuestion from "./question-types/matching-headings-question";
-import MatchingQuestion from "./question-types/matching-question";
-import MultipleChoiceQuestion from "./question-types/multiple-choice-question";
-import PickFromListQuestion from "./question-types/pick-from-list-question";
-import ShortAnswerQuestion from "./question-types/short-answer-question";
-import TrueFalseNotGivenQuestion from "./question-types/true-false-not-given-question";
-import WritingTask1Question from "./question-types/writing-task1-question";
-import WritingTask2Question from "./question-types/writing-task2-question";
+import { supportsPartialScoring } from "@testComponents/lib/test-utils";
 
 interface QuestionRendererProps {
   question: Question;
   sectionId: string;
 }
-
-type AnswerType = Record<string, string> | string | number | null;
 
 // Type guard for questions with subQuestions
 function hasSubQuestions(question: Question): boolean {
@@ -37,22 +40,29 @@ function hasSubQuestions(question: Question): boolean {
 function getLocalAnswerFromProgress(
   question: Question,
   answers: Record<string, UserAnswer> | undefined
-): AnswerType {
+): AnswerType | WritingTaskAnswer {
   if (!answers) return null;
 
-  if (hasSubQuestions(question) && question.scoringStrategy === "partial") {
-    // For questions with sub-questions, collect answers for all sub-questions
+  // Handle questions supporting partial scoring with sub-questions
+  if (
+    supportsPartialScoring.includes(question.type) &&
+    hasSubQuestions(question) &&
+    question.scoringStrategy === "partial"
+  ) {
     const subAnswers: Record<string, string> = {};
-
-    // Use enhanced UserAnswer structure to find answers related to this question
     const questionAnswers = Object.values(answers).filter(
       (answer) =>
         answer.parentQuestionId === question.id ||
-        answer.questionId === question.id
+        (answer.questionId === question.id &&
+          answer.subQuestionId !== undefined)
     );
 
     questionAnswers.forEach((answer) => {
-      if (answer.subQuestionId !== undefined && answer.answer !== undefined) {
+      if (
+        answer.subQuestionId !== undefined &&
+        answer.answer !== undefined &&
+        typeof answer.answer === "string"
+      ) {
         subAnswers[answer.subQuestionId] = answer.answer;
       }
     });
@@ -60,13 +70,31 @@ function getLocalAnswerFromProgress(
     return Object.keys(subAnswers).length > 0 ? subAnswers : null;
   }
 
-  // Regular question without sub-questions
-  const answer = answers[question.id]?.answer;
-  if (!answer) return null;
+  // Handle regular questions or those without partial scoring strategy for sub-questions
+  const userAnswer = answers[question.id];
+  if (
+    !userAnswer ||
+    userAnswer.answer === undefined ||
+    userAnswer.answer === null ||
+    userAnswer.subQuestionId !== undefined
+  ) {
+    return null;
+  }
 
-  // Special handling for writing tasks
-  if (question.type === "writing-task1" || question.type === "writing-task2") {
-    return answer as string;
+  const answer = userAnswer.answer;
+
+  // Handle T/F/NG specifically if it's NOT partial scoring / has no sub-questions
+  // to ensure it returns a Record, matching the component's expected prop type
+  if (question.type === "true-false-not-given" && !hasSubQuestions(question)) {
+    if (typeof answer === "string") {
+      // Use the main question ID as the key for the single answer
+      return { [question.id]: answer };
+    }
+    console.warn(
+      `Unexpected answer format for single T/F/NG question ${question.id}:`,
+      answer
+    );
+    return null;
   }
 
   return answer;
@@ -75,7 +103,7 @@ function getLocalAnswerFromProgress(
 // Function to submit an answer with proper typing
 function submitQuestionAnswer(
   question: Question,
-  newAnswer: AnswerType,
+  newAnswer: AnswerType | WritingTaskAnswer,
   submitAnswer: (
     questionId: string,
     answer: any,
@@ -86,7 +114,8 @@ function submitQuestionAnswer(
   if (
     hasSubQuestions(question) &&
     typeof newAnswer === "object" &&
-    newAnswer !== null
+    newAnswer !== null &&
+    supportsPartialScoring.includes(question.type)
   ) {
     if (subId) {
       const answerForSubQuestion =
@@ -97,7 +126,7 @@ function submitQuestionAnswer(
         question.type === "short-answer" ||
         question.type === "true-false-not-given" ||
         question.type === "completion"
-          ? newAnswer[subId]
+          ? (newAnswer as Record<string, string>)[subId]
           : newAnswer;
 
       submitAnswer(question.id, answerForSubQuestion, subId);
@@ -107,7 +136,6 @@ function submitQuestionAnswer(
   } else {
     submitAnswer(question.id, newAnswer);
   }
-  return;
 }
 
 export default function QuestionRenderer({
@@ -115,7 +143,9 @@ export default function QuestionRenderer({
   sectionId,
 }: QuestionRendererProps) {
   const { submitAnswer, progress } = useTestStore();
-  const [localAnswer, setLocalAnswer] = useState<AnswerType>(null);
+  const [localAnswer, setLocalAnswer] = useState<
+    AnswerType | WritingTaskAnswer
+  >(null);
   const questionIdRef = useRef(question.id);
   const hasInitializedRef = useRef(false);
 
@@ -128,34 +158,37 @@ export default function QuestionRenderer({
 
     if (!hasInitializedRef.current) {
       setLocalAnswer(getLocalAnswerFromProgress(question, progress?.answers));
+
       hasInitializedRef.current = true;
     }
   }, [question.id, progress?.answers]);
 
   // Handle answer changes with debouncing
-  const handleChange = (newAnswer: AnswerType, subId?: string) => {
+  const handleChange = (
+    newAnswer: AnswerType | WritingTaskAnswer,
+    subId?: string
+  ) => {
     setLocalAnswer(newAnswer);
-
-    // Debounce submission to prevent rapid consecutive calls
     setTimeout(() => {
       submitQuestionAnswer(question, newAnswer, submitAnswer, subId);
     }, 100);
   };
 
-  // Render question based on type with proper type assertions
+  // Render question based on type
   switch (question.type) {
     case "multiple-choice":
       return (
-        <MultipleChoiceQuestion
+        <MultipleChoiceQuestionComponent
           question={question}
-          value={localAnswer as string}
+          // Adjust cast: if null, pass undefined
+          value={(localAnswer as string | null) ?? undefined}
           onChange={handleChange}
         />
       );
 
     case "completion":
       return (
-        <CompletionQuestion
+        <CompletionQuestionComponent
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
@@ -164,7 +197,7 @@ export default function QuestionRenderer({
 
     case "matching":
       return (
-        <MatchingQuestion
+        <MatchingQuestionComponent
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
@@ -173,7 +206,7 @@ export default function QuestionRenderer({
 
     case "labeling":
       return (
-        <LabelingQuestion
+        <LabelingQuestionComponent
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
@@ -182,7 +215,7 @@ export default function QuestionRenderer({
 
     case "pick-from-list":
       return (
-        <PickFromListQuestion
+        <PickFromListQuestionComponent
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
@@ -191,16 +224,16 @@ export default function QuestionRenderer({
 
     case "true-false-not-given":
       return (
-        <TrueFalseNotGivenQuestion
+        <TrueFalseNotGivenQuestionComponent
           question={question}
-          value={localAnswer as Record<string, string> | string | null}
+          value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
         />
       );
 
     case "matching-headings":
       return (
-        <MatchingHeadingsQuestion
+        <MatchingHeadingsQuestionComponent
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
@@ -209,7 +242,7 @@ export default function QuestionRenderer({
 
     case "short-answer":
       return (
-        <ShortAnswerQuestion
+        <ShortAnswerQuestionComponent
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
@@ -218,26 +251,24 @@ export default function QuestionRenderer({
 
     case "writing-task1":
       return (
-        <WritingTask1Question
+        // Use the correct component name
+        <WritingTask1QuestionRenderer
           question={question}
-          value={localAnswer as string | null}
+          value={localAnswer as WritingTaskAnswer | null}
           onChange={handleChange}
         />
       );
 
     case "writing-task2":
       return (
-        <WritingTask2Question
+        // Use the correct component name
+        <WritingTask2QuestionRenderer
           question={question}
-          value={localAnswer as string | null}
+          value={localAnswer as WritingTaskAnswer | null}
           onChange={handleChange}
         />
       );
 
-    default: {
-      // This helps TypeScript verify we've handled all cases
-      const _exhaustiveCheck: never = question;
-      return null;
-    }
+    // No default case needed if the union is exhaustive
   }
 }

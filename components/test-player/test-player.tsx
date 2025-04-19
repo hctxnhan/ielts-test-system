@@ -53,6 +53,8 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
     resetTest,
   } = useTestStore();
 
+  console.log(progress?.answers);
+
   // Load the test when component mounts
   useEffect(() => {
     loadTest(updatedTest);
@@ -188,38 +190,6 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
           }
         }, 100);
       }
-    },
-    [progress, updatedTest]
-  );
-
-  // Check if a section has been fully answered
-  const isSectionFullyAnswered = useCallback(
-    (sectionIndex: number) => {
-      if (!progress || !updatedTest) return false;
-
-      const section = updatedTest.sections[sectionIndex];
-      const sectionQuestionIds = section.questions.map((q) => q.id);
-
-      return sectionQuestionIds.every(
-        (id) => progress.answers[id] !== undefined
-      );
-    },
-    [progress, updatedTest]
-  );
-
-  // Check if a section has been partially answered
-  const isSectionPartiallyAnswered = useCallback(
-    (sectionIndex: number) => {
-      if (!progress || !updatedTest) return false;
-
-      const section = updatedTest.sections[sectionIndex];
-      const sectionQuestionIds = section.questions.map((q) => q.id);
-
-      const answeredCount = sectionQuestionIds.filter(
-        (id) => progress.answers[id] !== undefined
-      ).length;
-
-      return answeredCount > 0 && answeredCount < sectionQuestionIds.length;
     },
     [progress, updatedTest]
   );

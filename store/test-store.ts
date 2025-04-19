@@ -17,6 +17,17 @@ type SubmitResultFn = (
   }
 ) => Promise<any>;
 
+type ScoreEssayFn = (param: {
+  prompt: string;
+  essay: string;
+  scoringPrompt: string;
+}) => Promise<{
+  score: number;
+  feedback: string;
+  ok: boolean;
+  error?: string;
+}>;
+
 interface TestState {
   currentTest: Test | null;
   progress: TestProgress | null;
@@ -42,12 +53,16 @@ interface TestState {
   // Computed
   currentSection: () => any;
   isLastQuestion: () => boolean;
+
+  scoreEssayFn: ScoreEssayFn | null;
+  setScoreEssayFn: (fn: ScoreEssayFn) => void;
 }
 
 export const useTestStore = create<TestState>()((set, get) => ({
   currentTest: null,
   progress: null,
   submitResultFn: null,
+  scoreEssayFn: null,
 
   loadTest: (test: Test) => {
     set({ currentTest: test });
@@ -102,6 +117,10 @@ export const useTestStore = create<TestState>()((set, get) => ({
     }
   },
 
+  setScoreEssayFn: (fn: ScoreEssayFn) => {
+    set({ scoreEssayFn: fn });
+  },
+
   submitAnswer: (questionId: string, answer: any, subQuestionId?: string) => {
     const { progress, currentTest } = get();
     if (!progress || !currentTest) return;
@@ -113,6 +132,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
     // Determine the answer key - if a subQuestionId is provided, use that
     const answerKey = subQuestionId || questionId;
+    let feedback = "";
 
     // Find the relevant subQuestion if one exists
     const subQuestion = question.subQuestions?.find(
@@ -332,19 +352,26 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
         case "writing-task1":
         case "writing-task2":
-          // For writing tasks, we store the answer and any AI feedback
-          if (typeof answer === "object" && answer.score !== undefined) {
-            // This is an AI-scored submission
-            score = answer.score;
-            // Consider correct if score is above 70% of max points
-            isCorrect = score >= maxScore * 0.7;
-            // Use the text as the actual answer
-            answer = answer.text;
-          } else if (typeof answer === "object" && answer.text !== undefined) {
-            // This is just the essay text without scoring
-            answer = answer.text;
-            isCorrect = false;
+          if (
+            typeof answer === "object" &&
+            answer !== null &&
+            "text" in answer
+          ) {
+            const aiScore = answer.score as number | undefined;
+
+            score = aiScore ?? 0;
+
+            console.log("Writing task score:", score);
+
+            isCorrect = true;
+          } else {
+            console.warn(
+              "Invalid answer format received for writing task:",
+              answer
+            );
             score = 0;
+            feedback = "";
+            isCorrect = false;
           }
           break;
 
@@ -365,6 +392,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
       questionType: question.type,
       questionIndex,
       parentQuestionId: subQuestionId ? questionId : undefined,
+      feedback,
     };
 
     // Create answer object with format { subquestionId: answerId }

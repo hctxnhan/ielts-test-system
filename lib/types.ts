@@ -129,6 +129,7 @@ export interface WritingTask2Question extends BaseQuestion {
   wordLimit: number;
   sampleAnswer?: string;
   scoringPrompt?: string;
+  imageUrl?: string;
 }
 
 export type Question =
@@ -214,4 +215,76 @@ export interface SectionTemplate {
   title: string;
   questionTypes: QuestionType[];
   duration: number;
+}
+
+// Basic answer types
+export type BasicAnswerType = Record<string, string> | string | number | null;
+
+// Writing Task specific answer type
+export interface WritingTaskAnswer {
+  text: string | null;
+  score?: number;
+  feedback?: string;
+}
+
+// Combined answer type
+export type AnswerType = BasicAnswerType | WritingTaskAnswer;
+
+// Define other types like Question, UserAnswer etc. if they are not already defined elsewhere
+// Example placeholder for specific question types if needed
+export interface WritingTask1Question extends BaseQuestion {
+  type: "writing-task1";
+  // Add specific properties for WritingTask1Question
+}
+
+export interface WritingTask2Question extends BaseQuestion {
+  type: "writing-task2";
+  // Add specific properties for WritingTask2Question
+}
+
+// Define specific interfaces for each question type extending BaseQuestion
+interface MultipleChoiceQuestionType extends BaseQuestion {
+  type: "multiple-choice";
+  options: string[];
+  correctAnswer: string;
+} // Example specific props
+interface CompletionQuestionType extends BaseQuestion {
+  type: "completion" /* specific props */;
+}
+interface MatchingQuestionType extends BaseQuestion {
+  type: "matching" /* specific props */;
+}
+interface LabelingQuestionType extends BaseQuestion {
+  type: "labeling" /* specific props */;
+}
+interface PickFromListQuestionType extends BaseQuestion {
+  type: "pick-from-list" /* specific props */;
+}
+interface TrueFalseNotGivenQuestionType extends BaseQuestion {
+  type: "true-false-not-given" /* specific props */;
+}
+interface MatchingHeadingsQuestionType extends BaseQuestion {
+  type: "matching-headings" /* specific props */;
+}
+interface ShortAnswerQuestionType extends BaseQuestion {
+  type: "short-answer" /* specific props */;
+}
+
+// Keep WritingTask interfaces as previously defined
+export interface WritingTask1Question extends BaseQuestion {
+  type: "writing-task1";
+  // Add specific properties for WritingTask1Question
+}
+
+export interface WritingTask2Question extends BaseQuestion {
+  type: "writing-task2";
+  // Add specific properties for WritingTask2Question
+}
+
+// Example placeholder for UserAnswer type
+export interface UserAnswer {
+  questionId: string;
+  parentQuestionId?: string; // For sub-questions linked to a parent
+  subQuestionId?: string;
+  answer: any; // Can be string, number, Record<string, string>, WritingTaskAnswer, etc.
 }

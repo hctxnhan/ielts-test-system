@@ -32,18 +32,22 @@ export function getQuestionScore(
   let score = 0;
   let maxScore = 0;
 
-  if (question.scoringStrategy === "partial" && question.subQuestions?.length) {
+  if (
+    supportsPartialScoring.includes(question.type) &&
+    question.scoringStrategy === "partial" &&
+    question.subQuestions?.length
+  ) {
     const subQuestions = question.subQuestions || [];
     score = subQuestions.reduce((acc, subQ) => {
       const answer = answers[subQ.subId];
       maxScore += subQ.points;
 
-      return acc + (answer?.isCorrect ? subQ.points : 0);
+      return acc + (answer?.isCorrect ? answer.score ?? subQ.points : 0);
     }, 0);
   } else {
     maxScore = question.points;
     const answer = answers[question.id];
-    score = answer?.isCorrect ? question.points : 0;
+    score = answer?.isCorrect ? answer.score ?? question.points : 0;
   }
 
   return {
@@ -107,6 +111,16 @@ export function getTestStats(
   };
 }
 
+export const supportsPartialScoring = [
+  "completion",
+  "matching",
+  "labeling",
+  "pick-from-list",
+  "true-false-not-given",
+  "matching-headings",
+  "short-answer",
+];
+
 /**
  * Calculate statistics for a specific section
  */
@@ -126,8 +140,16 @@ export function getSectionStats(
     sectionScore += score;
     sectionTotalScore += maxScore;
 
+    console.log({
+      questionId: question.id,
+      score,
+      maxScore,
+      question,
+    });
+
     // Collect answers for both subquestions and main questions
     if (
+      supportsPartialScoring.includes(question.type) &&
       question.subQuestions?.length &&
       question.scoringStrategy === "partial"
     ) {

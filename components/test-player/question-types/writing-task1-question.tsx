@@ -1,27 +1,32 @@
 "use client";
 
 import type React from "react";
-
+import ReactMarkdown from "react-markdown";
+import rehypeHighlight from "rehype-highlight";
+import rehypeRaw from "rehype-raw";
+import remarkGfm from "remark-gfm";
 import { useState, useEffect } from "react";
 import { Textarea } from "@testComponents/components/ui/textarea";
 import { Button } from "@testComponents/components/ui/button";
 import { Card } from "@testComponents/components/ui/card";
 import { Clock, Eye, EyeOff, Award } from "lucide-react";
-import type { WritingTask1Question } from "@testComponents/lib/types";
+import type {
+  WritingTask1Question,
+  WritingTaskAnswer,
+} from "@testComponents/lib/types";
+import { useTestStore } from "@testComponents/store/test-store";
 
 interface WritingTask1QuestionProps {
   question: WritingTask1Question;
-  value: string | null;
-  onChange: (value: {
-    text: string | null;
-    score?: number;
-    feedback?: string;
-  }) => void;
+  value: WritingTaskAnswer | null;
+  onChange: (value: WritingTaskAnswer) => void;
 }
 
 interface ScoringResult {
   score: number;
   feedback: string;
+  ok?: boolean;
+  error?: string;
 }
 
 export default function WritingTask1QuestionRenderer({
@@ -29,39 +34,39 @@ export default function WritingTask1QuestionRenderer({
   value,
   onChange,
 }: WritingTask1QuestionProps) {
-  const [wordCount, setWordCount] = useState(0);
-  const [showSampleAnswer, setShowSampleAnswer] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(20 * 60); // 20 minutes in seconds
-  const [timerActive, setTimerActive] = useState(false);
-  const [aiScore, setAiScore] = useState<ScoringResult | null>(null);
+  console.log("WritingTask1QuestionRenderer", value);
+
+  const [currentEssay, setCurrentEssay] = useState<string | null>(
+    value?.text ?? null
+  );
+  const [aiScore, setAiScore] = useState<ScoringResult | null>(
+    value?.score !== undefined && value?.feedback !== undefined
+      ? { score: value.score, feedback: value.feedback }
+      : null
+  );
   const [isScoring, setIsScoring] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showSampleAnswer, setShowSampleAnswer] = useState(false);
 
-  // Calculate word count when answer changes
+  const getEssayScore = useTestStore.getState().scoreEssayFn;
+
+  // Update local state if the external value changes (e.g., loading from progress)
   useEffect(() => {
-    if (value) {
-      const words = (value as any).text
-        .trim()
-        .split(/\s+/)
-        .filter((word) => word.length > 0);
-      setWordCount(words.length);
-    } else {
-      setWordCount(0);
+    setCurrentEssay(value?.text ?? null);
+    setAiScore(
+      value?.score !== undefined && value?.feedback !== undefined
+        ? { score: value.score, feedback: value.feedback }
+        : null
+    );
+    // Reset feedback visibility if score/feedback is cleared
+    if (value?.score === undefined || value?.feedback === undefined) {
+      setShowFeedback(false);
     }
   }, [value]);
 
-  // Timer functionality
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    if (timerActive && timeRemaining > 0) {
-      interval = setInterval(() => {
-        setTimeRemaining((prev) => prev - 1);
-      }, 1000);
-    }
-
-    return () => clearInterval(interval);
-  }, [timerActive, timeRemaining]);
+  const wordCount = currentEssay
+    ? (currentEssay.match(/\b\w+\b/g) || []).length
+    : 0;
 
   // Format time as MM:SS
   const formatTime = (seconds: number) => {
@@ -72,9 +77,18 @@ export default function WritingTask1QuestionRenderer({
       .padStart(2, "0")}`;
   };
 
-  // Function to score the essay using OpenRouter
+  // Function to score the essay using OpenRouter and save the essay content
   const scoreEssay = async () => {
-    if (!value || (value as any).text.trim().length < 50) {
+    if (isScoring) {
+      return;
+    }
+
+    if (getEssayScore === null) {
+      alert("Essay scoring function is not available.");
+      return;
+    }
+
+    if (!currentEssay || currentEssay.trim().length < 50) {
       alert("Please write more content before scoring.");
       return;
     }
@@ -82,33 +96,32 @@ export default function WritingTask1QuestionRenderer({
     setIsScoring(true);
 
     try {
-      const response = await fetch("/api/score-essay", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt: question.prompt,
-          essay: (value as any).text,
-          scoringPrompt: question.scoringPrompt,
-        }),
+      const response = await getEssayScore({
+        prompt: question.prompt,
+        essay: currentEssay || "",
+        scoringPrompt: question?.scoringPrompt || "",
       });
 
       if (!response.ok) {
         throw new Error("Failed to score essay");
       }
 
-      const result = await response.json();
+      const result = {
+        score: response.score,
+        feedback: response.feedback,
+      };
+
       setAiScore(result);
 
-      // Store the score and feedback in the test store
+      // Call onChange with the full WritingTaskAnswer object including the score and feedback
       onChange({
-        text: (value as any).text,
+        text: currentEssay,
         score: result.score,
         feedback: result.feedback,
       });
 
       setIsScoring(false);
+      setShowFeedback(true); // Automatically show feedback after scoring
     } catch (error) {
       console.error("Error scoring essay:", error);
       setIsScoring(false);
@@ -116,30 +129,17 @@ export default function WritingTask1QuestionRenderer({
     }
   };
 
-  // Update the onChange handler to properly handle the text value
+  // Handle changes in the textarea - only update local state, don't save
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onChange({
-      text: e.target.value,
-      ...(value && "score" in value
-        ? { score: (value as any).score, feedback: (value as any).feedback }
-        : {}),
-    });
+    const newText = e.target.value;
+    setCurrentEssay(newText);
+    // No auto-save - only update local state
   };
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Writing Task 1</h3>
-        <div className="flex items-center gap-2">
-          <Button
-            variant={timerActive ? "default" : "outline"}
-            size="sm"
-            onClick={() => setTimerActive(!timerActive)}
-          >
-            <Clock className="mr-2 h-4 w-4" />
-            {formatTime(timeRemaining)}
-          </Button>
-        </div>
       </div>
 
       <Card className="p-4">
@@ -156,28 +156,34 @@ export default function WritingTask1QuestionRenderer({
         )}
 
         <p className="text-sm text-muted-foreground mb-4">
-          Write at least {question.wordLimit} words.
+          Write at least {question.wordLimit || 150} words.
         </p>
       </Card>
 
       <Textarea
-        value={
-          typeof value === "object" && value !== null
-            ? (value as any).text || ""
-            : ""
-        }
+        value={currentEssay || ""}
         onChange={handleTextChange}
         placeholder="Write your answer here..."
         className="min-h-[300px]"
       />
 
+      {/* Updated save notification message */}
+      <div className="text-sm text-muted-foreground italic flex items-center">
+        <span>
+          Click &quot;Get AI Score&quot; button to save your answer and receive
+          feedback. Changes are not saved automatically.
+        </span>
+      </div>
+
       <div className="flex justify-between items-center">
         <p
           className={`text-sm ${
-            wordCount < question.wordLimit ? "text-amber-600" : "text-green-600"
+            wordCount < (question.wordLimit || 150)
+              ? "text-amber-600"
+              : "text-green-600"
           }`}
         >
-          Word count: {wordCount} / {question.wordLimit} minimum
+          Word count: {wordCount} / {question.wordLimit || 150} minimum
         </p>
 
         <div className="flex gap-2">
@@ -186,7 +192,7 @@ export default function WritingTask1QuestionRenderer({
             size="sm"
             onClick={scoreEssay}
             disabled={
-              isScoring || !value || (value as any).text.trim().length < 50
+              isScoring || !currentEssay || currentEssay.trim().length < 50
             }
           >
             <Award className="mr-2 h-4 w-4" />
@@ -232,7 +238,14 @@ export default function WritingTask1QuestionRenderer({
 
             {showFeedback && (
               <div className="mt-2 p-3 bg-white dark:bg-gray-800 rounded-md text-sm">
-                <p className="whitespace-pre-line">{aiScore.feedback}</p>
+                <div className="prose prose-lg max-w-none">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeRaw, rehypeHighlight]}
+                  >
+                    {aiScore.feedback}
+                  </ReactMarkdown>
+                </div>
               </div>
             )}
           </div>
