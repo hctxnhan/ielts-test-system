@@ -6,7 +6,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@testComponents/components/ui/accordion";
-import { Button } from "@testComponents/components/ui/button";
 import {
   Card,
   CardContent,
@@ -14,12 +13,8 @@ import {
   CardTitle,
 } from "@testComponents/components/ui/card";
 import { Progress } from "@testComponents/components/ui/progress";
-import {
-  getSectionStats,
-  getStatusColorClass,
-  getTestStats,
-} from "@testComponents/lib/test-utils";
-import { useTestStore } from "@testComponents/store/test-store";
+import { getSectionStats, getTestStats } from "@testComponents/lib/test-utils";
+import { Section, UserAnswer } from "@testComponents/lib/types";
 import { BarChart3, CheckCircle2, Clock } from "lucide-react";
 import { useMemo } from "react";
 
@@ -135,34 +130,87 @@ const StatusBadge = ({
   );
 };
 
-// QuestionButton component for individual question state buttons
-const QuestionButton = ({
-  displayNumber,
-  status,
+// Component to display answer comparison item
+const AnswerComparisonItem = ({
+  questionNumber,
+  questionText,
+  userAnswer,
+  correctAnswer,
+  isCorrect,
+  isAnswered = true,
 }: {
-  displayNumber: number;
-  status: "correct" | "partial" | "incorrect" | "untouched";
+  questionNumber: number;
+  questionText?: string;
+  userAnswer: any;
+  correctAnswer: any;
+  isCorrect: boolean;
+  isAnswered?: boolean;
 }) => {
-  const statusColor = getStatusColorClass(status);
+  // Format the answers for display
+  const formatAnswer = (answer: any) => {
+    if (!answer) return "-";
+
+    return (
+      <div className="flex flex-col gap-1">
+        {answer.split("\n").map((line: string, lineIdx: number) => (
+          <span key={lineIdx}>{line}</span>
+        ))}
+      </div>
+    );
+  };
 
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      className="relative h-7 w-8 sm:h-8 sm:w-9 flex items-center justify-center p-0 overflow-hidden hover:bg-muted group"
-    >
-      <div className="flex flex-col items-center justify-center">
-        <span className="text-xs transition-opacity">{displayNumber}</span>
+    <div className={`border rounded-md p-2 flex flex-col gap-2`}>
+      <div className="flex items-start">
+        <div className="text-xs font-bold w-[50px]">Q{questionNumber}</div>
+        {questionText && (
+          <div className="text-xs text-gray-700 dark:text-gray-300 flex-1 flex flex-col gap-1 font-bold">
+            {questionText.split("\n").map((line: string, lineIdx: number) => (
+              <span key={lineIdx}>{line}</span>
+            ))}
+          </div>
+        )}
       </div>
-      <span
-        className={`absolute bottom-0 left-0 right-0 h-1 ${statusColor}`}
-      ></span>
-    </Button>
+
+      <div className="flex gap-5 items-start">
+        {isAnswered ? (
+          <>
+            <div
+              className={`text-xs ml-[50px] ${
+                isCorrect
+                  ? "text-green-600 dark:text-green-600"
+                  : "text-red-600"
+              }`}
+            >
+              {formatAnswer(userAnswer)}
+            </div>
+            {!isCorrect && (
+              <div className="text-xs flex-1 text-green-600 dark:text-green-600">
+                {formatAnswer(correctAnswer)}
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="text-xs text-gray-500 ml-[50px]">Not answered</div>
+            <div className="text-xs flex-1 text-green-600 dark:text-green-600">
+              {formatAnswer(correctAnswer)}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 };
 
 // SectionPerformance component for section score visualization
-const SectionPerformance = ({ section, answers }) => {
+const SectionPerformance = ({
+  section,
+  answers,
+}: {
+  section: any;
+  answers: Record<string, UserAnswer>;
+}) => {
   const {
     sectionAnswers,
     sectionScore,
@@ -209,12 +257,26 @@ const SectionPerformance = ({ section, answers }) => {
 };
 
 // SectionAccordionItem component for the question review accordion
-const SectionAccordionItem = ({ section, answers, getAnswerStatus }) => {
+const SectionAccordionItem = ({
+  section,
+  answers,
+  getAnswerStatus,
+  sectionResult,
+}: {
+  section: Section;
+  answers: Record<string, UserAnswer>;
+  getAnswerStatus: (
+    questionId: string
+  ) => "correct" | "partial" | "incorrect" | "untouched";
+  sectionResult?: { title: string; questions: any[] };
+}) => {
   const {
     sectionCorrectAnswers: correctCount,
     sectionIncorrectAnswers: incorrectCount,
     sectionUnansweredQuestions: unansweredCount,
   } = getSectionStats(section, answers);
+
+  console.log(sectionResult);
 
   return (
     <AccordionItem
@@ -233,82 +295,38 @@ const SectionAccordionItem = ({ section, answers, getAnswerStatus }) => {
         </div>
       </AccordionTrigger>
       <AccordionContent className="pt-1 pb-1.5 sm:pb-2">
-        <div className="grid grid-cols-7 sm:grid-cols-10 gap-1 sm:gap-1.5 p-1.5 sm:p-2">
-          {section.questions.map((question, qIndex) => {
-            // Check if this is a partial question with a range
-            if (
-              question.scoringStrategy === "partial" &&
-              question.partialEndingIndex !== undefined
-            ) {
-              // Handle partial questions with range (multiple numbered questions)
-              const individualQuestions = [];
-              const startIndex = question.index;
-              const endIndex = question.partialEndingIndex;
-
-              for (let i = startIndex; i <= endIndex; i++) {
-                const j = i - startIndex;
-                const subQuestion = question.subQuestions?.[j];
-                const subId = subQuestion?.subId;
-
-                // Determine question status for this specific sub-question
-                const status = subId
-                  ? answers[subId]
-                    ? answers[subId].isCorrect
-                      ? "correct"
-                      : "incorrect"
-                    : "untouched"
-                  : "untouched";
-
-                individualQuestions.push(
-                  <QuestionButton
-                    key={`${qIndex}-${i}`}
-                    displayNumber={i + 1}
-                    status={status}
-                  />
-                );
-              }
-
-              return individualQuestions;
-            }
-
-            // For standard questions, render as a single question with its index
-            const status = getAnswerStatus(question.id);
-            const displayNumber =
-              (question.index !== undefined ? question.index : 0) + 1;
-
-            return (
-              <QuestionButton
-                key={question.id}
-                displayNumber={displayNumber}
-                status={status}
-              />
-            );
-          })}
-        </div>
-        <div className="flex justify-end text-[10px] sm:text-xs text-muted-foreground mt-1 px-1.5 sm:px-2">
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-            <div className="flex items-center gap-1">
-              <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full"></span>
-              <span>Correct</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-500 rounded-full"></span>
-              <span>Incorrect</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-300 rounded-full"></span>
-              <span>Unanswered</span>
-            </div>
-          </div>
+        <div className="flex flex-col gap-4 sm:gap-4 p-2 sm:p-4">
+          {/* Use pre-calculated question data */}
+          {sectionResult?.questions.map((question, index) => (
+            <AnswerComparisonItem
+              key={index}
+              questionNumber={question.questionNumber}
+              questionText={question.questionText}
+              userAnswer={question.userAnswer}
+              correctAnswer={question.correctAnswer}
+              isCorrect={question.isCorrect}
+              isAnswered={question.isAnswered}
+            />
+          ))}
         </div>
       </AccordionContent>
     </AccordionItem>
   );
 };
 
-export default function TestResults() {
-  const { currentTest, progress, resetTest } = useTestStore();
+export interface TestResultsProps {
+  currentTest: any; // Should be typed as Test
+  progress: any; // Should be typed as TestProgress
+  sectionResults: any[];
+  onResetTest?: () => void;
+}
 
+export default function TestResults({
+  currentTest,
+  progress,
+  sectionResults,
+  onResetTest,
+}: TestResultsProps) {
   if (!currentTest || !progress) {
     return (
       <div className="flex justify-center items-center h-96">
@@ -428,7 +446,7 @@ export default function TestResults() {
               Section Performance
             </h3>
             <div className="space-y-2 text-xs sm:text-sm">
-              {currentTest.sections.map((section) => (
+              {currentTest.sections.map((section: any) => (
                 <SectionPerformance
                   key={section.id}
                   section={section}
@@ -446,17 +464,27 @@ export default function TestResults() {
             </h3>
             <Accordion
               type="multiple"
-              defaultValue={currentTest.sections.map((section) => section.id)}
+              defaultValue={currentTest.sections.map(
+                (section: any) => section.id
+              )}
               className="w-full space-y-1.5 sm:space-y-2"
             >
-              {currentTest.sections.map((section) => (
-                <SectionAccordionItem
-                  key={section.id}
-                  section={section}
-                  answers={progress.answers}
-                  getAnswerStatus={getAnswerStatus}
-                />
-              ))}
+              {currentTest.sections.map((section: any, index: number) => {
+                // Find the matching section result from pre-calculated data
+                const sectionResult = sectionResults?.find(
+                  (result) => result.title === section.title
+                );
+
+                return (
+                  <SectionAccordionItem
+                    key={section.id}
+                    section={section}
+                    answers={progress.answers}
+                    getAnswerStatus={getAnswerStatus}
+                    sectionResult={sectionResult}
+                  />
+                );
+              })}
             </Accordion>
           </div>
         </CardContent>

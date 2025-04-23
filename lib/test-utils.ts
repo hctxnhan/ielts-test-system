@@ -8,8 +8,19 @@ export function getQuestionStatus(
   answers: Record<string, UserAnswer>
 ): "completed" | "partial" | "untouched" {
   const answer = answers[questionId];
+
   if (!answer) return "untouched";
-  else return "completed";
+
+  if (
+    (typeof answer.answer === "object" &&
+      Object.values(answer.answer).filter((v) => Boolean(v)).length === 0) ||
+    (typeof answer.answer === "string" &&
+      (answer.answer as string).trim() === "")
+  ) {
+    return "untouched";
+  }
+
+  return "completed";
 }
 
 export function countSectionQuestion(questions: Question[]): number {
@@ -140,13 +151,6 @@ export function getSectionStats(
     sectionScore += score;
     sectionTotalScore += maxScore;
 
-    console.log({
-      questionId: question.id,
-      score,
-      maxScore,
-      question,
-    });
-
     // Collect answers for both subquestions and main questions
     if (
       supportsPartialScoring.includes(question.type) &&
@@ -155,8 +159,8 @@ export function getSectionStats(
     ) {
       question.subQuestions.forEach((sq) => {
         const answer = answers[sq.subId];
-
-        if (answer) {
+        const questionStatus = getQuestionStatus(sq.subId, answers);
+        if (questionStatus === "completed") {
           sectionAnswers.push(answer);
           if (answer.isCorrect) {
             correctAnswers++;
@@ -166,8 +170,10 @@ export function getSectionStats(
         }
       });
     } else {
+      const questionStatus = getQuestionStatus(question.id, answers);
+
       const answer = answers[question.id];
-      if (answer) {
+      if (questionStatus === "completed") {
         sectionAnswers.push(answer);
         if (answer.isCorrect) {
           correctAnswers++;

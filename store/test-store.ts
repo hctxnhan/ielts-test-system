@@ -1,4 +1,5 @@
 import { getTestStats } from "@testComponents/lib/test-utils";
+import { getQuestionText } from "@testComponents/lib/test";
 import type {
   MultipleChoiceOption,
   SubQuestionMeta,
@@ -14,6 +15,7 @@ type SubmitResultFn = (
   results: {
     totalScore: number;
     maxPossibleScore: number;
+    sectionResults: SectionResult[];
   }
 ) => Promise<any>;
 
@@ -28,12 +30,26 @@ type ScoreEssayFn = (param: {
   error?: string;
 }>;
 
+// Define a structure for the section results
+interface QuestionResult {
+  questionNumber: number;
+  questionText?: string;
+  userAnswer: any;
+  correctAnswer: any;
+  isCorrect: boolean;
+  isAnswered: boolean;
+}
+
+interface SectionResult {
+  title: string;
+  questions: QuestionResult[];
+}
+
 interface TestState {
   currentTest: Test | null;
   progress: TestProgress | null;
   submitResultFn: SubmitResultFn | null;
-
-  // Actions
+  sectionResults: SectionResult[] | null;
   loadTest: (test: Test) => void;
   startTest: () => void;
   submitAnswer: (
@@ -63,6 +79,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
   progress: null,
   submitResultFn: null,
   scoreEssayFn: null,
+  sectionResults: null,
 
   loadTest: (test: Test) => {
     set({ currentTest: test });
@@ -104,10 +121,79 @@ export const useTestStore = create<TestState>()((set, get) => ({
       const totalScore = testStats.totalScore;
       const maxPossibleScore = testStats.maxPossibleScore;
 
+      // Calculate section results for display
+      const sectionResults: SectionResult[] = currentTest.sections.map(
+        (section) => {
+          const sectionQuestions: QuestionResult[] = [];
+
+          // Process each question in the section
+          section.questions.forEach((question, qIndex) => {
+            // Handle questions with subquestions
+            if (
+              question.scoringStrategy === "partial" &&
+              question.partialEndingIndex !== undefined &&
+              question.subQuestions?.length
+            ) {
+              // Handle partial questions with subquestions
+              question.subQuestions.forEach((subQuestion, subIndex) => {
+                const displayNumber = (question.index || 0) + subIndex + 1;
+                const subId = subQuestion.subId;
+                const answer = subId ? progress.answers[subId] : null;
+
+                // Get the correct answer text
+                const { questionText, answerText } = currentTest
+                  ? getQuestionText(currentTest, question.id, subQuestion.subId)
+                  : { questionText: undefined, answerText: undefined };
+
+                sectionQuestions.push({
+                  questionNumber: displayNumber,
+                  questionText,
+                  userAnswer: answer ? answer.answerReadable : null,
+                  correctAnswer: answerText || "No correct answer provided",
+                  isCorrect: answer ? !!answer.isCorrect : false,
+                  isAnswered: !!answer,
+                });
+              });
+            } else {
+              // Handle standard questions
+              const answer = progress.answers[question.id];
+              const displayNumber =
+                (question.index !== undefined ? question.index : 0) + 1;
+
+              // Get the correct answer text for main questions
+              const { questionText, answerText } = currentTest
+                ? getQuestionText(currentTest, question.id)
+                : { questionText: undefined, answerText: undefined };
+
+              sectionQuestions.push({
+                questionNumber: displayNumber,
+                questionText,
+                userAnswer: answer ? answer.answerReadable : null,
+                correctAnswer: answerText,
+                isCorrect: answer ? !!answer.isCorrect : false,
+                isAnswered: !!answer,
+              });
+            }
+          });
+
+          return {
+            title: section.title,
+            questions: sectionQuestions,
+          };
+        }
+      );
+
+      set({ sectionResults });
+
       // Call the submission function
       await submitResultFn(testId, {
         totalScore,
         maxPossibleScore,
+        // only include questions that were answered
+        sectionResults: sectionResults.map((section) => ({
+          title: section.title,
+          questions: section.questions.filter((q) => q.isAnswered),
+        })),
       });
 
       return true;
@@ -161,229 +247,223 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
     // If we have a subQuestion, use its correct answer, otherwise use the question's
     const correctAnswer = subQuestion?.correctAnswer;
+    let answerReadable = [];
+
     if (subQuestion && correctAnswer) {
       isCorrect = answer === correctAnswer;
       score = isCorrect ? subQuestion.points : 0;
-    } else {
-      // Handle main question scoring as before
-      const scoringStrategy = question.scoringStrategy || "partial";
+    }
 
-      switch (question.type) {
-        case "multiple-choice":
-          isCorrect = question.options.some(
-            (option: MultipleChoiceOption) =>
-              option.id === answer && option.isCorrect
+    // Handle main question scoring as before
+    const scoringStrategy = question.scoringStrategy || "partial";
+
+    switch (question.type) {
+      case "multiple-choice":
+        isCorrect = question.options.some(
+          (option: MultipleChoiceOption) =>
+            option.id === answer && option.isCorrect
+        );
+
+        const selected = question.items.find(
+          (option: MultipleChoiceOption) => option.id === answer
+        );
+        answerReadable = [["", selected?.text]];
+
+        score = isCorrect ? question.points : 0;
+        break;
+
+      case "completion":
+        if (scoringStrategy === "partial") {
+          const subQuestion = question.subQuestions?.find(
+            (sq: { subId: string }) => sq.subId === subQuestionId
           );
 
+          isCorrect = subQuestion.correctAnswer === answer;
+
+          answerReadable = [["", answer]];
+
+          score = isCorrect ? subQuestion.points : 0;
+        } else {
+          const totalSubQuestions = question.subQuestions?.length || 0;
+          const correctCount = Object.entries(answer).filter(([key, value]) =>
+            question.subQuestions?.some(
+              (sq: SubQuestionMeta) =>
+                sq.subId === key && sq.correctAnswer === value
+            )
+          ).length;
+
+          question.subQuestions?.forEach(
+            (sq: SubQuestionMeta, index: number) => {
+              const subAnswer = answer[sq.subId];
+
+              answerReadable.push([`${index + 1}`, subAnswer]);
+            }
+          );
+
+          isCorrect = correctCount === totalSubQuestions;
           score = isCorrect ? question.points : 0;
-          break;
+        }
+        break;
 
-        case "completion":
-          if (answer && typeof answer === "object") {
-            // Calculate score based on scoring strategy
-            if (scoringStrategy === "partial") {
-              // Partial credit based on number of correct answers
-              const subQuestion = question.subQuestions?.find(
-                (sq: { subId: string }) => sq.subId === subQuestionId
+      case "matching":
+      case "matching-headings":
+      case "labeling":
+      case "pick-from-list":
+        if (scoringStrategy === "partial") {
+          const subQuestion = question.subQuestions?.find(
+            (sq: { subId: string }) => sq.subId === subQuestionId
+          );
+
+          isCorrect = subQuestion?.correctAnswer === answer;
+          score = isCorrect ? subQuestion?.points || 0 : 0;
+
+          const selectedOption = question.options?.find(
+            (option: { id: string }) => option.id === answer
+          );
+
+          answerReadable = [["", selectedOption?.text || answer]];
+        } else {
+          const totalSubQuestions = question.subQuestions?.length || 0;
+          const correctCount = Object.entries(answer).filter(([key, value]) =>
+            question.subQuestions?.some(
+              (sq: SubQuestionMeta) =>
+                sq.subId === key && sq.correctAnswer === value
+            )
+          ).length;
+
+          question.subQuestions?.forEach(
+            (sq: SubQuestionMeta, index: number) => {
+              const subAnswer = answer[sq.subId];
+
+              // Find the matching item and options
+              const item = question.items?.find(
+                (item: { id: string }) => item.id === sq.subId
+              );
+              const selectedOption = question.options?.find(
+                (option: { id: string }) => option.id === subAnswer
               );
 
-              isCorrect = subQuestion.correctAnswer === answer;
-
-              score = isCorrect ? subQuestion.points : 0;
-            } else {
-              const totalSubQuestions = question.subQuestions?.length || 0;
-              const correctCount = Object.entries(answer).filter(
-                ([key, value]) =>
-                  question.subQuestions?.some(
-                    (sq: SubQuestionMeta) =>
-                      sq.subId === key && sq.correctAnswer === value
-                  )
-              ).length;
-              isCorrect = correctCount === totalSubQuestions;
-              score = isCorrect ? question.points : 0;
+              answerReadable.push([
+                item?.text || `${index + 1}`,
+                selectedOption?.text || subAnswer,
+              ]);
             }
-          }
-          break;
+          );
 
-        case "matching":
-          // Check each match
-          if (answer && typeof answer === "object") {
-            // Calculate score based on scoring strategy
-            if (scoringStrategy === "partial") {
-              // Partial credit based on number of correct matches
-              const subQuestion = question.subQuestions?.find(
-                (sq: { subId: string }) => sq.subId === subQuestionId
+          isCorrect = correctCount === totalSubQuestions;
+          score = isCorrect ? question.points : 0;
+        }
+        break;
+
+      case "true-false-not-given":
+        if (scoringStrategy === "partial") {
+          answerReadable = [["", answer]];
+        } else {
+          const totalSubQuestions = question.subQuestions?.length || 0;
+          const correctCount = Object.entries(answer).filter(([key, value]) =>
+            question.subQuestions?.some(
+              (sq: SubQuestionMeta) =>
+                sq.subId === key && sq.correctAnswer === value
+            )
+          ).length;
+
+          question.subQuestions?.forEach(
+            (sq: SubQuestionMeta, index: number) => {
+              const subAnswer = answer[sq.subId];
+
+              const statement = question.statements?.find(
+                (stmt: { id: string }) => stmt.id === sq.subId
               );
 
-              isCorrect = subQuestion?.correctAnswer === answer;
-              score = isCorrect ? subQuestion?.points || 0 : 0;
-            } else {
-              const totalSubQuestions = question.subQuestions?.length || 0;
-              const correctCount = Object.entries(answer).filter(
-                ([key, value]) =>
-                  question.subQuestions?.some(
-                    (sq: SubQuestionMeta) =>
-                      sq.subId === key && sq.correctAnswer === value
-                  )
-              ).length;
-              isCorrect = correctCount === totalSubQuestions;
-              score = isCorrect ? question.points : 0;
+              answerReadable.push([
+                statement?.text || `${index + 1}`,
+                subAnswer,
+              ]);
             }
+          );
+
+          isCorrect = correctCount === totalSubQuestions;
+          score = isCorrect ? question.points : 0;
+        }
+
+        break;
+
+      case "short-answer":
+        if (scoringStrategy === "partial") {
+          const subQuestion = question.subQuestions?.find(
+            (sq: { subId: string }) => sq.subId === subQuestionId
+          );
+
+          if (subQuestion) {
+            const acceptableAnswers =
+              (subQuestion as any).acceptableAnswers || [];
+            isCorrect = acceptableAnswers.includes(answer);
+            score = isCorrect ? subQuestion.points : 0;
+
+            answerReadable = [["", answer]];
           }
-          break;
-
-        case "true-false-not-given":
-          // Check each statement
-          if (answer && typeof answer === "object") {
-            const totalStatements = question.statements.length;
-            const correctCount = Object.entries(answer).filter(
-              ([key, value]) =>
-                question.statements[Number.parseInt(key)].correctAnswer ===
-                value
-            ).length;
-
-            // Calculate score based on scoring strategy
-            if (scoringStrategy === "partial") {
-              // Partial credit based on number of correct answers
-              score = Math.round(
-                (correctCount / totalStatements) * question.points
-              );
-              isCorrect = correctCount === totalStatements;
-            } else {
-              // All-or-nothing
-              isCorrect = correctCount === totalStatements;
-              score = isCorrect ? question.points : 0;
-            }
-          }
-
-          break;
-
-        case "matching-headings":
-          // Check each heading
-          if (answer && typeof answer === "object") {
-            const totalHeadings = question.headings.length;
-            const correctCount = Object.entries(answer).filter(
-              ([key, value]) =>
-                question.headings[Number.parseInt(key)].correctAnswer === value
-            ).length;
-
-            // Calculate score based on scoring strategy
-            if (scoringStrategy === "partial") {
-              // Partial credit based on number of correct answers
-              score = Math.round(
-                (correctCount / totalHeadings) * question.points
-              );
-              isCorrect = correctCount === totalHeadings;
-            } else {
-              // All-or-nothing
-              isCorrect = correctCount === totalHeadings;
-              score = isCorrect ? question.points : 0;
-            }
-          }
-          break;
-
-        case "short-answer":
-          if (answer && typeof answer === "object") {
-            const totalAnswers = Object.keys(question.questions).length;
-            const correctCount = Object.entries(answer).filter(
-              ([key, value]) =>
-                question.correctAnswers[Number.parseInt(key)] === value
-            ).length;
-
-            // Calculate score based on scoring strategy
-            if (scoringStrategy === "partial") {
-              // Partial credit based on number of correct answers
-              score = Math.round(
-                (correctCount / totalAnswers) * question.points
-              );
-              isCorrect = correctCount === totalAnswers;
-            } else {
-              // All-or-nothing
-              isCorrect = correctCount === totalAnswers;
-              score = isCorrect ? question.points : 0;
-            }
-          }
-
-        case "labeling":
-          // Check each label
-          if (answer && typeof answer === "object") {
-            const totalLabels = question.labels.length;
-            const correctCount = Object.entries(answer).filter(
-              ([key, value]) =>
-                question.labels[Number.parseInt(key)].correctAnswer === value
-            ).length;
-
-            // Calculate score based on scoring strategy
-            if (scoringStrategy === "partial") {
-              // Partial credit based on number of correct answers
-              score = Math.round(
-                (correctCount / totalLabels) * question.points
-              );
-              isCorrect = correctCount === totalLabels;
-            } else {
-              // All-or-nothing
-              isCorrect = correctCount === totalLabels;
-              score = isCorrect ? question.points : 0;
-            }
-          }
-          break;
-
-        case "pick-from-list":
-          // Check each pick
-          if (answer && typeof answer === "object") {
-            const totalPicks = question.picks.length;
-            const correctCount = Object.entries(answer).filter(
-              ([key, value]) =>
-                question.picks[Number.parseInt(key)].correctAnswer === value
-            ).length;
-
-            // Calculate score based on scoring strategy
-            if (scoringStrategy === "partial") {
-              // Partial credit based on number of correct answers
-              score = Math.round((correctCount / totalPicks) * question.points);
-              isCorrect = correctCount === totalPicks;
-            } else {
-              // All-or-nothing
-              isCorrect = correctCount === totalPicks;
-              score = isCorrect ? question.points : 0;
-            }
-          }
-          break;
-
-        case "writing-task1":
-        case "writing-task2":
-          if (
-            typeof answer === "object" &&
-            answer !== null &&
-            "text" in answer
-          ) {
-            const aiScore = answer.score as number | undefined;
-
-            score = aiScore ?? 0;
-
-            console.log("Writing task score:", score);
-
-            isCorrect = true;
-          } else {
-            console.warn(
-              "Invalid answer format received for writing task:",
-              answer
+        } else {
+          const totalQuestions = question.questions?.length || 0;
+          const correctCount = Object.entries(answer).filter(([key, value]) => {
+            const sq = question.subQuestions?.find(
+              (sq: SubQuestionMeta & { acceptableAnswers?: string[] }) =>
+                sq.subId === key &&
+                sq.acceptableAnswers?.includes((value as string).toString())
             );
-            score = 0;
-            feedback = "";
-            isCorrect = false;
-          }
-          break;
+            return !!sq;
+          }).length;
 
-        default:
-          isCorrect = false;
+          question.subQuestions?.forEach(
+            (
+              sq: SubQuestionMeta & { acceptableAnswers?: string[] },
+              index: number
+            ) => {
+              const subAnswer = answer[sq.subId];
+
+              const questionItem = question.questions?.find(
+                (q: { id: string }) => q.id === sq.subId
+              );
+
+              answerReadable.push([
+                questionItem?.text || `${index + 1}`,
+                subAnswer || "",
+              ]);
+            }
+          );
+
+          isCorrect = correctCount === totalQuestions;
+          score = isCorrect ? question.points : 0;
+        }
+        break;
+
+      case "writing-task1":
+      case "writing-task2":
+        if (typeof answer === "object" && answer !== null && "text" in answer) {
+          const aiScore = answer.score as number | undefined;
+
+          score = aiScore ?? 0;
+
+          isCorrect = true;
+        } else {
+          console.warn(
+            "Invalid answer format received for writing task:",
+            answer
+          );
           score = 0;
-      }
+          feedback = "";
+          isCorrect = false;
+        }
+        break;
+
+      default:
+        isCorrect = false;
+        score = 0;
     }
 
     const userAnswer: UserAnswer = {
       questionId,
       answer,
+      answerReadable,
       isCorrect,
       score,
       maxScore,
@@ -395,7 +475,6 @@ export const useTestStore = create<TestState>()((set, get) => ({
       feedback,
     };
 
-    // Create answer object with format { subquestionId: answerId }
     set({
       progress: {
         ...progress,

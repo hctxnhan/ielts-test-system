@@ -34,8 +34,6 @@ export default function WritingTask2QuestionRenderer({
   value,
   onChange,
 }: WritingTask2QuestionProps) {
-  console.log("WritingTask2QuestionRenderer", value);
-
   const [currentEssay, setCurrentEssay] = useState<string | null>(
     value?.text ?? null
   );

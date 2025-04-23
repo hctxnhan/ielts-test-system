@@ -51,9 +51,8 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
     currentSection,
     completeTest,
     resetTest,
+    sectionResults,
   } = useTestStore();
-
-  console.log(progress?.answers);
 
   // Load the test when component mounts
   useEffect(() => {
@@ -215,8 +214,15 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
   }
 
   // If test is completed, show results
-  if (progress?.completed) {
-    return <TestResults />;
+  if (progress?.completed && sectionResults) {
+    return (
+      <TestResults
+        currentTest={updatedTest}
+        sectionResults={sectionResults}
+        progress={progress}
+        onResetTest={resetTest}
+      />
+    );
   }
 
   // Get current section
@@ -339,6 +345,7 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
               />
 
               <NavigationButtons
+                isSubmitting={isSubmitting}
                 currentSectionIndex={progress.currentSectionIndex}
                 totalSections={updatedTest.sections.length}
                 onPreviousSection={handlePreviousSection}

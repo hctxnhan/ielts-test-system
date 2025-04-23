@@ -23,7 +23,7 @@ export default function MultipleChoiceQuestion({
       <RadioGroup
         value={value}
         onValueChange={(value) => {
-          onChange(value);
+          onChange(value, question.id);
         }}
       >
         {question.options.map((option, index) => (

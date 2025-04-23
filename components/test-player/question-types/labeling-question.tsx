@@ -29,14 +29,15 @@ export default function LabelingQuestionRenderer({
   const handleDrop = (optionId: string, subQuestionId: string) => {
     setMatches((prevMatches) => {
       const updatedMatches = { ...prevMatches };
+
       updatedMatches[subQuestionId] = optionId;
 
-      // Find the corresponding subQuestion
-      const subQuestion = question.subQuestions?.find(
-        (sq) => sq.item === question.labels[parseInt(subQuestionId)].id
-      );
+      if (question.scoringStrategy === "partial") {
+        onChange(updatedMatches, subQuestionId);
+      } else {
+        onChange(updatedMatches);
+      }
 
-      onChange(updatedMatches, subQuestion?.subId);
       return updatedMatches;
     });
   };
@@ -64,8 +65,13 @@ export default function LabelingQuestionRenderer({
               (sq) => sq.item === label.id
             );
 
+            if (!subQuestion) {
+              console.error("No subQuestion found for item:", label.id);
+              return null;
+            }
+
             const matchedOption = question.options.find(
-              (opt) => opt.id === matches[labelIndex.toString()]
+              (opt) => opt.id === matches[subQuestion.subId]
             );
 
             return (
@@ -77,13 +83,23 @@ export default function LabelingQuestionRenderer({
                   {label.text}
                 </Label>
                 <DroppableZone
-                  key={labelIndex}
-                  subQuestionId={labelIndex.toString()}
-                  matchedId={matches[labelIndex.toString()]}
+                  key={subQuestion.subId}
+                  subQuestionId={subQuestion.subId}
+                  matchedId={matches[subQuestion.subId]}
                   matchedText={matchedOption?.text}
+                  prefix={
+                    matchedOption
+                      ? String.fromCharCode(
+                          65 +
+                            question.options.findIndex(
+                              (o) => o.id === matchedOption.id
+                            )
+                        ) + "."
+                      : ""
+                  }
                   onDrop={handleDrop}
                   itemType={ITEM_TYPE}
-                  placeholder="Drag option here"
+                  placeholder="Drag an option here"
                 />
               </div>
             );

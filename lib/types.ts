@@ -23,6 +23,9 @@ export interface SubQuestionMeta {
   item?: string;
   correctAnswer?: any;
   points: number;
+  subIndex?: number;
+  questionText?: string; // The actual text of the question (item, statement, etc.)
+  answerText?: string; // The actual text of the answer (option, heading, etc.)
 }
 
 export interface MultipleChoiceOption {
@@ -179,6 +182,7 @@ export interface Test {
 export interface UserAnswer {
   questionId: string;
   answer: any;
+  answerReadable: any;
   isCorrect?: boolean;
   score?: number;
   maxScore?: number;
@@ -240,51 +244,4 @@ export interface WritingTask1Question extends BaseQuestion {
 export interface WritingTask2Question extends BaseQuestion {
   type: "writing-task2";
   // Add specific properties for WritingTask2Question
-}
-
-// Define specific interfaces for each question type extending BaseQuestion
-interface MultipleChoiceQuestionType extends BaseQuestion {
-  type: "multiple-choice";
-  options: string[];
-  correctAnswer: string;
-} // Example specific props
-interface CompletionQuestionType extends BaseQuestion {
-  type: "completion" /* specific props */;
-}
-interface MatchingQuestionType extends BaseQuestion {
-  type: "matching" /* specific props */;
-}
-interface LabelingQuestionType extends BaseQuestion {
-  type: "labeling" /* specific props */;
-}
-interface PickFromListQuestionType extends BaseQuestion {
-  type: "pick-from-list" /* specific props */;
-}
-interface TrueFalseNotGivenQuestionType extends BaseQuestion {
-  type: "true-false-not-given" /* specific props */;
-}
-interface MatchingHeadingsQuestionType extends BaseQuestion {
-  type: "matching-headings" /* specific props */;
-}
-interface ShortAnswerQuestionType extends BaseQuestion {
-  type: "short-answer" /* specific props */;
-}
-
-// Keep WritingTask interfaces as previously defined
-export interface WritingTask1Question extends BaseQuestion {
-  type: "writing-task1";
-  // Add specific properties for WritingTask1Question
-}
-
-export interface WritingTask2Question extends BaseQuestion {
-  type: "writing-task2";
-  // Add specific properties for WritingTask2Question
-}
-
-// Example placeholder for UserAnswer type
-export interface UserAnswer {
-  questionId: string;
-  parentQuestionId?: string; // For sub-questions linked to a parent
-  subQuestionId?: string;
-  answer: any; // Can be string, number, Record<string, string>, WritingTaskAnswer, etc.
 }
