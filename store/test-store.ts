@@ -1,4 +1,4 @@
-import { getTestStats } from "@testComponents/lib/test-utils";
+import { getSectionStats, getTestStats } from "@testComponents/lib/test-utils";
 import { getQuestionText } from "@testComponents/lib/test";
 import type {
   MultipleChoiceOption,
@@ -10,13 +10,9 @@ import type {
 import { create } from "zustand";
 
 // Type for the submission function
-type SubmitResultFn = (
+export type SubmitResultFn = (
   testId: number,
-  results: {
-    totalScore: number;
-    maxPossibleScore: number;
-    sectionResults: SectionResult[];
-  }
+  results: TestResult
 ) => Promise<any>;
 
 type ScoreEssayFn = (param: {
@@ -40,16 +36,36 @@ interface QuestionResult {
   isAnswered: boolean;
 }
 
-interface SectionResult {
+export interface SectionResult {
   title: string;
+  id: string;
+  correctCount: number;
+  incorrectCount: number;
+  unansweredCount: number;
+  totalCount: number;
+  totalScore: number;
+  maxScore: number;
+  percentageScore: number;
   questions: QuestionResult[];
+}
+
+export interface TestResult {
+  totalScore: number;
+  maxPossibleScore: number;
+  sectionResults: SectionResult[];
+  totalQuestions: number;
+  answeredQuestions: number;
+  correctAnswers: number;
+  percentageScore: number;
+  startedAt: string;
+  completedAt: string;
 }
 
 interface TestState {
   currentTest: Test | null;
   progress: TestProgress | null;
   submitResultFn: SubmitResultFn | null;
-  sectionResults: SectionResult[] | null;
+  sectionResults: TestResult | null;
   loadTest: (test: Test) => void;
   startTest: () => void;
   submitAnswer: (
@@ -126,6 +142,8 @@ export const useTestStore = create<TestState>()((set, get) => ({
         (section) => {
           const sectionQuestions: QuestionResult[] = [];
 
+          const sectionStats = getSectionStats(section, progress.answers);
+
           // Process each question in the section
           section.questions.forEach((question, qIndex) => {
             // Handle questions with subquestions
@@ -178,20 +196,39 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
           return {
             title: section.title,
+            id: section.id,
+            correctCount: sectionStats.sectionCorrectAnswers,
+            incorrectCount: sectionStats.sectionIncorrectAnswers,
+            unansweredCount: sectionStats.sectionUnansweredQuestions,
+            totalCount: sectionStats.sectionTotalQuestions,
+            totalScore: sectionStats.sectionTotalScore,
+            maxScore: sectionStats.sectionTotalScore,
             questions: sectionQuestions,
+            percentageScore: sectionStats.sectionPercentage,
           };
         }
       );
 
-      set({ sectionResults });
-
-      // Call the submission function
-      await submitResultFn(testId, {
+      const testResults = {
         totalScore,
         maxPossibleScore,
-        // only include questions that were answered
+        totalQuestions: testStats.totalQuestions,
+        answeredQuestions: testStats.answeredQuestions,
+        correctAnswers: testStats.correctAnswers,
+        percentageScore: testStats.percentageScore,
+        sectionResults,
+        startedAt: progress.startedAt,
+        completedAt: new Date().toISOString(),
+      };
+
+      set({
+        sectionResults: testResults,
+      });
+
+      await submitResultFn(testId, {
+        ...testResults,
         sectionResults: sectionResults.map((section) => ({
-          title: section.title,
+          ...section,
           questions: section.questions.filter((q) => q.isAnswered),
         })),
       });

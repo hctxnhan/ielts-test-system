@@ -216,12 +216,9 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
   // If test is completed, show results
   if (progress?.completed && sectionResults) {
     return (
-      <TestResults
-        currentTest={updatedTest}
-        sectionResults={sectionResults}
-        progress={progress}
-        onResetTest={resetTest}
-      />
+      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4 max-w-4xl">
+        <TestResults currentTest={updatedTest} testResults={sectionResults} />
+      </div>
     );
   }
 

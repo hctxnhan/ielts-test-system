@@ -15,11 +15,13 @@ import {
 import { Progress } from "@testComponents/components/ui/progress";
 import { getSectionStats, getTestStats } from "@testComponents/lib/test-utils";
 import { Section, UserAnswer } from "@testComponents/lib/types";
+import { SectionResult, TestResult } from "@testComponents/store/test-store";
 import { BarChart3, CheckCircle2, Clock } from "lucide-react";
 import { useMemo } from "react";
 
 // Helper function to determine color based on percentage score
 const getScoreColorClass = (percentage: number) => {
+  if (percentage == 0) return "bg-neutral-200";
   if (percentage >= 70) return "text-green-500";
   if (percentage >= 50) return "text-amber-500";
   return "text-rose-500";
@@ -27,6 +29,7 @@ const getScoreColorClass = (percentage: number) => {
 
 // Helper function to determine background color based on percentage score
 const getScoreBgClass = (percentage: number) => {
+  if (percentage == 0) return "bg-neutral-200";
   if (percentage >= 70) return "bg-green-500";
   if (percentage >= 50) return "bg-amber-500";
   return "bg-rose-500";
@@ -150,13 +153,23 @@ const AnswerComparisonItem = ({
   const formatAnswer = (answer: any) => {
     if (!answer) return "-";
 
-    return (
-      <div className="flex flex-col gap-1">
-        {answer.split("\n").map((line: string, lineIdx: number) => (
-          <span key={lineIdx}>{line}</span>
-        ))}
-      </div>
-    );
+    if (typeof answer === "string") {
+      return (
+        <div className="flex flex-col gap-1">
+          {answer.split("\n").map((line: string, lineIdx: number) => (
+            <span key={lineIdx}>{line}</span>
+          ))}
+        </div>
+      );
+    } else if (Array.isArray(answer)) {
+      return (
+        <div className="flex flex-col gap-1">
+          {answer.map((line, lineIdx: number) => (
+            <span key={lineIdx}>{line[1]}</span>
+          ))}
+        </div>
+      );
+    }
   };
 
   return (
@@ -178,14 +191,14 @@ const AnswerComparisonItem = ({
             <div
               className={`text-xs ml-[50px] ${
                 isCorrect
-                  ? "text-green-600 dark:text-green-600"
-                  : "text-red-600"
+                  ? "text-green-600 dark:text-green-600 font-bold"
+                  : "text-red-600 line-through"
               }`}
             >
               {formatAnswer(userAnswer)}
             </div>
             {!isCorrect && (
-              <div className="text-xs flex-1 text-green-600 dark:text-green-600">
+              <div className="text-xs flex-1 text-green-600 dark:text-green-600 font-bold">
                 {formatAnswer(correctAnswer)}
               </div>
             )}
@@ -193,7 +206,7 @@ const AnswerComparisonItem = ({
         ) : (
           <>
             <div className="text-xs text-gray-500 ml-[50px]">Not answered</div>
-            <div className="text-xs flex-1 text-green-600 dark:text-green-600">
+            <div className="text-xs flex-1 text-green-600 dark:text-green-600 font-bold">
               {formatAnswer(correctAnswer)}
             </div>
           </>
@@ -204,21 +217,8 @@ const AnswerComparisonItem = ({
 };
 
 // SectionPerformance component for section score visualization
-const SectionPerformance = ({
-  section,
-  answers,
-}: {
-  section: any;
-  answers: Record<string, UserAnswer>;
-}) => {
-  const {
-    sectionAnswers,
-    sectionScore,
-    sectionTotalScore,
-    sectionPercentage,
-    sectionTotalQuestions,
-  } = getSectionStats(section, answers);
-
+const SectionPerformance = ({ section }: { section: SectionResult }) => {
+  if (!section) return null;
   return (
     <div
       key={section.id}
@@ -231,24 +231,25 @@ const SectionPerformance = ({
       </div>
 
       <div className="flex-1">
-        <div className="flex items-center gap-1 mb-1">
+        <div className="flex items-center gap-1 mb-1 ">
           <Progress
-            value={sectionPercentage}
+            value={section?.percentageScore}
             className={`h-2 flex-1 bg-muted ${getScoreColorClass(
-              sectionPercentage
+              section.percentageScore
             )}`}
           />
           <span className="text-xs font-medium w-8 text-right">
-            {sectionPercentage}%
+            {section.percentageScore}%
           </span>
         </div>
 
         <div className="flex justify-between items-center text-xs text-muted-foreground">
           <div>
-            {sectionScore}/{sectionTotalScore} points
+            {section.totalScore}/{section.maxScore} points
           </div>
           <div>
-            {sectionAnswers.length}/{sectionTotalQuestions} answered
+            {section.totalCount - section.unansweredCount}/{section.totalCount}{" "}
+            answered
           </div>
         </div>
       </div>
@@ -257,27 +258,8 @@ const SectionPerformance = ({
 };
 
 // SectionAccordionItem component for the question review accordion
-const SectionAccordionItem = ({
-  section,
-  answers,
-  getAnswerStatus,
-  sectionResult,
-}: {
-  section: Section;
-  answers: Record<string, UserAnswer>;
-  getAnswerStatus: (
-    questionId: string
-  ) => "correct" | "partial" | "incorrect" | "untouched";
-  sectionResult?: { title: string; questions: any[] };
-}) => {
-  const {
-    sectionCorrectAnswers: correctCount,
-    sectionIncorrectAnswers: incorrectCount,
-    sectionUnansweredQuestions: unansweredCount,
-  } = getSectionStats(section, answers);
-
-  console.log(sectionResult);
-
+const SectionAccordionItem = ({ section }: { section: SectionResult }) => {
+  if (!section) return null;
   return (
     <AccordionItem
       key={section.id}
@@ -288,16 +270,16 @@ const SectionAccordionItem = ({
         <div className="flex justify-between items-center w-full">
           <span>{section.title}</span>
           <div className="flex gap-1 mr-4 sm:mr-8">
-            <StatusBadge count={correctCount} type="correct" />
-            <StatusBadge count={incorrectCount} type="incorrect" />
-            <StatusBadge count={unansweredCount} type="unanswered" />
+            <StatusBadge count={section.correctCount} type="correct" />
+            <StatusBadge count={section.incorrectCount} type="incorrect" />
+            <StatusBadge count={section.unansweredCount} type="unanswered" />
           </div>
         </div>
       </AccordionTrigger>
       <AccordionContent className="pt-1 pb-1.5 sm:pb-2">
         <div className="flex flex-col gap-4 sm:gap-4 p-2 sm:p-4">
           {/* Use pre-calculated question data */}
-          {sectionResult?.questions.map((question, index) => (
+          {section?.questions.map((question, index) => (
             <AnswerComparisonItem
               key={index}
               questionNumber={question.questionNumber}
@@ -315,19 +297,15 @@ const SectionAccordionItem = ({
 };
 
 export interface TestResultsProps {
-  currentTest: any; // Should be typed as Test
-  progress: any; // Should be typed as TestProgress
-  sectionResults: any[];
-  onResetTest?: () => void;
+  currentTest: any;
+  testResults: TestResult;
 }
 
 export default function TestResults({
   currentTest,
-  progress,
-  sectionResults,
-  onResetTest,
+  testResults,
 }: TestResultsProps) {
-  if (!currentTest || !progress) {
+  if (!currentTest) {
     return (
       <div className="flex justify-center items-center h-96">
         <p>No test results available.</p>
@@ -335,20 +313,14 @@ export default function TestResults({
     );
   }
 
-  // Calculate time taken
-  const startTime = new Date(progress.startedAt).getTime();
-  const endTime = progress.completedAt
-    ? new Date(progress.completedAt).getTime()
+  const startTime = new Date(testResults.startedAt).getTime();
+  const endTime = testResults.completedAt
+    ? new Date(testResults.completedAt).getTime()
     : new Date().getTime();
 
   const timeTakenSeconds = Math.floor((endTime - startTime) / 1000);
   const timeTakenMinutes = Math.floor(timeTakenSeconds / 60);
   const remainingSeconds = timeTakenSeconds % 60;
-
-  // Calculate test statistics using our utility function
-  const testStats = useMemo(() => {
-    return getTestStats(currentTest, progress.answers);
-  }, [currentTest, progress.answers]);
 
   const {
     totalQuestions,
@@ -357,138 +329,112 @@ export default function TestResults({
     totalScore,
     maxPossibleScore,
     percentageScore: scorePercentage,
-  } = testStats;
+  } = testResults;
 
   // Estimate band score
   const estimatedBandScore = useMemo(() => {
     return Math.min(9, Math.max(1, Math.round(scorePercentage / 11.1)));
   }, [scorePercentage]);
 
-  // Get answer status for a question or sub-question using our utility functions
-  const getAnswerStatus = (questionId: string) => {
-    if (!progress.answers[questionId]) return "untouched";
-    if (progress.answers[questionId].isCorrect) return "correct";
-    return "incorrect";
-  };
-
   return (
-    <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4 max-w-4xl">
-      <Card className="overflow-hidden border-2 shadow-md">
-        <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 pb-2 px-3 sm:px-6 py-3 sm:py-4">
-          <CardTitle className="text-base sm:text-xl flex items-center justify-center">
-            <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center mr-2">
-              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
-            </span>
-            {currentTest.title} - {currentTest.type.toUpperCase()}
-          </CardTitle>
-        </CardHeader>
+    <Card className="overflow-hidden border-2 shadow-md">
+      <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 pb-2 px-3 sm:px-6 py-3 sm:py-4">
+        <CardTitle className="text-base sm:text-xl flex items-center justify-center">
+          <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center mr-2">
+            <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
+          </span>
+          {currentTest.title} - {currentTest.type.toUpperCase()}
+        </CardTitle>
+      </CardHeader>
 
-        <CardContent className="space-y-4 sm:space-y-5 pt-4 sm:pt-5 px-3 sm:px-6">
-          {/* Stats Summary */}
+      <CardContent className="space-y-4 sm:space-y-5 pt-4 sm:pt-5 px-3 sm:px-6">
+        {/* Stats Summary */}
 
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-6">
-            <ScoreCircle percentage={scorePercentage} />
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-6">
+          <ScoreCircle percentage={scorePercentage} />
 
-            <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
-              <MetricCard
-                icon={Clock}
-                title="Time"
-                value={`${timeTakenMinutes}m ${remainingSeconds}s`}
-              />
-              <MetricCard
-                icon={CheckCircle2}
-                title="Accuracy"
-                value={`${correctAnswers}/${answeredQuestions}`}
-                iconColor="text-green-500"
-              />
-              <MetricCard
-                icon={BarChart3}
-                title="Completion"
-                value={`${answeredQuestions}/${totalQuestions}`}
-              />
-            </div>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
+            <MetricCard
+              icon={Clock}
+              title="Time"
+              value={`${timeTakenMinutes}m ${remainingSeconds}s`}
+            />
+            <MetricCard
+              icon={CheckCircle2}
+              title="Accuracy"
+              value={`${correctAnswers}/${answeredQuestions}`}
+              iconColor="text-green-500"
+            />
+            <MetricCard
+              icon={BarChart3}
+              title="Completion"
+              value={`${answeredQuestions}/${totalQuestions}`}
+            />
           </div>
+        </div>
 
-          {/* Score Summary */}
-          <div className="bg-muted/40 rounded-lg p-2 sm:p-3 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
-            <div className="text-sm w-full sm:w-auto">
-              <h3 className="font-medium text-center sm:text-left">
-                Final Score
-              </h3>
-              <div className="text-lg font-semibold mt-1 text-center sm:text-left">
-                {totalScore} / {maxPossibleScore}
-                <span className="text-xs text-muted-foreground ml-2">
-                  points
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-1 flex-1 w-full sm:max-w-xs sm:mx-auto px-2">
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Band Score Estimate</span>
-                <span>{estimatedBandScore}/9</span>
-              </div>
-              <div className="bg-muted h-1.5 sm:h-2 rounded-full overflow-hidden">
-                <div
-                  className={`h-full transition-all duration-1000 ease-out ${getScoreBgClass(
-                    scorePercentage
-                  )}`}
-                  style={{ width: `${scorePercentage}%` }}
-                ></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Section Breakdown */}
-          <div>
-            <h3 className="text-xs sm:text-sm font-medium mb-2 flex items-center">
-              <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-primary" />
-              Section Performance
+        {/* Score Summary */}
+        <div className="bg-muted/40 rounded-lg p-2 sm:p-3 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
+          <div className="text-sm w-full sm:w-auto">
+            <h3 className="font-medium text-center sm:text-left">
+              Final Score
             </h3>
-            <div className="space-y-2 text-xs sm:text-sm">
-              {currentTest.sections.map((section: any) => (
-                <SectionPerformance
-                  key={section.id}
-                  section={section}
-                  answers={progress.answers}
-                />
-              ))}
+            <div className="text-lg font-semibold mt-1 text-center sm:text-left">
+              {totalScore} / {maxPossibleScore}
+              <span className="text-xs text-muted-foreground ml-2">points</span>
             </div>
           </div>
 
-          {/* Question Review */}
-          <div>
-            <h3 className="text-xs sm:text-sm font-medium mb-2 sm:mb-3 flex items-center">
-              <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-primary" />
-              Question Review
-            </h3>
-            <Accordion
-              type="multiple"
-              defaultValue={currentTest.sections.map(
-                (section: any) => section.id
-              )}
-              className="w-full space-y-1.5 sm:space-y-2"
-            >
-              {currentTest.sections.map((section: any, index: number) => {
-                // Find the matching section result from pre-calculated data
-                const sectionResult = sectionResults?.find(
-                  (result) => result.title === section.title
-                );
-
-                return (
-                  <SectionAccordionItem
-                    key={section.id}
-                    section={section}
-                    answers={progress.answers}
-                    getAnswerStatus={getAnswerStatus}
-                    sectionResult={sectionResult}
-                  />
-                );
-              })}
-            </Accordion>
+          <div className="space-y-1 flex-1 w-full sm:max-w-xs sm:mx-auto px-2">
+            <div className="flex text-sm text-muted-foreground gap-4">
+              <span>Band Score Estimate</span>
+              <span className="font-bold">{estimatedBandScore}/9</span>
+            </div>
+            <div className="bg-muted h-1.5 sm:h-2 rounded-full overflow-hidden bg-neutral-100">
+              <div
+                className={`h-full transition-all duration-1000 ease-out ${getScoreBgClass(
+                  scorePercentage
+                )}`}
+                style={{ width: `${scorePercentage}%` }}
+              ></div>
+            </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+
+        {/* Section Breakdown */}
+        <div>
+          <h3 className="text-xs sm:text-sm font-medium mb-2 flex items-center">
+            <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-primary" />
+            Section Performance
+          </h3>
+          <div className="space-y-2 text-xs sm:text-sm">
+            {testResults.sectionResults.map((section: any) => (
+              <SectionPerformance key={section.id} section={section} />
+            ))}
+          </div>
+        </div>
+
+        {/* Question Review */}
+        <div>
+          <h3 className="text-xs sm:text-sm font-medium mb-2 sm:mb-3 flex items-center">
+            <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-primary" />
+            Question Review
+          </h3>
+          <Accordion
+            type="multiple"
+            defaultValue={testResults.sectionResults.map(
+              (section: any) => section.id
+            )}
+            className="w-full space-y-1.5 sm:space-y-2"
+          >
+            {testResults.sectionResults.map((section: any, index: number) => {
+              return (
+                <SectionAccordionItem key={section.id} section={section} />
+              );
+            })}
+          </Accordion>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

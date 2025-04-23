@@ -63,7 +63,6 @@ export default function TestSidebar({
                 answers={progress.answers}
                 isCurrentSection={isCurrentSection}
                 onJumpToSection={onJumpToSection}
-                onJumpToQuestion={onJumpToQuestion}
               />
             </div>
           );
