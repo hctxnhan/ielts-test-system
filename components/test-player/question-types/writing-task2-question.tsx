@@ -95,9 +95,9 @@ export default function WritingTask2QuestionRenderer({
 
     try {
       const response = await getEssayScore({
-        prompt: question.prompt,
+        prompt: question.text,
         essay: currentEssay || "",
-        scoringPrompt: question?.scoringPrompt || "",
+        scoringPrompt: question?.prompt || "",
       });
 
       if (!response.ok) {
@@ -141,7 +141,7 @@ export default function WritingTask2QuestionRenderer({
       </div>
 
       <Card className="p-4">
-        <p className="font-medium mb-4">{question.prompt}</p>
+        <p className="font-medium mb-4">{question.text}</p>
 
         {question.imageUrl && (
           <div className="my-4 flex justify-center">
