@@ -380,7 +380,7 @@ export default function TestResults({
               Final Score
             </h3>
             <div className="text-lg font-semibold mt-1 text-center sm:text-left">
-              {totalScore} / {maxPossibleScore}
+              {totalScore.toFixed(1)} / {maxPossibleScore}
               <span className="text-xs text-muted-foreground ml-2">points</span>
             </div>
           </div>

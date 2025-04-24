@@ -74,7 +74,7 @@ export function getQuestionText(
         if (standardized.type.startsWith("writing-task")) {
           defaultReturn = {
             questionText: standardized.text,
-            answerText: standardized.sampleAnswer,
+            answerText: standardized.answer.text,
           };
         }
         // For questions without subquestion ID, return main question text
@@ -90,11 +90,6 @@ export function getQuestionText(
             "\n" +
             standardized.subQuestions.map((sub) => sub.answerText).join("\n");
         }
-
-        // if ("items" in standardized && standardized.items) {
-        //   defaultReturn.questionText +=
-        //     "\n" + standardized.items.map((item) => item.text).join("\n");
-        // }
 
         if (standardized.type === "completion") {
           defaultReturn.answerText = standardized.subQuestions

@@ -477,10 +477,9 @@ export const useTestStore = create<TestState>()((set, get) => ({
       case "writing-task2":
         if (typeof answer === "object" && answer !== null && "text" in answer) {
           const aiScore = answer.score as number | undefined;
-
           score = aiScore ?? 0;
-
           isCorrect = true;
+          answerReadable = [["", answer.text]];
         } else {
           console.warn(
             "Invalid answer format received for writing task:",

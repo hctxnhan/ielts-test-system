@@ -338,13 +338,14 @@ function transformWritingTask(
     {
       subId: question.id,
       points: question.points,
-      questionText: question.prompt,
+      questionText: question.text,
       answerText: question.sampleAnswer,
     },
   ];
 
   return {
     ...question,
+    scoringStrategy: "partial",
     subQuestions: standardSubQuestions,
   } as StandardWritingTask1Question | StandardWritingTask2Question;
 }

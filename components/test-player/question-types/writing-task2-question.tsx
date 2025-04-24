@@ -19,7 +19,7 @@ import remarkGfm from "remark-gfm";
 interface WritingTask2QuestionProps {
   question: WritingTask2Question;
   value: WritingTaskAnswer | null;
-  onChange: (value: WritingTaskAnswer) => void;
+  onChange: (value: WritingTaskAnswer, subId: string) => void;
 }
 
 interface ScoringResult {
@@ -66,15 +66,6 @@ export default function WritingTask2QuestionRenderer({
     ? (currentEssay.match(/\b\w+\b/g) || []).length
     : 0;
 
-  // Format time as MM:SS
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
-      .toString()
-      .padStart(2, "0")}`;
-  };
-
   // Function to score the essay using OpenRouter and save the essay content
   const scoreEssay = async () => {
     if (isScoring) {
@@ -109,14 +100,24 @@ export default function WritingTask2QuestionRenderer({
         feedback: response.feedback,
       };
 
-      setAiScore(result);
+      setAiScore(
+        result?.score !== undefined && result?.feedback !== undefined
+          ? {
+              score: (result?.score * question.points) / 9, // Convert from 1-9 scale to question.points scale
+              feedback: result?.feedback,
+            }
+          : null
+      );
 
       // Call onChange with the full WritingTaskAnswer object including the score and feedback
-      onChange({
-        text: currentEssay,
-        score: result.score,
-        feedback: result.feedback,
-      });
+      onChange(
+        {
+          text: currentEssay,
+          score: (result.score * question.points) / 9, // Convert from 1-9 scale to question.points scale
+          feedback: result.feedback,
+        },
+        question.id
+      );
 
       setIsScoring(false);
       setShowFeedback(true); // Automatically show feedback after scoring
@@ -221,7 +222,7 @@ export default function WritingTask2QuestionRenderer({
         <Card className="p-4 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
           <h4 className="font-medium mb-2 flex items-center">
             <Award className="mr-2 h-5 w-5 text-green-600 dark:text-green-400" />
-            AI Score: {aiScore.score.toFixed(1)} / 9.0
+            AI Score: {aiScore.score.toFixed(1)} / {question.points}
           </h4>
 
           <div className="mt-2">

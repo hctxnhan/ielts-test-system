@@ -1,20 +1,20 @@
 "use client";
 
-import type React from "react";
-import ReactMarkdown from "react-markdown";
-import rehypeHighlight from "rehype-highlight";
-import rehypeRaw from "rehype-raw";
-import remarkGfm from "remark-gfm";
-import { useState, useEffect } from "react";
-import { Textarea } from "@testComponents/components/ui/textarea";
 import { Button } from "@testComponents/components/ui/button";
 import { Card } from "@testComponents/components/ui/card";
-import { Clock, Eye, EyeOff, Award } from "lucide-react";
+import { Textarea } from "@testComponents/components/ui/textarea";
 import type {
   WritingTask1Question,
   WritingTaskAnswer,
 } from "@testComponents/lib/types";
 import { useTestStore } from "@testComponents/store/test-store";
+import { Award, Eye, EyeOff } from "lucide-react";
+import type React from "react";
+import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import rehypeHighlight from "rehype-highlight";
+import rehypeRaw from "rehype-raw";
+import remarkGfm from "remark-gfm";
 
 interface WritingTask1QuestionProps {
   question: WritingTask1Question;
@@ -66,15 +66,6 @@ export default function WritingTask1QuestionRenderer({
     ? (currentEssay.match(/\b\w+\b/g) || []).length
     : 0;
 
-  // Format time as MM:SS
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
-      .toString()
-      .padStart(2, "0")}`;
-  };
-
   // Function to score the essay using OpenRouter and save the essay content
   const scoreEssay = async () => {
     if (isScoring) {
@@ -109,12 +100,19 @@ export default function WritingTask1QuestionRenderer({
         feedback: response.feedback,
       };
 
-      setAiScore(result);
+      setAiScore(
+        result?.score !== undefined && result?.feedback !== undefined
+          ? {
+              score: (result?.score * question.points) / 9, // Convert from 1-9 scale to question.points scale
+              feedback: result?.feedback,
+            }
+          : null
+      );
 
       // Call onChange with the full WritingTaskAnswer object including the score and feedback
       onChange({
         text: currentEssay,
-        score: result.score,
+        score: (result.score * question.points) / 9, // Convert from 1-9 scale to question.points scale
         feedback: result.feedback,
       });
 
@@ -221,7 +219,7 @@ export default function WritingTask1QuestionRenderer({
         <Card className="p-4 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
           <h4 className="font-medium mb-2 flex items-center">
             <Award className="mr-2 h-5 w-5 text-green-600 dark:text-green-400" />
-            AI Score: {aiScore.score.toFixed(1)} / 9.0
+            AI Score: {aiScore.score.toFixed(1)} / {question.points}
           </h4>
 
           <div className="mt-2">

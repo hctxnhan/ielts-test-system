@@ -9,7 +9,7 @@ import type { MultipleChoiceQuestion } from "@testComponents/lib/types";
 interface MultipleChoiceQuestionProps {
   question: MultipleChoiceQuestion;
   value?: string;
-  onChange: (value: string) => void;
+  onChange: (value: string, subId: string) => void;
 }
 
 export default function MultipleChoiceQuestion({
