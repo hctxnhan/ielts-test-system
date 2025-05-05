@@ -1,5 +1,5 @@
 "use client";
-
+import React from "react";
 import { Button } from "@testComponents/components/ui/button";
 import { Input } from "@testComponents/components/ui/input";
 import { Label } from "@testComponents/components/ui/label";
@@ -26,7 +26,7 @@ interface PickFromListEditorProps {
   onUpdateQuestion: (
     sectionId: string,
     questionId: string,
-    updates: any
+    updates: any,
   ) => void;
 }
 
@@ -66,7 +66,7 @@ export default function PickFromListEditor({
                   size="icon"
                   onClick={() => {
                     const newOptions = (question.options || []).filter(
-                      (_, i) => i !== optIndex
+                      (_, i) => i !== optIndex,
                     );
 
                     onUpdateQuestion(sectionId, question.id, {
@@ -126,7 +126,7 @@ export default function PickFromListEditor({
                   size="icon"
                   onClick={() => {
                     const newItems = (question.items || []).filter(
-                      (_, i) => i !== itemIndex
+                      (_, i) => i !== itemIndex,
                     );
                     onUpdateQuestion(sectionId, question.id, {
                       items: newItems,
@@ -181,7 +181,7 @@ export default function PickFromListEditor({
                 onValueChange={(value) => {
                   const newSubQuestions = [...(question.subQuestions || [])];
                   const existingIndex = newSubQuestions.findIndex(
-                    (sq) => sq.item === item.id
+                    (sq) => sq.item === item.id,
                   );
 
                   if (existingIndex === -1) {
@@ -219,15 +219,15 @@ export default function PickFromListEditor({
                           {String.fromCharCode(
                             65 +
                               question.options.findIndex(
-                                (o) => o.id === option.id
-                              )
+                                (o) => o.id === option.id,
+                              ),
                           )}
                         </div>
                         <span>
                           {option.text ||
                             `Option ${
                               question.options.findIndex(
-                                (o) => o.id === option.id
+                                (o) => o.id === option.id,
                               ) + 1
                             }`}
                         </span>

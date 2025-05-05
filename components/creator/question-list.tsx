@@ -1,11 +1,10 @@
 "use client";
-
+import React, { useState } from "react";
 import { Button } from "@testComponents/components/ui/button";
-import { Dialog, DialogTrigger } from "@testComponents/components/ui/dialog";
 import { Badge } from "@testComponents/components/ui/badge";
 import type { Question } from "@testComponents/lib/types";
-import QuestionEditor from "./question-editor";
-import { X, Edit } from "lucide-react";
+import QuestionEditorInline from "./question-editor-inline";
+import { X, ChevronDown, ChevronUp } from "lucide-react";
 
 interface QuestionListProps {
   questions: Question[];
@@ -13,7 +12,7 @@ interface QuestionListProps {
   onUpdateQuestion: (
     sectionId: string,
     questionId: string,
-    updates: any
+    updates: Record<string, unknown>,
   ) => void;
   onRemoveQuestion: (sectionId: string, questionId: string) => void;
 }
@@ -24,6 +23,16 @@ export default function QuestionList({
   onUpdateQuestion,
   onRemoveQuestion,
 }: QuestionListProps) {
+  const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(
+    null,
+  );
+
+  const toggleQuestionExpand = (questionId: string) => {
+    setExpandedQuestionId(
+      expandedQuestionId === questionId ? null : questionId,
+    );
+  };
+
   if (questions.length === 0) {
     return (
       <div className="text-center py-3 px-2 border border-dashed rounded bg-muted/20">
@@ -33,13 +42,16 @@ export default function QuestionList({
   }
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-3">
       {questions.map((question, qIndex) => (
         <div
           key={question.id}
-          className="border-l-2 border-l-primary/70 border-t border-r border-b pl-2 pr-1 py-1.5 rounded hover:bg-muted/30 transition-colors"
+          className="border-l-2 border-l-primary/70 border-t border-r border-b rounded hover:bg-muted/30 transition-colors"
         >
-          <div className="flex justify-between items-center gap-2">
+          <div
+            className="flex justify-between items-center gap-2 pl-2 pr-1 py-1.5 cursor-pointer"
+            onClick={() => toggleQuestionExpand(question.id)}
+          >
             <div className="flex items-center gap-1.5 flex-1 min-w-0">
               <Badge
                 variant="outline"
@@ -58,23 +70,29 @@ export default function QuestionList({
               </span>
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6">
-                    <Edit size={14} className="text-muted-foreground" />
-                  </Button>
-                </DialogTrigger>
-                <QuestionEditor
-                  question={question}
-                  sectionId={sectionId}
-                  onUpdateQuestion={onUpdateQuestion}
-                />
-              </Dialog>
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6"
-                onClick={() => onRemoveQuestion(sectionId, question.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleQuestionExpand(question.id);
+                }}
+              >
+                {expandedQuestionId === question.id ? (
+                  <ChevronUp size={14} className="text-muted-foreground" />
+                ) : (
+                  <ChevronDown size={14} className="text-muted-foreground" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemoveQuestion(sectionId, question.id);
+                }}
               >
                 <X
                   size={14}
@@ -83,6 +101,16 @@ export default function QuestionList({
               </Button>
             </div>
           </div>
+
+          {expandedQuestionId === question.id && (
+            <div className="px-3 pb-3">
+              <QuestionEditorInline
+                question={question}
+                sectionId={sectionId}
+                onUpdateQuestion={onUpdateQuestion}
+              />
+            </div>
+          )}
         </div>
       ))}
     </div>

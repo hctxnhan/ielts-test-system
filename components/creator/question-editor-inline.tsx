@@ -1,18 +1,18 @@
 "use client";
-
+import React from "react";
 import { Label } from "@testComponents/components/ui/label";
-import { Input } from "@testComponents/components/ui/input";
-import { Textarea } from "@testComponents/components/ui/textarea";
-import {
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@testComponents/components/ui/dialog";
+import { AutoResizeTextarea } from "@testComponents/components/ui/auto-resize-textarea";
 import {
   RadioGroup,
   RadioGroupItem,
 } from "@testComponents/components/ui/radio-group";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@testComponents/components/ui/card";
 import type { Question, ScoringStrategy } from "@testComponents/lib/types";
 import { BarChart2, MessageSquare } from "lucide-react";
 import MultipleChoiceEditor from "./question-editors/multiple-choice-editor";
@@ -23,12 +23,10 @@ import TrueFalseNotGivenEditor from "./question-editors/true-false-not-given-edi
 import MatchingHeadingsEditor from "./question-editors/matching-headings-editor";
 import ShortAnswerEditor from "./question-editors/short-answer-editor";
 import LabelingEditor from "./question-editors/labeling-editor";
-
-// Add imports for writing task editors
 import WritingTask1Editor from "./question-editors/writing-task1-editor";
 import WritingTask2Editor from "./question-editors/writing-task2-editor";
 
-interface QuestionEditorProps {
+interface QuestionEditorInlineProps {
   question: Question;
   sectionId: string;
   onUpdateQuestion: (
@@ -38,11 +36,11 @@ interface QuestionEditorProps {
   ) => void;
 }
 
-export default function QuestionEditor({
+export default function QuestionEditorInline({
   question,
   sectionId,
   onUpdateQuestion,
-}: QuestionEditorProps) {
+}: QuestionEditorInlineProps) {
   const supportsPartialScoring = [
     "completion",
     "matching",
@@ -54,14 +52,14 @@ export default function QuestionEditor({
   ].includes(question.type);
 
   return (
-    <DialogContent className="max-w-3xl">
-      <DialogHeader className="">
-        <DialogTitle className="text-base">Edit Question</DialogTitle>
-        <DialogDescription className="text-xs mt-1">
-          Configure the question details.
-        </DialogDescription>
-      </DialogHeader>
-      <div className="space-y-3 py-3 max-h-[70vh] overflow-y-auto pr-1">
+    <Card className="mt-2">
+      <CardHeader className="py-3">
+        <CardTitle className="text-base">Question Details</CardTitle>
+        <CardDescription className="text-xs">
+          Configure the question settings.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3 py-3">
         <div className="space-y-1.5">
           <Label
             htmlFor={`question-text-${question.id}`}
@@ -70,18 +68,17 @@ export default function QuestionEditor({
             <MessageSquare className="h-3 w-3" />
             Question Text
           </Label>
-          <Textarea
+          <AutoResizeTextarea
             id={`question-text-${question.id}`}
             value={question.text}
             onChange={(e) =>
               onUpdateQuestion(sectionId, question.id, { text: e.target.value })
             }
-            rows={2}
-            className="text-sm resize-none"
+            minRows={4}
+            maxRows={20}
+            className="text-sm"
           />
         </div>
-
-        {/* Points field removed as it's always 1 */}
 
         {/* Scoring Strategy Selection - only show for question types that support partial scoring */}
         {supportsPartialScoring && (
@@ -195,7 +192,7 @@ export default function QuestionEditor({
             />
           )}
 
-          {/* Add writing task editors to the component */}
+          {/* Writing task editors */}
           {question.type === "writing-task1" && (
             <WritingTask1Editor
               question={question}
@@ -212,7 +209,7 @@ export default function QuestionEditor({
             />
           )}
         </div>
-      </div>
-    </DialogContent>
+      </CardContent>
+    </Card>
   );
 }

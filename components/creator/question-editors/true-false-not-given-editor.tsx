@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 import { Button } from "@testComponents/components/ui/button";
 import { Input } from "@testComponents/components/ui/input";
 import { Label } from "@testComponents/components/ui/label";
@@ -19,7 +20,7 @@ interface TrueFalseNotGivenEditorProps {
   onUpdateQuestion: (
     sectionId: string,
     questionId: string,
-    updates: Partial<TrueFalseNotGivenQuestion>
+    updates: Partial<TrueFalseNotGivenQuestion>,
   ) => void;
 }
 
@@ -39,7 +40,7 @@ export default function TrueFalseNotGivenEditor({
 
   const handleAnswerChange = (
     index: number,
-    value: "true" | "false" | "not-given"
+    value: "true" | "false" | "not-given",
   ) => {
     const updatedSubQuestions = [...(question.subQuestions || [])];
     updatedSubQuestions[index] = {
@@ -109,11 +110,11 @@ export default function TrueFalseNotGivenEditor({
                 onValueChange={(value) =>
                   handleAnswerChange(
                     index,
-                    value as "true" | "false" | "not-given"
+                    value as "true" | "false" | "not-given",
                   )
                 }
               >
-                <SelectTrigger className="w-24 h-7 text-xs">
+                <SelectTrigger className="w-32 h-7 text-xs">
                   <SelectValue placeholder="Answer" />
                 </SelectTrigger>
                 <SelectContent>

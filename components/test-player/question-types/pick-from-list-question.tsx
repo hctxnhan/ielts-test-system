@@ -63,7 +63,7 @@ export default function PickFromListQuestionRenderer({
           {question.items.map((item, index) => {
             // Find the corresponding subQuestion
             const subQuestion = question.subQuestions?.find(
-              (sq) => sq.item === item.id
+              (sq) => sq.item === item.id,
             );
 
             if (!subQuestion) {
@@ -72,7 +72,7 @@ export default function PickFromListQuestionRenderer({
             }
 
             const matchedOption = question.options.find(
-              (opt) => opt.id === matches[subQuestion.subId]
+              (opt) => opt.id === matches[subQuestion.subId],
             );
 
             return (
@@ -93,8 +93,8 @@ export default function PickFromListQuestionRenderer({
                       ? String.fromCharCode(
                           65 +
                             question.options.findIndex(
-                              (o) => o.id === matchedOption.id
-                            )
+                              (o) => o.id === matchedOption.id,
+                            ),
                         ) + "."
                       : ""
                   }

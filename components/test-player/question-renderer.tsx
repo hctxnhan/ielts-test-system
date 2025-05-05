@@ -1,28 +1,26 @@
 "use client";
 
 import type {
+  AnswerType,
   Question,
   UserAnswer,
   WritingTaskAnswer,
-  AnswerType,
-  WritingTask1Question,
-  WritingTask2Question,
 } from "@testComponents/lib/types"; // Import types
 // Import actual components
-import MultipleChoiceQuestionComponent from "./question-types/multiple-choice-question";
 import CompletionQuestionComponent from "./question-types/completion-question";
-import MatchingQuestionComponent from "./question-types/matching-question";
 import LabelingQuestionComponent from "./question-types/labeling-question";
-import PickFromListQuestionComponent from "./question-types/pick-from-list-question";
-import TrueFalseNotGivenQuestionComponent from "./question-types/true-false-not-given-question";
 import MatchingHeadingsQuestionComponent from "./question-types/matching-headings-question";
+import MatchingQuestionComponent from "./question-types/matching-question";
+import MultipleChoiceQuestionComponent from "./question-types/multiple-choice-question";
+import PickFromListQuestionComponent from "./question-types/pick-from-list-question";
 import ShortAnswerQuestionComponent from "./question-types/short-answer-question";
+import TrueFalseNotGivenQuestionComponent from "./question-types/true-false-not-given-question";
 import WritingTask1QuestionRenderer from "./question-types/writing-task1-question"; // Correct component import
 import WritingTask2QuestionRenderer from "./question-types/writing-task2-question"; // Correct component import
 
+import { supportsPartialScoring } from "@testComponents/lib/test-utils";
 import { useTestStore } from "@testComponents/store/test-store";
 import { useEffect, useRef, useState } from "react";
-import { supportsPartialScoring } from "@testComponents/lib/test-utils";
 
 interface QuestionRendererProps {
   question: Question;
@@ -39,7 +37,7 @@ function hasSubQuestions(question: Question): boolean {
 // Function to get the local answer from progress
 function getLocalAnswerFromProgress(
   question: Question,
-  answers: Record<string, UserAnswer> | undefined
+  answers: Record<string, UserAnswer> | undefined,
 ): AnswerType | WritingTaskAnswer {
   if (!answers) return null;
 
@@ -54,7 +52,7 @@ function getLocalAnswerFromProgress(
       (answer) =>
         answer.parentQuestionId === question.id ||
         (answer.questionId === question.id &&
-          answer.subQuestionId !== undefined)
+          answer.subQuestionId !== undefined),
     );
 
     questionAnswers.forEach((answer) => {
@@ -92,7 +90,7 @@ function getLocalAnswerFromProgress(
     }
     console.warn(
       `Unexpected answer format for single T/F/NG question ${question.id}:`,
-      answer
+      answer,
     );
     return null;
   }
@@ -107,9 +105,9 @@ function submitQuestionAnswer(
   submitAnswer: (
     questionId: string,
     answer: any,
-    subQuestionId?: string
+    subQuestionId?: string,
   ) => void,
-  subId?: string
+  subId?: string,
 ): void {
   if (
     hasSubQuestions(question) &&
@@ -166,7 +164,7 @@ export default function QuestionRenderer({
   // Handle answer changes with debouncing
   const handleChange = (
     newAnswer: AnswerType | WritingTaskAnswer,
-    subId?: string
+    subId?: string,
   ) => {
     setLocalAnswer(newAnswer);
     setTimeout(() => {

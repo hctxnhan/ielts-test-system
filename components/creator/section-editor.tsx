@@ -1,5 +1,5 @@
 "use client";
-
+import React from "react";
 import FilePicker from "@testComponents/components/file-picker";
 import { Button } from "@testComponents/components/ui/button";
 import {
@@ -17,7 +17,7 @@ import {
 } from "@testComponents/components/ui/dialog";
 import { Input } from "@testComponents/components/ui/input";
 import { Label } from "@testComponents/components/ui/label";
-import { Textarea } from "@testComponents/components/ui/textarea";
+import { AutoResizeTextarea } from "@testComponents/components/ui/auto-resize-textarea";
 import type { FileObject } from "@testComponents/lib/supabase-storage";
 import type { Section, Test } from "@testComponents/lib/types";
 import {
@@ -45,7 +45,7 @@ interface SectionEditorProps {
   onUpdateQuestion: (
     sectionId: string,
     questionId: string,
-    updates: any
+    updates: any,
   ) => void;
   onRemoveQuestion: (sectionId: string, questionId: string) => void;
 }
@@ -176,15 +176,16 @@ export default function SectionEditor({
               >
                 Description
               </Label>
-              <Textarea
+              <AutoResizeTextarea
                 id={`section-description-${index}`}
                 value={section.description}
                 onChange={(e) =>
                   onUpdateSection(section.id, { description: e.target.value })
                 }
-                rows={2}
+                minRows={2}
+                maxRows={6}
                 placeholder="Brief description of this section"
-                className="resize-none"
+                className="text-sm"
               />
             </div>
 
@@ -259,14 +260,14 @@ export default function SectionEditor({
                     </div>
                   </div>
 
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <Label
                       htmlFor={`passage-content-${index}`}
                       className="text-xs font-medium"
                     >
                       Passage Content
                     </Label>
-                    <Textarea
+                    <AutoResizeTextarea
                       id={`passage-content-${index}`}
                       value={section.readingPassage?.content || ""}
                       onChange={(e) => {
@@ -285,8 +286,9 @@ export default function SectionEditor({
                         });
                       }}
                       placeholder="Enter passage content"
-                      rows={8}
-                      className="resize-none"
+                      minRows={5}
+                      maxRows={20}
+                      className="text-sm"
                     />
                   </div>
 
@@ -365,7 +367,7 @@ export default function SectionEditor({
                                 <X size={14} />
                               </Button>
                             </div>
-                          )
+                          ),
                         )}
                         <FilePicker
                           fileType="image"

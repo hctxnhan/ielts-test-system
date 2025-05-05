@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Button } from "@testComponents/components/ui/button";
 import { Input } from "@testComponents/components/ui/input";
 import { Label } from "@testComponents/components/ui/label";
@@ -24,7 +25,7 @@ interface MatchingEditorProps {
   onUpdateQuestion: (
     sectionId: string,
     questionId: string,
-    updates: any
+    updates: any,
   ) => void;
 }
 
@@ -37,7 +38,7 @@ export default function MatchingEditor({
     () =>
       Array.isArray(question.items) &&
       question.items.length > 0 &&
-      typeof question.items[0] !== "string"
+      typeof question.items[0] !== "string",
   );
 
   const initializeItems = useCallback(() => {
@@ -71,7 +72,7 @@ export default function MatchingEditor({
   const initializeSubQuestions = useCallback(() => {
     return initializeItems().map((item, index) => {
       const existingSubQuestion = question.subQuestions?.find(
-        (sq) => sq.item === item.id
+        (sq) => sq.item === item.id,
       );
 
       return {
@@ -96,7 +97,7 @@ export default function MatchingEditor({
   useEffect(() => {
     const formattedSubQuestions = items.map((item, index) => {
       const existingSubQuestion = subQuestions.find(
-        (sq) => sq.item === item.id
+        (sq) => sq.item === item.id,
       );
 
       return {
@@ -137,7 +138,7 @@ export default function MatchingEditor({
     setItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
     setSubQuestions((prevSubQuestions) => {
       const filteredSubQuestions = prevSubQuestions.filter(
-        (sq) => sq.item !== itemId
+        (sq) => sq.item !== itemId,
       );
       return filteredSubQuestions.map((sq, idx) => ({
         ...sq,
@@ -149,13 +150,13 @@ export default function MatchingEditor({
   const updateItemText = useCallback((itemId: string, newText: string) => {
     setItems((prevItems) =>
       prevItems.map((item) =>
-        item.id === itemId ? { ...item, text: newText } : item
-      )
+        item.id === itemId ? { ...item, text: newText } : item,
+      ),
     );
     setSubQuestions((prevSubQuestions) =>
       prevSubQuestions.map((sq) =>
-        sq.item === itemId ? { ...sq, itemContent: newText } : sq
-      )
+        sq.item === itemId ? { ...sq, itemContent: newText } : sq,
+      ),
     );
   }, []);
 
@@ -168,7 +169,7 @@ export default function MatchingEditor({
   const removeOption = useCallback(
     (optionId: string) => {
       setOptions((prevOptions) =>
-        prevOptions.filter((option) => option.id !== optionId)
+        prevOptions.filter((option) => option.id !== optionId),
       );
       setSubQuestions((prevSubQuestions) =>
         prevSubQuestions.map((sq) => {
@@ -176,10 +177,10 @@ export default function MatchingEditor({
             return { ...sq, correctAnswer: options[0]?.id || "" };
           }
           return sq;
-        })
+        }),
       );
     },
-    [options]
+    [options],
   );
 
   return (
@@ -296,7 +297,7 @@ export default function MatchingEditor({
                   onValueChange={(optionId) => {
                     const newSubQuestions = [...subQuestions];
                     const subQuestionIndex = newSubQuestions.findIndex(
-                      (sq) => sq.item === item.id
+                      (sq) => sq.item === item.id,
                     );
 
                     if (subQuestionIndex >= 0) {

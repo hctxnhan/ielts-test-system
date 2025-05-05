@@ -18,7 +18,7 @@ interface CreatorState {
   createNewTest: (
     type: TestType,
     title: string,
-    readingVariant?: ReadingVariant
+    readingVariant?: ReadingVariant,
   ) => void;
   updateTestDetails: (details: Partial<Test>) => void;
   addSection: () => void;
@@ -28,7 +28,7 @@ interface CreatorState {
   updateQuestion: (
     sectionId: string,
     questionId: string,
-    updates: Partial<Question>
+    updates: Partial<Question>,
   ) => void;
   removeQuestion: (sectionId: string, questionId: string) => void;
   // saveTest: () => void;
@@ -49,7 +49,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
   createNewTest: (
     type: TestType,
     title: string,
-    readingVariant?: ReadingVariant
+    readingVariant?: ReadingVariant,
   ) => {
     const newTest: Test = {
       title,
@@ -98,7 +98,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
 
     const newSection: Section = {
       id: uuidv4(),
-      title: `Section ${currentTest.sections.length + 1}`,
+      title: `Part ${currentTest.sections.length + 1}`,
       description: "",
       questions: [],
       duration: 600, // Default 10 minutes
@@ -132,7 +132,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
     if (!currentTest) return;
 
     const updatedSections = currentTest.sections.map((section) =>
-      section.id === sectionId ? { ...section, ...updates } : section
+      section.id === sectionId ? { ...section, ...updates } : section,
     );
 
     set({
@@ -149,7 +149,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
     if (!currentTest) return;
 
     const updatedSections = currentTest.sections.filter(
-      (section) => section.id !== sectionId
+      (section) => section.id !== sectionId,
     );
 
     set({
@@ -167,7 +167,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
     if (!currentTest) return;
 
     const sectionIndex = currentTest.sections.findIndex(
-      (section) => section.id === sectionId
+      (section) => section.id === sectionId,
     );
 
     if (sectionIndex === -1) return;
@@ -390,7 +390,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
   updateQuestion: (
     sectionId: string,
     questionId: string,
-    updates: Partial<Question>
+    updates: Partial<Question>,
   ) => {
     const { currentTest } = get();
     if (!currentTest) return;
@@ -399,7 +399,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
       if (section.id !== sectionId) return section;
 
       const updatedQuestions = section.questions.map((question) =>
-        question.id === questionId ? { ...question, ...updates } : question
+        question.id === questionId ? { ...question, ...updates } : question,
       );
 
       return {
@@ -470,7 +470,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
     if (!currentTest) return 0;
     return currentTest.sections.reduce(
       (total, section) => total + section.duration,
-      0
+      0,
     );
   },
 
@@ -479,7 +479,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
     if (!currentTest) return 0;
     return currentTest.sections.reduce(
       (total, section) => total + section.questions.length,
-      0
+      0,
     );
   },
 }));

@@ -31,13 +31,13 @@ import {
 
 // Type guards for question types
 function isMultipleChoiceQuestion(
-  question: Question
+  question: Question,
 ): question is MultipleChoiceQuestion {
   return question.type === "multiple-choice";
 }
 
 function isCompletionQuestion(
-  question: Question
+  question: Question,
 ): question is CompletionQuestion {
   return question.type === "completion";
 }
@@ -51,51 +51,51 @@ function isLabelingQuestion(question: Question): question is LabelingQuestion {
 }
 
 function isPickFromListQuestion(
-  question: Question
+  question: Question,
 ): question is PickFromListQuestion {
   return question.type === "pick-from-list";
 }
 
 function isTrueFalseNotGivenQuestion(
-  question: Question
+  question: Question,
 ): question is TrueFalseNotGivenQuestion {
   return question.type === "true-false-not-given";
 }
 
 function isMatchingHeadingsQuestion(
-  question: Question
+  question: Question,
 ): question is MatchingHeadingsQuestion {
   return question.type === "matching-headings";
 }
 
 function isShortAnswerQuestion(
-  question: Question
+  question: Question,
 ): question is ShortAnswerQuestion {
   return question.type === "short-answer";
 }
 
 function isWritingTask1Question(
-  question: Question
+  question: Question,
 ): question is WritingTask1Question {
   return question.type === "writing-task1";
 }
 
 function isWritingTask2Question(
-  question: Question
+  question: Question,
 ): question is WritingTask2Question {
   return question.type === "writing-task2";
 }
 
 // Transform functions for each question type
 function transformMultipleChoice(
-  question: MultipleChoiceQuestion
+  question: MultipleChoiceQuestion,
 ): StandardMultipleChoiceQuestion {
   const standardItems: StandardQuestionOption[] = question.options.map(
     (opt) => ({
       id: opt.id,
       text: opt.text,
       isCorrect: opt.isCorrect,
-    })
+    }),
   );
 
   const correctOption = standardItems.find((opt) => opt.isCorrect);
@@ -117,7 +117,7 @@ function transformMultipleChoice(
 }
 
 function transformMatching(
-  question: MatchingQuestion
+  question: MatchingQuestion,
 ): StandardMatchingQuestion {
   const standardItems: StandardQuestionItem[] = question.items.map((item) => ({
     id: item.id,
@@ -128,7 +128,7 @@ function transformMatching(
     (opt) => ({
       id: opt.id,
       text: opt.text,
-    })
+    }),
   );
 
   const standardSubQuestions: StandardSubQuestionMeta[] =
@@ -151,20 +151,20 @@ function transformMatching(
 }
 
 function transformLabeling(
-  question: LabelingQuestion
+  question: LabelingQuestion,
 ): StandardLabelingQuestion {
   const standardItems: StandardQuestionItem[] = question.labels.map(
     (label) => ({
       id: label.id,
       text: label.text,
-    })
+    }),
   );
 
   const standardOptions: StandardQuestionOption[] = question.options.map(
     (opt) => ({
       id: opt.id,
       text: opt.text,
-    })
+    }),
   );
 
   const standardSubQuestions: StandardSubQuestionMeta[] =
@@ -187,7 +187,7 @@ function transformLabeling(
 }
 
 function transformCompletion(
-  question: CompletionQuestion
+  question: CompletionQuestion,
 ): StandardCompletionQuestion {
   const standardSubQuestions: StandardSubQuestionMeta[] =
     question.subQuestions.map((sub) => ({
@@ -205,7 +205,7 @@ function transformCompletion(
 }
 
 function transformPickFromList(
-  question: PickFromListQuestion
+  question: PickFromListQuestion,
 ): StandardPickFromListQuestion {
   const standardItems: StandardQuestionItem[] = question.items.map((item) => ({
     id: item.id,
@@ -216,7 +216,7 @@ function transformPickFromList(
     (opt) => ({
       id: opt.id,
       text: opt.text,
-    })
+    }),
   );
 
   const standardSubQuestions: StandardSubQuestionMeta[] =
@@ -239,13 +239,13 @@ function transformPickFromList(
 }
 
 function transformTrueFalseNotGiven(
-  question: TrueFalseNotGivenQuestion
+  question: TrueFalseNotGivenQuestion,
 ): StandardTrueFalseNotGivenQuestion {
   const standardItems: StandardQuestionItem[] = question.statements.map(
     (stmt) => ({
       id: stmt.id,
       text: stmt.text,
-    })
+    }),
   );
 
   const standardSubQuestions: StandardSubQuestionMeta[] =
@@ -266,20 +266,20 @@ function transformTrueFalseNotGiven(
 }
 
 function transformMatchingHeadings(
-  question: MatchingHeadingsQuestion
+  question: MatchingHeadingsQuestion,
 ): StandardMatchingHeadingsQuestion {
   const standardOptions: StandardQuestionItem[] = question.paragraphs.map(
     (para) => ({
       id: para.id,
       text: para.text,
-    })
+    }),
   );
 
   const standardItems: StandardQuestionOption[] = question.headings.map(
     (head) => ({
       id: head.id,
       text: head.text,
-    })
+    }),
   );
 
   const standardSubQuestions: StandardSubQuestionMeta[] =
@@ -302,7 +302,7 @@ function transformMatchingHeadings(
 }
 
 function transformShortAnswer(
-  question: ShortAnswerQuestion
+  question: ShortAnswerQuestion,
 ): StandardShortAnswerQuestion {
   const standardItems: StandardQuestionItem[] = question.questions.map((q) => ({
     id: q.id,
@@ -332,7 +332,7 @@ function transformShortAnswer(
 }
 
 function transformWritingTask(
-  question: WritingTask1Question | WritingTask2Question
+  question: WritingTask1Question | WritingTask2Question,
 ): StandardWritingTask1Question | StandardWritingTask2Question {
   const standardSubQuestions: StandardSubQuestionMeta[] = [
     {
@@ -352,7 +352,7 @@ function transformWritingTask(
 
 // Update the main transform function
 export function transformToStandardQuestion(
-  question: Question
+  question: Question,
 ): StandardQuestion {
   if (isMultipleChoiceQuestion(question)) {
     return transformMultipleChoice(question);
