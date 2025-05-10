@@ -1,5 +1,5 @@
 "use client";
-
+import React from "react";
 import { Button } from "@testComponents/components/ui/button";
 import {
   Dialog,
@@ -45,7 +45,7 @@ export default function QuestionTypeDialog({
       icon: "⇄",
     },
     {
-      type: "pick-from-list" as QuestionType,
+      type: "pick-from-a-list" as QuestionType,
       title: "Pick from List",
       description: "Select options from a list",
       icon: "≡",
@@ -140,15 +140,15 @@ export default function QuestionTypeDialog({
                 </span>
                 {(testType === "listening" &&
                   listeningQuestionTypes.some(
-                    (q) => q.type === questionType.type
+                    (q) => q.type === questionType.type,
                   )) ||
                 (testType === "reading" &&
                   readingQuestionTypes.some(
-                    (q) => q.type === questionType.type
+                    (q) => q.type === questionType.type,
                   )) ||
                 (testType === "writing" &&
                   writingQuestionTypes.some(
-                    (q) => q.type === questionType.type
+                    (q) => q.type === questionType.type,
                   )) ? (
                   <Badge
                     variant="outline"

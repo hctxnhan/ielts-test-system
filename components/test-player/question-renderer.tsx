@@ -1,5 +1,5 @@
 "use client";
-
+import React from "react";
 import type {
   AnswerType,
   Question,
@@ -119,7 +119,7 @@ function submitQuestionAnswer(
       const answerForSubQuestion =
         question.type === "matching" ||
         question.type === "labeling" ||
-        question.type === "pick-from-list" ||
+        question.type === "pick-from-a-list" ||
         question.type === "matching-headings" ||
         question.type === "short-answer" ||
         question.type === "true-false-not-given" ||
@@ -168,6 +168,7 @@ export default function QuestionRenderer({
   ) => {
     setLocalAnswer(newAnswer);
     setTimeout(() => {
+      console.log(newAnswer, subId);
       submitQuestionAnswer(question, newAnswer, submitAnswer, subId);
     }, 100);
   };
@@ -211,7 +212,7 @@ export default function QuestionRenderer({
         />
       );
 
-    case "pick-from-list":
+    case "pick-from-a-list":
       return (
         <PickFromListQuestionComponent
           question={question}

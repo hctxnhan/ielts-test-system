@@ -1,5 +1,5 @@
 "use client";
-
+import React from "react";
 import { Button } from "@testComponents/components/ui/button";
 import { Input } from "@testComponents/components/ui/input";
 import { Label } from "@testComponents/components/ui/label";
@@ -30,7 +30,7 @@ interface MatchingHeadingsEditorProps {
   onUpdateQuestion: (
     sectionId: string,
     questionId: string,
-    updates: Partial<MatchingHeadingsQuestion>
+    updates: Partial<MatchingHeadingsQuestion>,
   ) => void;
 }
 
@@ -53,10 +53,10 @@ const MatchingHeadingsEditor = ({
 
   const handleParagraphRemove = (paragraphId: string) => {
     const newParagraphs = question.paragraphs.filter(
-      (p) => p.id !== paragraphId
+      (p) => p.id !== paragraphId,
     );
     const newSubQuestions = (question.subQuestions || []).filter(
-      (sq) => sq.item !== paragraphId
+      (sq) => sq.item !== paragraphId,
     );
     onUpdateQuestion(sectionId, question.id, {
       paragraphs: newParagraphs,
@@ -119,7 +119,7 @@ const MatchingHeadingsEditor = ({
   const handleCorrectMatchChange = (paraId: string, headingId: string) => {
     const newSubQuestions = [...(question.subQuestions || [])];
     const existingSubQuestion = newSubQuestions.find(
-      (sq) => sq.item === paraId
+      (sq) => sq.item === paraId,
     );
     if (!existingSubQuestion) {
       newSubQuestions.push({

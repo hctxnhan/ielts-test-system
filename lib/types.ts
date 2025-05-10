@@ -12,6 +12,7 @@ export type QuestionType =
   | "matching"
   | "labeling"
   | "pick-from-list"
+  | "pick-from-a-list"
   | "true-false-not-given"
   | "matching-headings"
   | "short-answer"
@@ -89,6 +90,12 @@ export interface PickFromListQuestion extends BaseQuestion {
   subQuestions: SubQuestionMeta[];
 }
 
+export interface PickFromAListQuestion extends BaseQuestion {
+  type: "pick-from-a-list";
+  items: { id: string; text: string }[];
+  subQuestions: SubQuestionMeta[];
+}
+
 export interface TFNGStatement {
   id: string;
   text: string;
@@ -141,6 +148,7 @@ export type Question =
   | MatchingQuestion
   | LabelingQuestion
   | PickFromListQuestion
+  | PickFromAListQuestion
   | TrueFalseNotGivenQuestion
   | MatchingHeadingsQuestion
   | ShortAnswerQuestion

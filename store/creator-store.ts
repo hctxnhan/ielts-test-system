@@ -248,43 +248,55 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
           points: 1,
           scoringStrategy: "partial",
           index: currentTest.sections[sectionIndex].questions.length + 1,
+          partialEndingIndex: 0,
           imageUrl: "",
           labels: labelIds.map((id) => ({ id, text: "" })),
           options: optionIdsForLabeling.map((id) => ({
             id,
             text: "",
           })),
-          subQuestions: labelIds.map((id, index) => ({
+          subQuestions: labelIds.map((id, i) => ({
             subId: uuidv4(),
             item: id,
-            correctAnswer: optionIdsForLabeling[index],
+            correctAnswer: optionIdsForLabeling[i],
             points: 1,
           })),
         };
         break;
-      case "pick-from-list":
-        const itemIdsForPick = [uuidv4(), uuidv4()];
-        const optionIdsForPick = [uuidv4(), uuidv4(), uuidv4()];
+      case "pick-from-a-list":
+        const itemsForPick = [
+          { id: uuidv4(), text: "" },
+          { id: uuidv4(), text: "" },
+          { id: uuidv4(), text: "" },
+          { id: uuidv4(), text: "" },
+        ];
 
         newQuestion = {
           id: uuidv4(),
-          type: "pick-from-list",
+          type: "pick-from-a-list",
           text: "",
           points: 1,
           scoringStrategy: "partial",
           index: currentTest.sections[sectionIndex].questions.length + 1,
-          items: itemIdsForPick.map((id) => ({ id, text: "" })),
-          options: optionIdsForPick.map((id) => ({ id, text: "" })),
-          subQuestions: itemIdsForPick.map((id, index) => ({
-            subId: uuidv4(),
-            item: id,
-            correctAnswer: optionIdsForPick[index],
-            points: 1,
-          })),
+          partialEndingIndex: 0,
+          items: itemsForPick,
+          // Options array is kept for type compliance but not used in the UI
+          subQuestions: [
+            {
+              subId: uuidv4(),
+              item: itemsForPick[0].id,
+              correctAnswer: "true", // Using "true" to indicate this item is correct
+              points: 1,
+            },
+          ],
         };
         break;
       case "true-false-not-given":
-        const stmtIds = [uuidv4(), uuidv4(), uuidv4()];
+        const statements = [
+          { id: uuidv4(), text: "" },
+          { id: uuidv4(), text: "" },
+          { id: uuidv4(), text: "" },
+        ];
 
         newQuestion = {
           id: uuidv4(),
@@ -293,18 +305,25 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
           points: 1,
           scoringStrategy: "partial",
           index: currentTest.sections[sectionIndex].questions.length + 1,
-          statements: stmtIds.map((id) => ({ id, text: "" })),
-          subQuestions: stmtIds.map((id, index) => ({
+          partialEndingIndex: 0,
+          statements: statements,
+          subQuestions: statements.map((stmt) => ({
             subId: uuidv4(),
-            item: id,
+            item: stmt.id,
             correctAnswer: "true",
             points: 1,
           })),
         };
         break;
       case "matching-headings":
-        const headingIds = [uuidv4(), uuidv4()];
-        const paraIds = [uuidv4(), uuidv4()];
+        const headings = [
+          { id: uuidv4(), text: "" },
+          { id: uuidv4(), text: "" },
+        ];
+        const paragraphs = [
+          { id: uuidv4(), text: "" },
+          { id: uuidv4(), text: "" },
+        ];
 
         newQuestion = {
           id: uuidv4(),
@@ -313,18 +332,23 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
           points: 1,
           scoringStrategy: "partial",
           index: currentTest.sections[sectionIndex].questions.length + 1,
-          paragraphs: paraIds.map((id) => ({ id, text: "" })),
-          headings: headingIds.map((id) => ({ id, text: "" })),
-          subQuestions: paraIds.map((id, index) => ({
+          partialEndingIndex: 0,
+          paragraphs: paragraphs,
+          headings: headings,
+          subQuestions: paragraphs.map((para, i) => ({
             subId: uuidv4(),
-            item: id,
-            correctAnswer: headingIds[index],
+            item: para.id,
+            correctAnswer: headings[i].id,
             points: 1,
           })),
         };
         break;
       case "short-answer":
-        const questionIds = [uuidv4(), uuidv4()];
+        const questions = [
+          { id: uuidv4(), text: "" },
+          { id: uuidv4(), text: "" },
+        ];
+
         newQuestion = {
           id: uuidv4(),
           type: "short-answer",
@@ -332,10 +356,11 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
           points: 1,
           scoringStrategy: "partial",
           index: currentTest.sections[sectionIndex].questions.length + 1,
-          questions: questionIds.map((id) => ({ id, text: "" })),
-          subQuestions: questionIds.map((_, index) => ({
+          partialEndingIndex: 0,
+          questions: questions,
+          subQuestions: questions.map((q) => ({
             subId: uuidv4(),
-            item: questionIds[index],
+            item: q.id,
             acceptableAnswers: [],
             points: 1,
           })),
@@ -350,6 +375,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
           points: 8,
           scoringStrategy: "all-or-nothing", // Default for writing tasks
           index: currentTest.sections[sectionIndex].questions.length + 1,
+          partialEndingIndex: 0,
           prompt: "",
           wordLimit: 150,
           imageUrl: "",
@@ -365,6 +391,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
           points: 12,
           scoringStrategy: "all-or-nothing", // Default for writing tasks
           index: currentTest.sections[sectionIndex].questions.length + 1,
+          partialEndingIndex: 0,
           prompt: "",
           wordLimit: 250,
           sampleAnswer: "",

@@ -1,12 +1,13 @@
 "use client";
 
+import React from "react";
 import { useState, useEffect } from "react";
 import { DraggableItem, DroppableZone } from "./shared/dnd-components";
 import { Label } from "@testComponents/components/ui/label";
-import type { MatchingHeadingsQuestion } from "@testComponents/lib/types";
+import type { StandardMatchingHeadingsQuestion } from "@testComponents/lib/standardized-types";
 
 interface MatchingHeadingsQuestionProps {
-  question: MatchingHeadingsQuestion;
+  question: StandardMatchingHeadingsQuestion;
   value: Record<string, string> | null;
   onChange: (value: Record<string, string>, subQuestionId?: string) => void;
 }
@@ -47,13 +48,13 @@ export default function MatchingHeadingsQuestionRenderer({
       <div className="space-y-2 w-fit">
         <Label className="text-sm">Headings:</Label>
         <div className="flex flex-col space-y-2">
-          {question.headings.map((heading, headingIndex) => (
+          {question.options.map((option, optionIndex) => (
             <DraggableItem
-              key={heading.id}
-              text={heading.text}
-              index={heading.id}
+              key={option.id}
+              text={option.text}
+              index={option.id}
               itemType={ITEM_TYPE}
-              prefix={String.fromCharCode(65 + headingIndex) + "."}
+              prefix={String.fromCharCode(65 + optionIndex) + "."}
             />
           ))}
         </div>
@@ -61,28 +62,28 @@ export default function MatchingHeadingsQuestionRenderer({
 
       <div className="space-y-4">
         <Label className="text-sm">Paragraphs:</Label>
-        {question.paragraphs.map((paragraph, paraIndex) => {
+        {question.items.map((item, itemIndex) => {
           // Find the corresponding subQuestion
           const subQuestion = question.subQuestions?.find(
-            (sq) => sq.item === paragraph.id
+            (sq) => sq.item === item.id,
           );
 
           if (!subQuestion) {
-            console.error("No subQuestion found for paragraph:", paragraph.id);
+            console.error("No subQuestion found for paragraph:", item.id);
             return null;
           }
 
-          const matchedHeading = question.headings.find(
-            (h) => h.id === matches[subQuestion.subId]
+          const matchedHeading = question.options.find(
+            (h) => h.id === matches[subQuestion.subId],
           );
 
           return (
-            <div key={paragraph.id} className="space-y-2 w-fit min-w-[300px]">
+            <div key={item.id} className="space-y-2 w-fit min-w-[300px]">
               <p className="text-sm text-gray-600 whitespace-pre-line font-medium">
                 {question.scoringStrategy === "partial" && subQuestion
-                  ? `Question ${question.index + paraIndex + 1}.`
-                  : `Paragraph ${paraIndex + 1}.`}{" "}
-                {paragraph.text}
+                  ? `Question ${question.index + itemIndex + 1}.`
+                  : `Paragraph ${itemIndex + 1}.`}{" "}
+                {item.text}
               </p>
               <DroppableZone
                 key={subQuestion.subId}
@@ -93,9 +94,9 @@ export default function MatchingHeadingsQuestionRenderer({
                   matchedHeading
                     ? String.fromCharCode(
                         65 +
-                          question.headings.findIndex(
-                            (h) => h.id === matchedHeading.id
-                          )
+                          question.options.findIndex(
+                            (h) => h.id === matchedHeading.id,
+                          ),
                       ) + "."
                     : ""
                 }

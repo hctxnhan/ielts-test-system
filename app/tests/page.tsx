@@ -1,5 +1,6 @@
 "use client";
-
+import React, { useEffect } from "react";
+import TestPlayer from "@testComponents/components/test-player/test-player";
 import { Button } from "@testComponents/components/ui/button";
 import {
   Card,
@@ -8,21 +9,29 @@ import {
   CardTitle,
 } from "@testComponents/components/ui/card";
 import { Textarea } from "@testComponents/components/ui/textarea";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { v4 as uuidv4 } from "uuid";
-import { useToast } from "@testComponents/components/ui/use-toast";
-import { useCreatorStore } from "@testComponents/store/creator-store";
-import type { Test } from "@testComponents/lib/types";
-import TestPlayer from "@testComponents/components/test-player/test-player";
 import { updateQuestionIndexes } from "@testComponents/lib/test";
+import type { Test } from "@testComponents/lib/types";
 import { useTestStore } from "@testComponents/store/test-store";
+import { useState } from "react";
 
 export default function TestsPage() {
   const [testJson, setTestJson] = useState("");
   const [currentTest, setCurrentTest] = useState<Test>();
 
-  const { progress } = useTestStore();
+  const { progress, setSubmitResultFn } = useTestStore();
+
+  useEffect(() => {
+    // Set the function to handle test submission
+    setSubmitResultFn((result) => {
+      console.log("Test submitted with result:", result);
+      alert("Test submitted successfully!");
+    });
+
+    return () => {
+      // Cleanup function to reset the submit result function
+      setSubmitResultFn(null);
+    };
+  }, [setSubmitResultFn]);
 
   const handleStartTest = () => {
     try {
@@ -32,7 +41,10 @@ export default function TestsPage() {
       const test = updateQuestionIndexes(testObject);
 
       setCurrentTest(test);
-    } catch (error) {}
+    } catch (error) {
+      console.error("Error parsing JSON:", error);
+      alert("Invalid JSON format. Please check your input.");
+    }
   };
 
   return (

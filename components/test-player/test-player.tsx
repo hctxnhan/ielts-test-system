@@ -1,5 +1,5 @@
 "use client";
-
+import React from "react";
 import { Alert, AlertDescription } from "@testComponents/components/ui/alert";
 import { Button } from "@testComponents/components/ui/button";
 import { Card, CardContent } from "@testComponents/components/ui/card";
@@ -12,7 +12,7 @@ import {
 } from "@testComponents/components/ui/sheet";
 import type { Test } from "@testComponents/lib/types";
 import { useTestStore } from "@testComponents/store/test-store";
-import { LayoutGrid, SplitSquareVertical, GripVertical } from "lucide-react";
+import { LayoutGrid, SplitSquareVertical } from "lucide-react";
 import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -152,7 +152,7 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
       useTestStore.setState({ progress: updatedProgress });
       setSidebarOpen(false);
     },
-    [progress]
+    [progress],
   );
 
   // Jump to specific question (and optionally a specific sub-question)
@@ -160,7 +160,7 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
     (
       sectionIndex: number,
       questionIndex: number,
-      subQuestionIndex?: number
+      subQuestionIndex?: number,
     ) => {
       if (!progress || !updatedTest) return;
 
@@ -179,7 +179,7 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
         // Use setTimeout to ensure the DOM has updated
         setTimeout(() => {
           const subQuestionElement = document.getElementById(
-            `question-${subQuestionIndex}`
+            `question-${subQuestionIndex}`,
           );
           if (subQuestionElement) {
             subQuestionElement.scrollIntoView({
@@ -190,7 +190,7 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
         }, 100);
       }
     },
-    [progress, updatedTest]
+    [progress, updatedTest],
   );
 
   // If test is not loaded yet, show loading

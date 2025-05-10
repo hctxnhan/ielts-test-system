@@ -12,7 +12,7 @@ import { create } from "zustand";
 // Type for the submission function
 export type SubmitResultFn = (
   testId: number,
-  results: TestResult
+  results: TestResult,
 ) => Promise<any>;
 
 type ScoreEssayFn = (param: {
@@ -71,7 +71,7 @@ interface TestState {
   submitAnswer: (
     questionId: string,
     answer: any,
-    subQuestionId?: string
+    subQuestionId?: string,
   ) => void;
   nextQuestion: () => void;
   previousQuestion: () => void;
@@ -127,7 +127,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
     if (!currentTest || !progress || !progress.answers || !submitResultFn) {
       console.error(
-        "Cannot submit test results: missing test data or submission function"
+        "Cannot submit test results: missing test data or submission function",
       );
       return false;
     }
@@ -201,12 +201,12 @@ export const useTestStore = create<TestState>()((set, get) => ({
             incorrectCount: sectionStats.sectionIncorrectAnswers,
             unansweredCount: sectionStats.sectionUnansweredQuestions,
             totalCount: sectionStats.sectionTotalQuestions,
-            totalScore: sectionStats.sectionTotalScore,
+            totalScore: sectionStats.sectionScore,
             maxScore: sectionStats.sectionTotalScore,
             questions: sectionQuestions,
             percentageScore: sectionStats.sectionPercentage,
           };
-        }
+        },
       );
 
       const testResults = {
@@ -259,7 +259,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
     // Find the relevant subQuestion if one exists
     const subQuestion = question.subQuestions?.find(
-      (sq: { subId: string }) => sq.subId === subQuestionId
+      (sq: { subId: string }) => sq.subId === subQuestionId,
     );
 
     // Find the question index in the test
@@ -269,7 +269,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
       for (let i = 0; i < currentTest.sections.length; i++) {
         const section = currentTest.sections[i];
         const indexInSection = section.questions.findIndex(
-          (q) => q.id === questionId
+          (q) => q.id === questionId,
         );
         if (indexInSection !== -1) {
           questionIndex = indexInSection;
@@ -284,7 +284,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
     // If we have a subQuestion, use its correct answer, otherwise use the question's
     const correctAnswer = subQuestion?.correctAnswer;
-    let answerReadable = [];
+    let answerReadable: [string, string][] = [];
 
     if (subQuestion && correctAnswer) {
       isCorrect = answer === correctAnswer;
@@ -298,13 +298,13 @@ export const useTestStore = create<TestState>()((set, get) => ({
       case "multiple-choice":
         isCorrect = question.options.some(
           (option: MultipleChoiceOption) =>
-            option.id === answer && option.isCorrect
+            option.id === answer && option.isCorrect,
         );
 
         const selected = question.items.find(
-          (option: MultipleChoiceOption) => option.id === answer
+          (option: MultipleChoiceOption) => option.id === answer,
         );
-        answerReadable = [["", selected?.text]];
+        answerReadable = [["", selected?.text || ""]];
 
         score = isCorrect ? question.points : 0;
         break;
@@ -312,7 +312,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
       case "completion":
         if (scoringStrategy === "partial") {
           const subQuestion = question.subQuestions?.find(
-            (sq: { subId: string }) => sq.subId === subQuestionId
+            (sq: { subId: string }) => sq.subId === subQuestionId,
           );
 
           isCorrect = subQuestion.correctAnswer === answer;
@@ -325,8 +325,8 @@ export const useTestStore = create<TestState>()((set, get) => ({
           const correctCount = Object.entries(answer).filter(([key, value]) =>
             question.subQuestions?.some(
               (sq: SubQuestionMeta) =>
-                sq.subId === key && sq.correctAnswer === value
-            )
+                sq.subId === key && sq.correctAnswer === value,
+            ),
           ).length;
 
           question.subQuestions?.forEach(
@@ -334,7 +334,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
               const subAnswer = answer[sq.subId];
 
               answerReadable.push([`${index + 1}`, subAnswer]);
-            }
+            },
           );
 
           isCorrect = correctCount === totalSubQuestions;
@@ -345,18 +345,19 @@ export const useTestStore = create<TestState>()((set, get) => ({
       case "matching":
       case "matching-headings":
       case "labeling":
-      case "pick-from-list":
         if (scoringStrategy === "partial") {
           const subQuestion = question.subQuestions?.find(
-            (sq: { subId: string }) => sq.subId === subQuestionId
+            (sq: { subId: string }) => sq.subId === subQuestionId,
           );
 
           isCorrect = subQuestion?.correctAnswer === answer;
           score = isCorrect ? subQuestion?.points || 0 : 0;
 
           const selectedOption = question.options?.find(
-            (option: { id: string }) => option.id === answer
+            (option: { id: string }) => option.id === answer,
           );
+
+          console.log("Readable:", selectedOption, answer, question.options);
 
           answerReadable = [["", selectedOption?.text || answer]];
         } else {
@@ -364,8 +365,8 @@ export const useTestStore = create<TestState>()((set, get) => ({
           const correctCount = Object.entries(answer).filter(([key, value]) =>
             question.subQuestions?.some(
               (sq: SubQuestionMeta) =>
-                sq.subId === key && sq.correctAnswer === value
-            )
+                sq.subId === key && sq.correctAnswer === value,
+            ),
           ).length;
 
           question.subQuestions?.forEach(
@@ -374,19 +375,81 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
               // Find the matching item and options
               const item = question.items?.find(
-                (item: { id: string }) => item.id === sq.subId
+                (item: { id: string }) => item.id === sq.subId,
               );
               const selectedOption = question.options?.find(
-                (option: { id: string }) => option.id === subAnswer
+                (option: { id: string }) => option.id === subAnswer,
               );
 
               answerReadable.push([
                 item?.text || `${index + 1}`,
                 selectedOption?.text || subAnswer,
               ]);
-            }
+            },
           );
 
+          isCorrect = correctCount === totalSubQuestions;
+          score = isCorrect ? question.points : 0;
+        }
+        break;
+
+      case "pick-from-a-list":
+        if (scoringStrategy === "partial") {
+          // For partial scoring, each subquestion is graded individually
+          const subQuestion = question.subQuestions?.find(
+            (sq: SubQuestionMeta) => sq.subId === subQuestionId,
+          );
+
+          console.log("subQuestion", subQuestionId, subQuestion);
+
+          if (subQuestion) {
+            // Check if the selected item matches the correct item for this subquestion
+            isCorrect = answer === subQuestion.item;
+            score = isCorrect ? subQuestion.points : 0;
+
+            // Find the selected item text for display
+            const selectedItem = question.items?.find(
+              (item: { id: string; text: string }) => item.id === answer,
+            );
+
+            answerReadable = [["", selectedItem?.text || String(answer)]];
+          }
+        } else {
+          // For all-or-nothing scoring
+          const totalSubQuestions = question.subQuestions?.length || 0;
+
+          // Count how many selections are correct
+          const correctCount = Object.entries(answer).filter(
+            ([subId, itemId]) => {
+              const subQuestion = question.subQuestions?.find(
+                (sq: SubQuestionMeta) => sq.subId === subId,
+              );
+              return subQuestion && itemId === subQuestion.item;
+            },
+          ).length;
+
+          // Clear answerReadable array
+          answerReadable = [];
+
+          // Build answer display
+          question.subQuestions?.forEach(
+            (sq: SubQuestionMeta, index: number) => {
+              const selectedItemId = answer[sq.subId];
+
+              // Find the selected item for display
+              const selectedItem = question.items?.find(
+                (item: { id: string; text: string }) =>
+                  item.id === selectedItemId,
+              );
+
+              answerReadable.push([
+                `Question ${index + 1}`,
+                selectedItem?.text || String(selectedItemId || ""),
+              ]);
+            },
+          );
+
+          // All subquestions must be correct for the question to be correct
           isCorrect = correctCount === totalSubQuestions;
           score = isCorrect ? question.points : 0;
         }
@@ -400,8 +463,8 @@ export const useTestStore = create<TestState>()((set, get) => ({
           const correctCount = Object.entries(answer).filter(([key, value]) =>
             question.subQuestions?.some(
               (sq: SubQuestionMeta) =>
-                sq.subId === key && sq.correctAnswer === value
-            )
+                sq.subId === key && sq.correctAnswer === value,
+            ),
           ).length;
 
           question.subQuestions?.forEach(
@@ -409,14 +472,14 @@ export const useTestStore = create<TestState>()((set, get) => ({
               const subAnswer = answer[sq.subId];
 
               const statement = question.statements?.find(
-                (stmt: { id: string }) => stmt.id === sq.subId
+                (stmt: { id: string }) => stmt.id === sq.subId,
               );
 
               answerReadable.push([
                 statement?.text || `${index + 1}`,
                 subAnswer,
               ]);
-            }
+            },
           );
 
           isCorrect = correctCount === totalSubQuestions;
@@ -428,7 +491,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
       case "short-answer":
         if (scoringStrategy === "partial") {
           const subQuestion = question.subQuestions?.find(
-            (sq: { subId: string }) => sq.subId === subQuestionId
+            (sq: { subId: string }) => sq.subId === subQuestionId,
           );
 
           if (subQuestion) {
@@ -445,7 +508,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
             const sq = question.subQuestions?.find(
               (sq: SubQuestionMeta & { acceptableAnswers?: string[] }) =>
                 sq.subId === key &&
-                sq.acceptableAnswers?.includes((value as string).toString())
+                sq.acceptableAnswers?.includes((value as string).toString()),
             );
             return !!sq;
           }).length;
@@ -453,19 +516,19 @@ export const useTestStore = create<TestState>()((set, get) => ({
           question.subQuestions?.forEach(
             (
               sq: SubQuestionMeta & { acceptableAnswers?: string[] },
-              index: number
+              index: number,
             ) => {
               const subAnswer = answer[sq.subId];
 
               const questionItem = question.questions?.find(
-                (q: { id: string }) => q.id === sq.subId
+                (q: { id: string }) => q.id === sq.subId,
               );
 
               answerReadable.push([
                 questionItem?.text || `${index + 1}`,
                 subAnswer || "",
               ]);
-            }
+            },
           );
 
           isCorrect = correctCount === totalQuestions;
@@ -483,7 +546,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
         } else {
           console.warn(
             "Invalid answer format received for writing task:",
-            answer
+            answer,
           );
           score = 0;
           feedback = "";
@@ -599,7 +662,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
     // This ensures we properly account for both main questions and sub-questions
     const totalScore = Object.values(progress.answers).reduce(
       (sum, answer) => sum + (answer.score || 0),
-      0
+      0,
     );
 
     set({
