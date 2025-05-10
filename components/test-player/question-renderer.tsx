@@ -25,6 +25,7 @@ import { useEffect, useRef, useState } from "react";
 interface QuestionRendererProps {
   question: Question;
   sectionId: string;
+  isReviewMode?: boolean;
 }
 
 // Type guard for questions with subQuestions
@@ -139,6 +140,7 @@ function submitQuestionAnswer(
 export default function QuestionRenderer({
   question,
   sectionId,
+  isReviewMode = false,
 }: QuestionRendererProps) {
   const { submitAnswer, progress } = useTestStore();
   const [localAnswer, setLocalAnswer] = useState<
@@ -168,7 +170,6 @@ export default function QuestionRenderer({
   ) => {
     setLocalAnswer(newAnswer);
     setTimeout(() => {
-      console.log(newAnswer, subId);
       submitQuestionAnswer(question, newAnswer, submitAnswer, subId);
     }, 100);
   };
@@ -182,6 +183,8 @@ export default function QuestionRenderer({
           // Adjust cast: if null, pass undefined
           value={(localAnswer as string | null) ?? undefined}
           onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
         />
       );
 
@@ -191,6 +194,8 @@ export default function QuestionRenderer({
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
         />
       );
 
@@ -200,6 +205,8 @@ export default function QuestionRenderer({
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
         />
       );
 
@@ -209,6 +216,8 @@ export default function QuestionRenderer({
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
         />
       );
 
@@ -218,6 +227,8 @@ export default function QuestionRenderer({
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
         />
       );
 
@@ -227,6 +238,8 @@ export default function QuestionRenderer({
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
         />
       );
 
@@ -236,6 +249,8 @@ export default function QuestionRenderer({
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
         />
       );
 
@@ -245,6 +260,8 @@ export default function QuestionRenderer({
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
         />
       );
 
@@ -255,6 +272,8 @@ export default function QuestionRenderer({
           question={question}
           value={localAnswer as WritingTaskAnswer | null}
           onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
         />
       );
 
@@ -265,6 +284,8 @@ export default function QuestionRenderer({
           question={question}
           value={localAnswer as WritingTaskAnswer | null}
           onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
         />
       );
 

@@ -52,14 +52,8 @@ function isLabelingQuestion(question: Question): question is LabelingQuestion {
 
 function isPickFromAListQuestion(
   question: Question,
-): question is PickFromListQuestion {
+): question is PickFromAListQuestion {
   return question.type === "pick-from-a-list";
-}
-
-function isPickFromListQuestion(
-  question: Question,
-): question is PickFromListQuestion {
-  return question.type === "pick-from-list";
 }
 
 function isTrueFalseNotGivenQuestion(
@@ -371,9 +365,6 @@ export function transformToStandardQuestion(
   }
   if (isLabelingQuestion(question)) {
     return transformLabeling(question);
-  }
-  if (isPickFromListQuestion(question)) {
-    return transformPickFromList(question);
   }
   if (isPickFromAListQuestion(question)) {
     return transformPickFromList(question); // Use the same transformer for both types

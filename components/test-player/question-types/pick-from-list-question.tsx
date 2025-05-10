@@ -1,6 +1,5 @@
 "use client";
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -10,17 +9,22 @@ import {
 } from "@testComponents/components/ui/select";
 import { Label } from "@testComponents/components/ui/label";
 import type { PickFromAListQuestion } from "@testComponents/lib/types";
+import { cn } from "@testComponents/lib/utils";
 
 interface PickFromListQuestionProps {
   question: PickFromAListQuestion;
   value: Record<string, string> | null;
   onChange: (value: Record<string, string>, subQuestionId?: string) => void;
+  readOnly?: boolean;
+  showCorrectAnswer?: boolean;
 }
 
 export default function PickFromListQuestionRenderer({
   question,
   value,
   onChange,
+  readOnly = false,
+  showCorrectAnswer = false,
 }: PickFromListQuestionProps) {
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<string, string>
@@ -32,8 +36,9 @@ export default function PickFromListQuestionRenderer({
     }
   }, [value]);
 
-  // Handle item selection for a subquestion
   const handleItemSelection = (itemId: string, subQuestionId: string) => {
+    if (readOnly) return;
+
     setSelectedAnswers((prev) => {
       const updated = { ...prev };
       updated[subQuestionId] = itemId;
@@ -48,20 +53,18 @@ export default function PickFromListQuestionRenderer({
     });
   };
 
-  // Get subquestions from the question
   const subQuestions = question.subQuestions || [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       <div>
-        <p className="font-medium mb-3">{question.text}</p>
+        <p className="font-medium text-sm mb-2">{question.text}</p>
 
-        {/* Display the list of items */}
-        <div className="bg-muted/30 p-4 rounded-md">
-          <h4 className="text-sm font-medium mb-2">List of Items:</h4>
-          <div className="pl-4">
+        <div className="bg-muted/30 p-2 rounded-md text-sm">
+          <h4 className="font-medium mb-1">List of Items:</h4>
+          <div className="pl-3">
             {question.items.map((item, index) => (
-              <div key={item.id} className="text-sm mb-1">
+              <div key={item.id} className="mb-0.5">
                 <span className="font-medium">
                   {String.fromCharCode(65 + index)}.
                 </span>{" "}
@@ -72,8 +75,7 @@ export default function PickFromListQuestionRenderer({
         </div>
       </div>
 
-      {/* Display the subquestions with dropdown selection */}
-      <div className="space-y-4 mt-4">
+      <div className="space-y-2">
         {subQuestions.map((subQuestion, index) => {
           const questionNumber =
             question.scoringStrategy === "partial"
@@ -81,23 +83,48 @@ export default function PickFromListQuestionRenderer({
               : index + 1;
 
           const selectedItemId = selectedAnswers[subQuestion.subId];
+          const isCorrect =
+            showCorrectAnswer && subQuestion.item === selectedItemId;
+          const isIncorrect = showCorrectAnswer && !isCorrect;
+
+          const correctAnswerIndex = question.items.findIndex(
+            (item) => item.id === subQuestion.item,
+          );
+          const correctAnswer = question.items[correctAnswerIndex]?.text;
+          const correctAnswerLabel = String.fromCharCode(
+            65 + correctAnswerIndex,
+          );
 
           return (
-            <div key={subQuestion.subId} className="flex flex-col gap-2 mb-4">
-              <Label className="text-sm">
+            <div
+              key={subQuestion.subId}
+              className="flex items-center gap-1.5 text-sm"
+            >
+              <Label className="w-16">
                 {question.scoringStrategy === "partial"
-                  ? `Question ${questionNumber}`
-                  : `Item ${questionNumber}`}
+                  ? `Q${questionNumber}:`
+                  : `#${questionNumber}:`}
               </Label>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-6">
                 <Select
                   value={selectedItemId || ""}
-                  onValueChange={(value) => {
-                    handleItemSelection(value, subQuestion.subId);
-                  }}
+                  onValueChange={(value) =>
+                    handleItemSelection(value, subQuestion.subId)
+                  }
+                  disabled={readOnly}
                 >
-                  <SelectTrigger className="w-[300px]">
-                    <SelectValue placeholder="Select an item from the list" />
+                  <SelectTrigger
+                    className={cn(
+                      "h-8 w-[200px]",
+                      isCorrect && "border-green-500 bg-green-50",
+                      isIncorrect && "border-red-500 bg-red-50",
+                    )}
+                  >
+                    <SelectValue
+                      placeholder={
+                        showCorrectAnswer ? "Not answered" : "Select an item"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {question.items.map((item, itemIndex) => (
@@ -107,6 +134,11 @@ export default function PickFromListQuestionRenderer({
                     ))}
                   </SelectContent>
                 </Select>
+                {showCorrectAnswer && isIncorrect && subQuestion.item && (
+                  <div className="text-sm text-green-600">
+                    ✓ {correctAnswerLabel} . {correctAnswer}
+                  </div>
+                )}
               </div>
             </div>
           );

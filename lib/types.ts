@@ -190,7 +190,6 @@ export interface Test {
 export interface UserAnswer {
   questionId: string;
   answer: any;
-  answerReadable: any;
   isCorrect?: boolean;
   score?: number;
   maxScore?: number;
@@ -213,6 +212,31 @@ export interface TestProgress {
   startedAt: string;
   completedAt?: string;
   score?: number;
+}
+
+export interface SectionResult {
+  title: string;
+  id: string;
+  correctCount: number;
+  incorrectCount: number;
+  unansweredCount: number;
+  totalCount: number;
+  totalScore: number;
+  maxScore: number;
+  percentageScore: number;
+}
+
+export interface TestResult {
+  totalScore: number;
+  maxPossibleScore: number;
+  totalQuestions: number;
+  answeredQuestions: number;
+  correctAnswers: number;
+  percentageScore: number;
+  sectionResults: SectionResult[];
+  startedAt: string;
+  completedAt: string;
+  answers?: Record<string, UserAnswer>;
 }
 
 export interface TestTemplate {

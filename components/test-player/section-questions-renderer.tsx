@@ -1,15 +1,17 @@
-import React, { useMemo } from "react";
-import QuestionRenderer from "./question-renderer";
 import type { Question } from "@testComponents/lib/types";
+import React from "react";
+import QuestionRenderer from "./question-renderer";
 
 interface SectionQuestionsRendererProps {
   questions: Question[];
   sectionId: string;
+  isReviewMode?: boolean;
 }
 
 const SectionQuestionsRenderer: React.FC<SectionQuestionsRendererProps> = ({
   questions,
   sectionId,
+  isReviewMode = false,
 }) => {
   return (
     <div className="space-y-8">
@@ -19,7 +21,7 @@ const SectionQuestionsRenderer: React.FC<SectionQuestionsRendererProps> = ({
           className="border-b border-gray-300 pb-8"
           id={`question-container-${question.id}`}
         >
-          <span className="flex gap-2">
+          <span className="flex gap-2 uppercase font-bold">
             <p>
               {question.scoringStrategy === "partial" &&
               question.partialEndingIndex !== question.index
@@ -30,7 +32,11 @@ const SectionQuestionsRenderer: React.FC<SectionQuestionsRendererProps> = ({
             </p>
             <p>{question.type}</p>
           </span>
-          <QuestionRenderer question={question} sectionId={sectionId} />
+          <QuestionRenderer
+            isReviewMode={isReviewMode}
+            question={question}
+            sectionId={sectionId}
+          />
         </div>
       ))}
     </div>

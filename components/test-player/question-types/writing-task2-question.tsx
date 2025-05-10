@@ -20,6 +20,8 @@ interface WritingTask2QuestionProps {
   question: WritingTask2Question;
   value: WritingTaskAnswer | null;
   onChange: (value: WritingTaskAnswer, subId: string) => void;
+  readOnly?: boolean;
+  showCorrectAnswer?: boolean;
 }
 
 interface ScoringResult {
@@ -33,14 +35,16 @@ export default function WritingTask2QuestionRenderer({
   question,
   value,
   onChange,
+  readOnly = false,
+  showCorrectAnswer = false,
 }: WritingTask2QuestionProps) {
   const [currentEssay, setCurrentEssay] = useState<string | null>(
-    value?.text ?? null
+    value?.text ?? null,
   );
   const [aiScore, setAiScore] = useState<ScoringResult | null>(
     value?.score !== undefined && value?.feedback !== undefined
       ? { score: value.score, feedback: value.feedback }
-      : null
+      : null,
   );
   const [isScoring, setIsScoring] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -54,13 +58,20 @@ export default function WritingTask2QuestionRenderer({
     setAiScore(
       value?.score !== undefined && value?.feedback !== undefined
         ? { score: value.score, feedback: value.feedback }
-        : null
+        : null,
     );
     // Reset feedback visibility if score/feedback is cleared
     if (value?.score === undefined || value?.feedback === undefined) {
       setShowFeedback(false);
     }
   }, [value]);
+
+  // Show sample answer automatically in review mode
+  useEffect(() => {
+    if (showCorrectAnswer && question.sampleAnswer) {
+      setShowSampleAnswer(true);
+    }
+  }, [showCorrectAnswer, question.sampleAnswer]);
 
   const wordCount = currentEssay
     ? (currentEssay.match(/\b\w+\b/g) || []).length
@@ -106,7 +117,7 @@ export default function WritingTask2QuestionRenderer({
               score: (result?.score * question.points) / 9, // Convert from 1-9 scale to question.points scale
               feedback: result?.feedback,
             }
-          : null
+          : null,
       );
 
       // Call onChange with the full WritingTaskAnswer object including the score and feedback
@@ -116,7 +127,7 @@ export default function WritingTask2QuestionRenderer({
           score: (result.score * question.points) / 9, // Convert from 1-9 scale to question.points scale
           feedback: result.feedback,
         },
-        question.id
+        question.id,
       );
 
       setIsScoring(false);
@@ -164,15 +175,18 @@ export default function WritingTask2QuestionRenderer({
         onChange={handleTextChange}
         placeholder="Write your answer here..."
         className="min-h-[300px]"
+        disabled={readOnly}
       />
 
-      {/* Updated save notification message */}
-      <div className="text-sm text-muted-foreground italic flex items-center">
-        <span>
-          Click &quot;Get AI Score&quot; button to save your answer and receive
-          feedback. Changes are not saved automatically.
-        </span>
-      </div>
+      {/* Hide save notification in readOnly mode */}
+      {!readOnly && (
+        <div className="text-sm text-muted-foreground italic flex items-center">
+          <span>
+            Click &quot;Get AI Score&quot; button to save your answer and
+            receive feedback. Changes are not saved automatically.
+          </span>
+        </div>
+      )}
 
       <div className="flex justify-between items-center">
         <p
@@ -191,14 +205,17 @@ export default function WritingTask2QuestionRenderer({
             size="sm"
             onClick={scoreEssay}
             disabled={
-              isScoring || !currentEssay || currentEssay.trim().length < 50
+              readOnly ||
+              isScoring ||
+              !currentEssay ||
+              currentEssay.trim().length < 50
             }
           >
             <Award className="mr-2 h-4 w-4" />
             {isScoring ? "Scoring..." : "Get AI Score"}
           </Button>
 
-          {question.sampleAnswer && (
+          {question.sampleAnswer && (showCorrectAnswer || !readOnly) && (
             <Button
               variant="outline"
               size="sm"

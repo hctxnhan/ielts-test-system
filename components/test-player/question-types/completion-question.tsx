@@ -1,48 +1,80 @@
 "use client";
-
+import React from "react";
 import { Input } from "@testComponents/components/ui/input";
 import { Label } from "@testComponents/components/ui/label";
 import type { CompletionQuestion } from "@testComponents/lib/types";
+import { cn } from "@testComponents/lib/utils";
+import { CheckCircle2, XCircle } from "lucide-react";
 
 interface CompletionQuestionProps {
   question: CompletionQuestion;
   value: Record<string, string> | null;
   onChange: (value: Record<string, string>, subQuestionId?: string) => void;
+  readOnly?: boolean;
+  showCorrectAnswer?: boolean;
 }
 
 export default function CompletionQuestionRenderer({
   question,
   value,
   onChange,
+  readOnly = false,
+  showCorrectAnswer = false,
 }: CompletionQuestionProps) {
   return (
-    <div className="space-y-4">
-      <p className="font-medium">{question.text}</p>
+    <div className="space-y-2">
+      <p className="font-medium text-sm">{question.text}</p>
       <div className="space-y-2">
-        {question.subQuestions.map((subQuestion, index) => (
-          <div key={subQuestion.subId} className="flex items-center space-x-2">
-            <Label htmlFor={`blank-${subQuestion.subId}`} className="w-20">
-              {question.scoringStrategy === "partial"
-                ? `Question ${question.index + index + 1}:`
-                : `Blank ${index + 1}:`}
-            </Label>
-            <Input
-              id={`blank-${subQuestion.subId}`}
-              value={value?.[subQuestion.subId] || ""}
-              onChange={(e) => {
-                const newAnswers = { ...(value || {}) };
-                newAnswers[subQuestion.subId] = e.target.value;
-                if (question.scoringStrategy === "partial") {
-                  onChange(newAnswers, subQuestion.subId);
-                } else {
-                  onChange(newAnswers);
-                }
-              }}
-              placeholder="Your answer"
-              className="max-w-md"
-            />
-          </div>
-        ))}
+        {question.subQuestions.map((subQuestion, index) => {
+          const userAnswer = value?.[subQuestion.subId] || "";
+          const isCorrect =
+            showCorrectAnswer && subQuestion.correctAnswer === userAnswer;
+          const isIncorrect = showCorrectAnswer && !isCorrect;
+
+          return (
+            <div
+              key={subQuestion.subId}
+              className="flex gap-1.5 items-center text-sm"
+            >
+              <Label htmlFor={`blank-${subQuestion.subId}`} className="w-16">
+                {question.scoringStrategy === "partial"
+                  ? `Q${question.index + index + 1}:`
+                  : `#${index + 1}:`}
+              </Label>
+              <div className="relative flex gap-6">
+                <Input
+                  id={`blank-${subQuestion.subId}`}
+                  value={userAnswer}
+                  onChange={(e) => {
+                    if (!readOnly) {
+                      const newAnswers = { ...(value || {}) };
+                      newAnswers[subQuestion.subId] = e.target.value;
+                      if (question.scoringStrategy === "partial") {
+                        onChange(newAnswers, subQuestion.subId);
+                      } else {
+                        onChange(newAnswers);
+                      }
+                    }
+                  }}
+                  readOnly={readOnly}
+                  placeholder={readOnly ? "Not answered" : "Your answer"}
+                  className={cn(
+                    "max-w-md pr-8 h-8 text-sm",
+                    isCorrect && "border-green-500 bg-green-50",
+                    isIncorrect && "border-red-500 bg-red-50",
+                  )}
+                />
+                {isIncorrect && showCorrectAnswer && (
+                  <div className="text-sm flex items-center">
+                    <span className="text-green-600 min-w-[80px]">
+                      ✓ {subQuestion.correctAnswer}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
