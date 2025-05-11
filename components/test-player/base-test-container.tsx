@@ -20,6 +20,7 @@ import AudioPlayer from "./audio-player";
 import NavigationButtons from "./navigation-buttons";
 import ReadingPassageViewer from "./reading-passage-viewer";
 import SectionQuestionsRenderer from "./section-questions-renderer";
+import TestSidebar from "./test-sidebar";
 
 export interface BaseTestContainerProps {
   test: Test;
@@ -32,6 +33,7 @@ export interface BaseTestContainerProps {
   currentSectionIndex: number;
   currentSection: any;
   readOnly?: boolean;
+  jumpToSection: (index: number) => void;
 }
 
 export default function BaseTestContainer({
@@ -44,6 +46,7 @@ export default function BaseTestContainer({
   currentSectionIndex,
   currentSection,
   readOnly = false,
+  jumpToSection,
 }: BaseTestContainerProps) {
   const [showPassage, setShowPassage] = useState(true);
   const [audioPlayed, setAudioPlayed] = useState(false);
@@ -105,7 +108,17 @@ export default function BaseTestContainer({
               </div>
             </SheetHeader>
             <div className="flex flex-col flex-1 mt-4">
-              {/* TestSidebar moved to individual components for different behavior */}
+              <div className="flex flex-col flex-1 mt-4">
+                <TestSidebar
+                  isSubmitting={isSubmitting}
+                  test={test}
+                  progress={progress}
+                  currentSectionIndex={progress.currentSectionIndex}
+                  onJumpToSection={jumpToSection}
+                  onCompleteTest={onCompleteTest}
+                  isReviewMode={readOnly}
+                />
+              </div>
             </div>
           </SheetContent>
         </Sheet>
@@ -190,6 +203,22 @@ export default function BaseTestContainer({
                   onCompleteTest={onCompleteTest}
                 />
               )}
+            </div>
+          </div>
+          {/* Sidebar - hidden on mobile, last column on desktop */}
+          <div className="lg:w-1/4 hidden lg:block">
+            <div className="sticky top-20 z-20">
+              <Card className="shadow-sm p-3 flex flex-col h-[calc(100vh-65px-2rem)]">
+                <TestSidebar
+                  isReviewMode={readOnly}
+                  isSubmitting={isSubmitting}
+                  test={test}
+                  progress={progress}
+                  currentSectionIndex={progress.currentSectionIndex}
+                  onJumpToSection={jumpToSection}
+                  onCompleteTest={onCompleteTest}
+                />
+              </Card>
             </div>
           </div>
         </div>

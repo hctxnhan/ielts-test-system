@@ -16,7 +16,6 @@ import PickFromListQuestionComponent from "./question-types/pick-from-list-quest
 import ShortAnswerQuestionComponent from "./question-types/short-answer-question";
 import TrueFalseNotGivenQuestionComponent from "./question-types/true-false-not-given-question";
 import WritingTask1QuestionRenderer from "./question-types/writing-task1-question"; // Correct component import
-import WritingTask2QuestionRenderer from "./question-types/writing-task2-question"; // Correct component import
 
 import { supportsPartialScoring } from "@testComponents/lib/test-utils";
 import { useTestStore } from "@testComponents/store/test-store";
@@ -266,6 +265,7 @@ export default function QuestionRenderer({
       );
 
     case "writing-task1":
+    case "writing-task2":
       return (
         // Use the correct component name
         <WritingTask1QuestionRenderer
@@ -276,19 +276,5 @@ export default function QuestionRenderer({
           showCorrectAnswer={isReviewMode}
         />
       );
-
-    case "writing-task2":
-      return (
-        // Use the correct component name
-        <WritingTask2QuestionRenderer
-          question={question}
-          value={localAnswer as WritingTaskAnswer | null}
-          onChange={handleChange}
-          readOnly={isReviewMode}
-          showCorrectAnswer={isReviewMode}
-        />
-      );
-
-    // No default case needed if the union is exhaustive
   }
 }

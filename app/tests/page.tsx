@@ -13,12 +13,13 @@ import { updateQuestionIndexes } from "@testComponents/lib/test";
 import type { Test } from "@testComponents/lib/types";
 import { useTestStore } from "@testComponents/store/test-store";
 import { useState } from "react";
+import { scoreEssay } from "../actions/score-essay";
 
 export default function TestsPage() {
   const [testJson, setTestJson] = useState("");
   const [currentTest, setCurrentTest] = useState<Test>();
 
-  const { progress, setSubmitResultFn } = useTestStore();
+  const { progress, setSubmitResultFn, setScoreEssayFn } = useTestStore();
 
   useEffect(() => {
     // Set the function to handle test submission
@@ -27,9 +28,12 @@ export default function TestsPage() {
       alert("Test submitted successfully!");
     });
 
+    setScoreEssayFn(scoreEssay);
+
     return () => {
       // Cleanup function to reset the submit result function
       setSubmitResultFn(null);
+      setScoreEssayFn(null);
     };
   }, [setSubmitResultFn]);
 

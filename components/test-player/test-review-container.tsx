@@ -44,6 +44,13 @@ export default function TestReview({
     }
   };
 
+  const jumpToSection = (index: number) => {
+    if (index >= 0 && index < test.sections.length) {
+      setCurrentSectionIndex(index);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   return (
     <BaseTestContainer
       test={test}
@@ -57,6 +64,7 @@ export default function TestReview({
       testResults={testResults}
       showResults={true}
       readOnly={true}
+      jumpToSection={jumpToSection}
     />
   );
 }

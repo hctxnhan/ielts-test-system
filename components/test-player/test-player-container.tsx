@@ -1,11 +1,11 @@
 "use client";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { updateQuestionIndexes } from "@testComponents/lib/test";
 import type { Test } from "@testComponents/lib/types";
 import { useTestStore } from "@testComponents/store/test-store";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import BaseTestContainer from "./base-test-container";
 import TestInstructions from "./test-instructions";
 import TestResults from "./test-results";
-import { updateQuestionIndexes } from "@testComponents/lib/test";
 
 interface TestPlayerProps {
   test: Test;
@@ -27,6 +27,95 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
   } = useTestStore();
 
   const showResults = progress?.completed && !!sectionResults;
+
+  // Function to score all writing questions in the test
+  const scoreAllWritingQuestions = async () => {
+    if (!test || !progress) {
+      return;
+    }
+
+    const getEssayScore = useTestStore.getState().scoreEssayFn;
+    if (!getEssayScore) {
+      console.warn("Debug: Essay scoring function is not available");
+      return;
+    }
+
+    const currentAnswers = { ...progress.answers };
+    let hasChanges = false;
+
+    const processQuestion = async (question: any, answer: any) => {
+      if (answer?.answer?.text && answer.answer.text.length < 100) {
+        return {
+          ...answer,
+          score: 0,
+          feedback: "Answer is too short.",
+          answer: {
+            ...answer.answer,
+            score: 0,
+            feedback: "Answer is too short.",
+          },
+        };
+      } else if (!answer.score && !answer.feedback) {
+        try {
+          const response = await getEssayScore({
+            prompt: question.text,
+            essay: answer.answer.text,
+            scoringPrompt: question.scoringPrompt || "",
+          });
+
+          if (response.ok) {
+            return {
+              ...answer,
+              score: (response.score * question.points) / 9,
+              feedback: response.feedback,
+              answer: {
+                ...answer.answer,
+                score: (response.score * question.points) / 9,
+                feedback: response.feedback,
+              },
+            };
+          } else {
+            console.warn(
+              "Debug: Scoring failed for question",
+              question.id,
+              "Response:",
+              response,
+            );
+          }
+        } catch (error) {
+          console.error(
+            `Error scoring writing question ${question.id}:`,
+            error,
+          );
+        }
+      }
+      return answer;
+    };
+
+    for (const section of test.sections) {
+      for (const question of section.questions) {
+        const answer = currentAnswers[question.id];
+        if (
+          (question.type === "writing-task1" ||
+            question.type === "writing-task2") &&
+          answer?.answer?.text
+        ) {
+          const updatedAnswer = await processQuestion(question, answer);
+          if (updatedAnswer !== answer) {
+            currentAnswers[question.id] = updatedAnswer;
+            hasChanges = true;
+          }
+        }
+      }
+    }
+
+    if (hasChanges) {
+      useTestStore.setState({
+        progress: { ...progress, answers: currentAnswers },
+      });
+    } else {
+    }
+  };
 
   // Load the test when component mounts
   useEffect(() => {
@@ -50,10 +139,13 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
 
   // Handle test completion
   const handleCompleteTest = useCallback(async () => {
-    // If we have a testId in the current test, try submitting the results
     if (test?.id) {
       try {
         setIsSubmitting(true);
+
+        // Score all writing questions before completing the test
+        await scoreAllWritingQuestions();
+
         await useTestStore.getState().submitTestResults(test.id);
         completeTest();
       } catch (error) {
@@ -62,7 +154,7 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
         setIsSubmitting(false);
       }
     }
-  }, [completeTest, test]);
+  }, [completeTest, test, scoreAllWritingQuestions]);
 
   // Navigation between sections
   const handleNextSection = useCallback(() => {
@@ -84,6 +176,22 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [progress, test, handleCompleteTest]);
+
+  // Jump to specific section
+  const jumpToSection = useCallback(
+    (sectionIndex: number) => {
+      if (!progress) return;
+
+      const updatedProgress = {
+        ...progress,
+        currentSectionIndex: sectionIndex,
+        currentQuestionIndex: 0,
+      };
+
+      useTestStore.setState({ progress: updatedProgress });
+    },
+    [progress],
+  );
 
   const handlePreviousSection = useCallback(() => {
     if (!progress || !test) return;
@@ -134,6 +242,7 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
       onNextSection={handleNextSection}
       currentSectionIndex={progress?.currentSectionIndex || 0}
       currentSection={currentSection()}
+      jumpToSection={jumpToSection}
     />
   );
 }

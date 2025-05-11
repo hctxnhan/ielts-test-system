@@ -264,8 +264,6 @@ export const useTestStore = create<TestState>()((set, get) => ({
             (sq: SubQuestionMeta) => sq.subId === subQuestionId,
           );
 
-          console.log("subQuestion", subQuestionId, subQuestion);
-
           if (subQuestion) {
             // Check if the selected item matches the correct item for this subquestion
             isCorrect = answer === subQuestion.item;
