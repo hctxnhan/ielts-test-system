@@ -3,28 +3,24 @@
 import { Badge } from "@testComponents/components/ui/badge";
 import { Button } from "@testComponents/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogTitle
+} from "@testComponents/components/ui/dialog";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@testComponents/components/ui/tooltip";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogClose,
-} from "@testComponents/components/ui/dialog";
 import type { ReadingPassage } from "@testComponents/lib/types";
 import {
-  Bookmark,
-  BookmarkCheck,
   BookOpen,
   ExternalLink,
   Info,
-  ZoomIn,
-  ZoomOut,
-  X,
   Maximize2,
+  ZoomIn,
+  ZoomOut
 } from "lucide-react";
 import { useState } from "react";
 
@@ -71,11 +67,10 @@ export default function ReadingPassageViewer({
   const closeImageModal = () => {
     setSelectedImage(null);
   };
-
-  // Split paragraphs for better readability
-  const paragraphs = passage.content
-    .split(/\n\n|\r\n\r\n/)
-    .filter((p) => p.trim().length > 0);
+  // For handling rich text content
+  const renderRichContent = () => {
+    return { __html: passage.content };
+  };
 
   return (
     <div className="relative">
@@ -153,15 +148,12 @@ export default function ReadingPassageViewer({
           </div>
         </div>
 
-        {/* Reading guide */}
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <span>Words: ~{passage.content.split(/\s+/).length}</span>
-          <span>·</span>
-          <span>Paragraphs: {paragraphs.length}</span>
+        {/* Reading guide */}        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span>Words: ~{passage.content.replace(/<[^>]*>/g, '').split(/\s+/).length}</span>
           <span>·</span>
           <span>
             Est. reading time:{" "}
-            {Math.ceil(passage.content.split(/\s+/).length / 200)} min
+            {Math.ceil(passage.content.replace(/<[^>]*>/g, '').split(/\s+/).length / 200)} min
           </span>
         </div>
       </div>
@@ -207,16 +199,11 @@ export default function ReadingPassageViewer({
               questions. Click on any image to view it in full size.
             </p>
           </div>
-        )}
-
-      {/* Content with paragraph styling */}
-      <div className={`prose dark:prose-invert max-w-none ${fontSizeClass}`}>
-        {paragraphs.map((paragraph, index) => (
-          <p key={index} className="mb-4">
-            {paragraph}
-          </p>
-        ))}
-      </div>
+        )}      {/* Content with rich text styling */}
+      <div 
+        className={`prose dark:prose-invert max-w-none ${fontSizeClass}`}
+        dangerouslySetInnerHTML={renderRichContent()}
+      ></div>
 
       {/* Footer with source information */}
       {passage.source && (
