@@ -213,18 +213,39 @@ export const useTestStore = create<TestState>()((set, get) => ({
       case "completion":
         if (scoringStrategy === "partial") {
           const subQuestion = question.subQuestions?.find(
-            (sq: { subId: string }) => sq.subId === subQuestionId,
+            (sq: SubQuestionMeta) => sq.subId === subQuestionId,
           );
 
-          isCorrect = subQuestion.correctAnswer === answer;
-
-          score = isCorrect ? subQuestion.points : 0;
+          if (subQuestion) {
+            const normalizedAnswer = answer
+              ?.trim()
+              .toLowerCase()
+              .replace(/\s+/g, " ");
+            isCorrect =
+              subQuestion.acceptableAnswers?.some(
+                (acceptableAnswer: string) =>
+                  acceptableAnswer.trim().toLowerCase().replace(/\s+/g, " ") ===
+                  normalizedAnswer,
+              ) || false;
+            score = isCorrect ? subQuestion.points : 0;
+          }
         } else {
           const totalSubQuestions = question.subQuestions?.length || 0;
           const correctCount = Object.entries(answer).filter(([key, value]) =>
             question.subQuestions?.some(
               (sq: SubQuestionMeta) =>
-                sq.subId === key && sq.correctAnswer === value,
+                sq.subId === key &&
+                sq.acceptableAnswers?.some((acceptableAnswer: string) => {
+                  const normalizedAcceptableAnswer = acceptableAnswer
+                    .trim()
+                    .toLowerCase()
+                    .replace(/\s+/g, " ");
+                  const normalizedValue = (value as string)
+                    .trim()
+                    .toLowerCase()
+                    .replace(/\s+/g, " ");
+                  return normalizedAcceptableAnswer === normalizedValue;
+                }),
             ),
           ).length;
 
@@ -314,7 +335,15 @@ export const useTestStore = create<TestState>()((set, get) => ({
           if (subQuestion) {
             const acceptableAnswers =
               (subQuestion as any).acceptableAnswers || [];
-            isCorrect = acceptableAnswers.includes(answer);
+            const normalizedAnswer = answer
+              .trim()
+              .toLowerCase()
+              .replace(/\s+/g, " ");
+            isCorrect = acceptableAnswers.some(
+              (acceptableAnswer: string) =>
+                acceptableAnswer.trim().toLowerCase().replace(/\s+/g, " ") ===
+                normalizedAnswer,
+            );
             score = isCorrect ? subQuestion.points : 0;
           }
         } else {
@@ -323,7 +352,17 @@ export const useTestStore = create<TestState>()((set, get) => ({
             const sq = question.subQuestions?.find(
               (sq: SubQuestionMeta & { acceptableAnswers?: string[] }) =>
                 sq.subId === key &&
-                sq.acceptableAnswers?.includes((value as string).toString()),
+                sq.acceptableAnswers?.some((acceptableAnswer: string) => {
+                  const normalizedAcceptableAnswer = acceptableAnswer
+                    .trim()
+                    .toLowerCase()
+                    .replace(/\s+/g, " ");
+                  const normalizedValue = (value as string)
+                    .trim()
+                    .toLowerCase()
+                    .replace(/\s+/g, " ");
+                  return normalizedAcceptableAnswer === normalizedValue;
+                }),
             );
             return !!sq;
           }).length;

@@ -4,7 +4,6 @@ import { Input } from "@testComponents/components/ui/input";
 import { Label } from "@testComponents/components/ui/label";
 import type { CompletionQuestion } from "@testComponents/lib/types";
 import { cn } from "@testComponents/lib/utils";
-import { CheckCircle2, XCircle } from "lucide-react";
 
 interface CompletionQuestionProps {
   question: CompletionQuestion;
@@ -27,8 +26,17 @@ export default function CompletionQuestionRenderer({
       <div className="space-y-2">
         {question.subQuestions.map((subQuestion, index) => {
           const userAnswer = value?.[subQuestion.subId] || "";
+          const normalizedUserAnswer = userAnswer
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, " ");
           const isCorrect =
-            showCorrectAnswer && subQuestion.correctAnswer === userAnswer;
+            showCorrectAnswer &&
+            subQuestion.acceptableAnswers?.some(
+              (answer) =>
+                answer.trim().toLowerCase().replace(/\s+/g, " ") ===
+                normalizedUserAnswer,
+            );
           const isIncorrect = showCorrectAnswer && !isCorrect;
 
           return (
@@ -66,8 +74,15 @@ export default function CompletionQuestionRenderer({
                 />
                 {isIncorrect && showCorrectAnswer && (
                   <div className="text-sm flex items-center">
-                    <span className="text-green-600 min-w-[80px]">
-                      ✓ {subQuestion.correctAnswer}
+                    <span className="text-green-600">
+                      ✓ {subQuestion.acceptableAnswers?.[0] || ""}
+                      {subQuestion.acceptableAnswers &&
+                        subQuestion.acceptableAnswers.length > 1 && (
+                          <span className="text-gray-500 ml-1">
+                            (or:{" "}
+                            {subQuestion.acceptableAnswers.slice(1).join(", ")})
+                          </span>
+                        )}
                     </span>
                   </div>
                 )}

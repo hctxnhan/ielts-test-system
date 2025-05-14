@@ -22,7 +22,8 @@ export type QuestionType =
 export interface SubQuestionMeta {
   subId: string;
   item?: string;
-  correctAnswer?: any;
+  correctAnswer?: string;
+  acceptableAnswers?: string[];
   points: number;
   subIndex?: number;
   questionText?: string; // The actual text of the question (item, statement, etc.)
@@ -55,7 +56,9 @@ export interface MultipleChoiceQuestion extends BaseQuestion {
 export interface CompletionQuestion extends BaseQuestion {
   type: "completion";
   blanks: number;
-  subQuestions: SubQuestionMeta[];
+  subQuestions: (Omit<SubQuestionMeta, "correctAnswer"> & {
+    acceptableAnswers: string[];
+  })[];
 }
 
 export interface MatchingItem {
