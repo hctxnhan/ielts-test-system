@@ -20,6 +20,7 @@ export default function ShortAnswerQuestionRenderer({
   readOnly = false,
   showCorrectAnswer = false,
 }: ShortAnswerQuestionProps) {
+  console.log(question);
   const handleChange = (subId: string, newValue: string) => {
     if (readOnly) return;
 
@@ -45,16 +46,7 @@ export default function ShortAnswerQuestionRenderer({
       </div>
 
       <div className="space-y-2">
-        {question.questions.map((q, index) => {
-          const subQuestion = question.subQuestions?.find(
-            (sq) => sq.item === q.id,
-          );
-
-          if (!subQuestion) {
-            console.error("No subQuestion found for question:", q.id);
-            return null;
-          }
-
+        {question.subQuestions.map((subQuestion, index) => {
           const questionNumber =
             question.scoringStrategy === "partial"
               ? `Q${question.index + index + 1}.`
@@ -69,13 +61,20 @@ export default function ShortAnswerQuestionRenderer({
             );
           const isIncorrect = showCorrectAnswer && !isCorrect;
 
+          const questionText = question.questions.find(
+            (q) => q.id === subQuestion.item,
+          );
+
           return (
-            <div key={q.id} className="space-y-1.5 text-sm">
-              <Label htmlFor={`short-answer-${q.id}`} className="font-medium">
-                {questionNumber} {q.text}
+            <div key={subQuestion.subId} className="space-y-1.5 text-sm">
+              <Label
+                htmlFor={`short-answer-${subQuestion.subId}`}
+                className="font-medium"
+              >
+                {questionNumber} {questionText?.text}
               </Label>
               <Textarea
-                id={`short-answer-${q.id}`}
+                id={`short-answer-${subQuestion.subId}`}
                 value={userAnswer}
                 onChange={(e) =>
                   handleChange(subQuestion.subId, e.target.value)

@@ -193,9 +193,8 @@ function transformCompletion(
     question.subQuestions.map((sub) => ({
       subId: sub.subId,
       points: sub.points,
-      correctAnswer: sub.correctAnswer,
+      acceptableAnswers: sub.acceptableAnswers,
       questionText: question.text,
-      answerText: String(sub.correctAnswer || ""),
     }));
 
   return {

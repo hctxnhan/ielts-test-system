@@ -216,6 +216,12 @@ export const useTestStore = create<TestState>()((set, get) => ({
             (sq: SubQuestionMeta) => sq.subId === subQuestionId,
           );
 
+          console.log({
+            subQuestion,
+            answer,
+            subQuestionId,
+          });
+
           if (subQuestion) {
             const normalizedAnswer = answer
               ?.trim()
@@ -227,6 +233,12 @@ export const useTestStore = create<TestState>()((set, get) => ({
                   acceptableAnswer.trim().toLowerCase().replace(/\s+/g, " ") ===
                   normalizedAnswer,
               ) || false;
+
+            console.log({
+              normalizedAnswer,
+              acceptableAnswers: subQuestion.acceptableAnswers,
+            });
+
             score = isCorrect ? subQuestion.points : 0;
           }
         } else {
