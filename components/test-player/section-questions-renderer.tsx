@@ -40,6 +40,7 @@ const SectionQuestionsRenderer: React.FC<SectionQuestionsRendererProps> = ({
         </div>
       ))}
     </div>
+
   );
 };
 

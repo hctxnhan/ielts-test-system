@@ -42,12 +42,13 @@ export async function scoreEssayWithAI(
   essay: string,
   scoringPrompt?: string,
 ) {
+  console.log("Scoring essay with AI...", process.env.OPENROUTER_MODEL_ID);
   try {
     const openrouter = createOpenRouter({
       apiKey: process.env.OPENROUTER_API_KEY,
     });
     const model = openrouter(
-      process.env.OPENROUTER_MODEL_ID || "google/gemini-2.5-pro-exp-03-25:free",
+      process.env.OPENROUTER_MODEL_ID || '',
     );
 
     // Refined instruction prompt for the AI model

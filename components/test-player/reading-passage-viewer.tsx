@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Badge } from "@testComponents/components/ui/badge";
 import { Button } from "@testComponents/components/ui/button";
 import {
@@ -7,6 +8,7 @@ import {
   DialogContent,
   DialogTitle
 } from "@testComponents/components/ui/dialog";
+import "react-quill/dist/quill.snow.css"; // Import Quill styles for compatibility
 import {
   Tooltip,
   TooltipContent,
@@ -146,14 +148,13 @@ export default function ReadingPassageViewer({
               </Tooltip>
             </TooltipProvider>
           </div>
-        </div>
-
-        {/* Reading guide */}        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <span>Words: ~{passage.content.replace(/<[^>]*>/g, '').split(/\s+/).length}</span>
+        </div>        {/* Reading guide */}
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span>Words: ~{passage.content.replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length}</span>
           <span>·</span>
           <span>
             Est. reading time:{" "}
-            {Math.ceil(passage.content.replace(/<[^>]*>/g, '').split(/\s+/).length / 200)} min
+            {Math.ceil(passage.content.replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length / 200)} min
           </span>
         </div>
       </div>
@@ -201,9 +202,87 @@ export default function ReadingPassageViewer({
           </div>
         )}      {/* Content with rich text styling */}
       <div 
-        className={`prose dark:prose-invert max-w-none ${fontSizeClass}`}
+        className={`prose dark:prose-invert max-w-none ${fontSizeClass} quill-content`}
         dangerouslySetInnerHTML={renderRichContent()}
       ></div>
+      
+      {/* Styles for Quill content */}
+      <style jsx global>{`
+        .quill-content {
+          line-height: 1.6;
+          font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .quill-content h1, .quill-content h2, .quill-content h3 {
+          font-weight: 600;
+          margin-top: 1.5em;
+          margin-bottom: 0.5em;
+          line-height: 1.3;
+        }
+        .quill-content h1 {
+          font-size: 1.75em;
+        }
+        .quill-content h2 {
+          font-size: 1.5em;
+        }
+        .quill-content h3 {
+          font-size: 1.25em;
+        }
+        .quill-content p {
+          margin-bottom: 1em;
+        }
+        .quill-content ul, .quill-content ol {
+          padding-left: 1.5em;
+          margin-bottom: 1em;
+        }
+        .quill-content ul {
+          list-style-type: disc;
+        }
+        .quill-content ol {
+          list-style-type: decimal;
+        }
+        .quill-content li {
+          margin-bottom: 0.5em;
+        }
+        .quill-content code {
+          background-color: rgba(0, 0, 0, 0.05);
+          border-radius: 3px;
+          padding: 2px 4px;
+          font-family: monospace;
+        }
+        .quill-content pre {
+          background-color: rgba(0, 0, 0, 0.05);
+          border-radius: 3px;
+          padding: 0.75em 1em;
+          margin-bottom: 1em;
+          white-space: pre-wrap;
+          font-family: monospace;
+        }
+        .quill-content img {
+          max-width: 100%;
+          height: auto;
+          margin: 1em 0;
+        }
+        .quill-content blockquote {
+          border-left: 4px solid rgba(0, 0, 0, 0.1);
+          padding-left: 1em;
+          margin-left: 0;
+          font-style: italic;
+        }
+        .quill-content a {
+          color: #3182ce;
+          text-decoration: underline;
+        }
+        /* Support different text alignment */
+        .quill-content .ql-align-center {
+          text-align: center;
+        }
+        .quill-content .ql-align-right {
+          text-align: right;
+        }
+        .quill-content .ql-align-justify {
+          text-align: justify;
+        }
+      `}</style>
 
       {/* Footer with source information */}
       {passage.source && (

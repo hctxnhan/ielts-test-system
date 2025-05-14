@@ -292,28 +292,36 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
       case "pick-from-a-list":
         if (scoringStrategy === "partial") {
-          // For partial scoring, each subquestion is graded individually
-          const subQuestion = question.subQuestions?.find(
-            (sq: SubQuestionMeta) => sq.subId === subQuestionId,
-          );
-
-          if (subQuestion) {
-            // Check if the selected item matches the correct item for this subquestion
-            isCorrect = answer === subQuestion.item;
-            score = isCorrect ? subQuestion.points : 0;
+          // if answer is already choosen, skip because it is already checked
+          if (question.subQuestions?.some((sq: { subId: string | number; item: any; }) => 
+            answer[sq.subId] === sq.item
+          )) {
+            isCorrect = false;
+            score = 0;
+            break;
           }
+
+          isCorrect = question.subQuestions?.some(
+            (sq: SubQuestionMeta) =>
+              sq.item === answer,
+          )
+
+          score = isCorrect ? question.points : 0;
         } else {
           // For all-or-nothing scoring
           const totalSubQuestions = question.subQuestions?.length || 0;
 
-          // Count how many selections are correct
-          const correctCount = Object.entries(answer).filter(
-            ([subId, itemId]) => {
-              const subQuestion = question.subQuestions?.find(
-                (sq: SubQuestionMeta) => sq.subId === subId,
-              );
-              return subQuestion && itemId === subQuestion.item;
-            },
+          const totalAnswers = Object.entries(answer)?.length || 0;
+
+          if(totalAnswers !== totalSubQuestions) {
+            isCorrect = false;
+            score = 0;
+            break;
+          }          const correctCount = Object.entries(answer).filter(([key, value]) =>
+            // Check if the answer value is ANY of the correct items in subQuestions
+            question.subQuestions?.some(
+              (sq: SubQuestionMeta) => sq.item === value
+            ),
           ).length;
 
           isCorrect = correctCount === totalSubQuestions;

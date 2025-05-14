@@ -40,6 +40,8 @@ export default function WritingTask1QuestionRenderer({
   readOnly = false,
   showCorrectAnswer = false,
 }: WritingTask1QuestionProps) {
+  console.log(value)
+
   const [currentEssay, setCurrentEssay] = useState<string | null>(
     value?.text ?? null,
   );
@@ -48,11 +50,8 @@ export default function WritingTask1QuestionRenderer({
       ? { score: value.score, feedback: value.feedback }
       : null,
   );
-  const [isScoring, setIsScoring] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showSampleAnswer, setShowSampleAnswer] = useState(false);
-
-  const getEssayScore = useTestStore.getState().scoreEssayFn;
 
   // Update local state if the external value changes (e.g., loading from progress)
   useEffect(() => {
@@ -79,65 +78,6 @@ export default function WritingTask1QuestionRenderer({
     ? (currentEssay.match(/\b\w+\b/g) || []).length
     : 0;
 
-  // Function to score the essay using OpenRouter and save the essay content
-  // const scoreEssay = async () => {
-  //   if (isScoring) {
-  //     return;
-  //   }
-
-  //   if (getEssayScore === null) {
-  //     alert("Essay scoring function is not available.");
-  //     return;
-  //   }
-
-  //   if (!currentEssay || currentEssay.trim().length < 50) {
-  //     alert("Please write more content before scoring.");
-  //     return;
-  //   }
-
-  //   setIsScoring(true);
-
-  //   try {
-  //     const response = await getEssayScore({
-  //       prompt: question.text,
-  //       essay: currentEssay || "",
-  //       scoringPrompt: question?.prompt || "",
-  //     });
-
-  //     if (!response.ok) {
-  //       throw new Error("Failed to score essay");
-  //     }
-
-  //     const result = {
-  //       score: response.score,
-  //       feedback: response.feedback,
-  //     };
-
-  //     setAiScore(
-  //       result?.score !== undefined && result?.feedback !== undefined
-  //         ? {
-  //             score: (result?.score * question.points) / 9, // Convert from 1-9 scale to question.points scale
-  //             feedback: result?.feedback,
-  //           }
-  //         : null,
-  //     );
-
-  //     // Call onChange with the full WritingTaskAnswer object including the score and feedback
-  //     onChange({
-  //       text: currentEssay,
-  //       score: (result.score * question.points) / 9, // Convert from 1-9 scale to question.points scale
-  //       feedback: result.feedback,
-  //     });
-
-  //     setIsScoring(false);
-  //     setShowFeedback(true); // Automatically show feedback after scoring
-  //   } catch (error) {
-  //     console.error("Error scoring essay:", error);
-  //     setIsScoring(false);
-  //     alert("There was an error scoring your essay. Please try again later.");
-  //   }
-  // };
-
   // Handle changes in the textarea - only update local state, don't save
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newText = e.target.value;
@@ -155,6 +95,7 @@ export default function WritingTask1QuestionRenderer({
 
       <Card className="p-4">
         <p className="font-medium mb-4">{question.text}</p>
+        <p>{question.prompt}</p>
 
         {question.imageUrl && (
           <div className="my-4 flex justify-center">

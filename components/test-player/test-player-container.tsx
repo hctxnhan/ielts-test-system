@@ -44,6 +44,10 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
     let hasChanges = false;
 
     const processQuestion = async (question: any, answer: any) => {
+      console.log({
+        answer,
+      });
+
       if (answer?.answer?.text && answer.answer.text.length < 100) {
         return {
           ...answer,
@@ -101,6 +105,12 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
           answer?.answer?.text
         ) {
           const updatedAnswer = await processQuestion(question, answer);
+          console.log({
+            updatedAnswer,
+            answer,
+            hasChanges: updatedAnswer !== answer,
+            question,
+          });
           if (updatedAnswer !== answer) {
             currentAnswers[question.id] = updatedAnswer;
             hasChanges = true;

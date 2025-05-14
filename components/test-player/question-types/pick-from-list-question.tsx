@@ -36,6 +36,9 @@ export default function PickFromListQuestionRenderer({
     }
   }, [value]);
 
+  // Get list of all currently selected items
+  const getSelectedItems = () => Object.values(selectedAnswers);
+
   const handleItemSelection = (itemId: string, subQuestionId: string) => {
     if (readOnly) return;
 
@@ -80,19 +83,40 @@ export default function PickFromListQuestionRenderer({
           const questionNumber =
             question.scoringStrategy === "partial"
               ? question.index + index + 1
-              : index + 1;
-
-          const selectedItemId = selectedAnswers[subQuestion.subId];
+              : index + 1;          const selectedItemId = selectedAnswers[subQuestion.subId];
+          
+          // Check if the selected item is ANY of the correct answers
           const isCorrect =
-            showCorrectAnswer && subQuestion.item === selectedItemId;
-          const isIncorrect = showCorrectAnswer && !isCorrect;
-
-          const correctAnswerIndex = question.items.findIndex(
-            (item) => item.id === subQuestion.item,
+            showCorrectAnswer && 
+            selectedItemId && 
+            question.subQuestions.some(sq => sq.item === selectedItemId);
+          
+          const isIncorrect = showCorrectAnswer && !isCorrect;          // Find all correct item IDs from the subQuestions
+          const allCorrectItemIds = question.subQuestions.map(sq => sq.item);
+          
+          // Find correct items that aren't currently selected in any field
+          const availableCorrectItemIds = allCorrectItemIds.filter(
+            itemId => !Object.values(selectedAnswers).includes(itemId ?? "") || itemId === selectedItemId
           );
-          const correctAnswer = question.items[correctAnswerIndex]?.text;
-          const correctAnswerLabel = String.fromCharCode(
-            65 + correctAnswerIndex,
+          
+          // Default to showing the original assigned correct answer
+          let suggestedCorrectItemId = subQuestion.item || "";
+            // If that's already selected somewhere else, suggest another available correct answer
+          if (availableCorrectItemIds.length > 0 && 
+             (Object.values(selectedAnswers).includes(subQuestion.item ?? "") && subQuestion.item !== selectedItemId)) {
+            suggestedCorrectItemId = availableCorrectItemIds[0] || "";
+          }
+          
+          const correctAnswerIndex = question.items.findIndex(
+            (item) => item.id === suggestedCorrectItemId,
+          );
+          const correctAnswer = question.items[correctAnswerIndex]?.text || "";
+          const correctAnswerLabel = correctAnswerIndex >= 0 ? 
+            String.fromCharCode(65 + correctAnswerIndex) : "";
+
+          // Get all currently selected items except the one selected for this sub-question
+          const selectedItems = getSelectedItems().filter(
+            id => id !== selectedItemId
           );
 
           return (
@@ -127,14 +151,21 @@ export default function PickFromListQuestionRenderer({
                     />
                   </SelectTrigger>
                   <SelectContent>
-                    {question.items.map((item, itemIndex) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {String.fromCharCode(65 + itemIndex)}. {item.text}
-                      </SelectItem>
-                    ))}
+                    {question.items.map((item, itemIndex) => {
+                      // Skip if this item is already selected in another sub-question
+                      const isAlreadySelected = selectedItems.includes(item.id);
+                      if (isAlreadySelected && item.id !== selectedItemId) {
+                        return null;
+                      }
+
+                      return (
+                        <SelectItem key={item.id} value={item.id}>
+                          {String.fromCharCode(65 + itemIndex)}. {item.text}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
-                </Select>
-                {showCorrectAnswer && isIncorrect && subQuestion.item && (
+                </Select>                {showCorrectAnswer && isIncorrect && suggestedCorrectItemId && (
                   <div className="text-sm text-green-600">
                     ✓ {correctAnswerLabel} . {correctAnswer}
                   </div>

@@ -1,9 +1,8 @@
 "use client";
 
-import React from "react";
-import { useDrag, useDrop } from "react-dnd";
-import type { RefCallback } from "react";
 import { cn } from "@testComponents/lib/utils";
+import type { RefCallback } from "react";
+import { useDrag, useDrop } from "react-dnd";
 
 interface DraggableItemProps {
   text: string;
@@ -24,6 +23,7 @@ interface DroppableZoneProps {
   disabled?: boolean;
   className?: string;
 }
+
 
 interface DragItem {
   index: string;
@@ -107,3 +107,4 @@ export function DroppableZone({
     </div>
   );
 }
+
