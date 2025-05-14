@@ -18,8 +18,9 @@ import {
 import { Input } from "@testComponents/components/ui/input";
 import { Label } from "@testComponents/components/ui/label";
 import { AutoResizeTextarea } from "@testComponents/components/ui/auto-resize-textarea";
+import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 import type { FileObject } from "@testComponents/lib/supabase-storage";
-import type { Section, Test } from "@testComponents/lib/types";
+import type { ReadingPassage, Section, Test } from "@testComponents/lib/types";
 import {
   ChevronDown,
   ChevronUp,
@@ -67,10 +68,9 @@ export default function SectionEditor({
   const handleAudioSelect = (file: FileObject) => {
     onUpdateSection(section.id, { audioUrl: file.url });
   };
-
   const handleImageSelect = (file: FileObject) => {
     if (section.readingPassage) {
-      const updatedPassage = {
+      const updatedPassage: ReadingPassage = {
         ...section.readingPassage,
         imageUrls: [...(section.readingPassage.imageUrls || []), file.url],
       };
@@ -208,18 +208,21 @@ export default function SectionEditor({
                       </Label>
                       <Input
                         id={`passage-title-${index}`}
-                        value={section.readingPassage?.title || ""}
-                        onChange={(e) => {
-                          const updatedPassage = {
-                            ...(section.readingPassage || {
-                              id: uuidv4(),
-                              title: "",
-                              content: "",
-                              hasImages: false,
-                              imageUrls: [],
-                            }),
+                        value={section.readingPassage?.title || ""}                        onChange={(e) => {
+                          // Create default passage if none exists
+                          const defaultPassage: ReadingPassage = {
+                            id: uuidv4(),
+                            title: "",
+                            content: "",
+                            hasImages: false,
+                            imageUrls: [],
+                          };
+                          
+                          const updatedPassage: ReadingPassage = {
+                            ...(section.readingPassage || defaultPassage),
                             title: e.target.value,
                           };
+                          
                           onUpdateSection(section.id, {
                             readingPassage: updatedPassage,
                           });
@@ -238,18 +241,21 @@ export default function SectionEditor({
                       </Label>
                       <Input
                         id={`passage-source-${index}`}
-                        value={section.readingPassage?.source || ""}
-                        onChange={(e) => {
-                          const updatedPassage = {
-                            ...(section.readingPassage || {
-                              id: uuidv4(),
-                              title: "",
-                              content: "",
-                              hasImages: false,
-                              imageUrls: [],
-                            }),
+                        value={section.readingPassage?.source || ""}                        onChange={(e) => {
+                          // Create default passage if none exists
+                          const defaultPassage: ReadingPassage = {
+                            id: uuidv4(),
+                            title: "",
+                            content: "",
+                            hasImages: false,
+                            imageUrls: [],
+                          };
+                          
+                          const updatedPassage: ReadingPassage = {
+                            ...(section.readingPassage || defaultPassage),
                             source: e.target.value,
                           };
+                          
                           onUpdateSection(section.id, {
                             readingPassage: updatedPassage,
                           });
@@ -259,7 +265,6 @@ export default function SectionEditor({
                       />
                     </div>
                   </div>
-
                   <div className="space-y-2">
                     <Label
                       htmlFor={`passage-content-${index}`}
@@ -267,46 +272,51 @@ export default function SectionEditor({
                     >
                       Passage Content
                     </Label>
-                    <AutoResizeTextarea
+                    <RichTextEditor
                       id={`passage-content-${index}`}
-                      value={section.readingPassage?.content || ""}
-                      onChange={(e) => {
-                        const updatedPassage = {
-                          ...(section.readingPassage || {
-                            id: uuidv4(),
-                            title: "",
-                            content: "",
-                            hasImages: false,
-                            imageUrls: [],
-                          }),
-                          content: e.target.value,
+                      value={section.readingPassage?.content || ""}                      onChange={(content) => {
+                        // Create default passage if none exists
+                        const defaultPassage: ReadingPassage = {
+                          id: uuidv4(),
+                          title: "",
+                          content: "",
+                          hasImages: false,
+                          imageUrls: [],
                         };
+                        
+                        const updatedPassage: ReadingPassage = {
+                          ...(section.readingPassage || defaultPassage),
+                          content: content,
+                        };
+                        
                         onUpdateSection(section.id, {
                           readingPassage: updatedPassage,
                         });
                       }}
                       placeholder="Enter passage content"
-                      minRows={5}
-                      maxRows={20}
-                      className="text-sm"
+                      minHeight={200}
+                      maxHeight={400}
                     />
                   </div>
 
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id={`passage-has-images-${index}`}
-                      checked={section.readingPassage?.hasImages || false}
-                      onCheckedChange={(checked) => {
-                        const updatedPassage = {
-                          ...(section.readingPassage || {
-                            id: uuidv4(),
-                            title: "",
-                            content: "",
-                            hasImages: false,
-                            imageUrls: [],
-                          }),
+                      checked={section.readingPassage?.hasImages || false}                      onCheckedChange={(checked) => {
+                        // Create default passage if none exists
+                        const defaultPassage: ReadingPassage = {
+                          id: uuidv4(),
+                          title: "",
+                          content: "",
+                          hasImages: false,
+                          imageUrls: [],
+                        };
+                        
+                        const updatedPassage: ReadingPassage = {
+                          ...(section.readingPassage || defaultPassage),
                           hasImages: !!checked,
                         };
+                        
                         onUpdateSection(section.id, {
                           readingPassage: updatedPassage,
                         });
@@ -351,17 +361,19 @@ export default function SectionEditor({
                                 variant="ghost"
                                 size="icon"
                                 className="h-6 w-6 mr-1"
-                                onClick={() => {
-                                  const newUrls = (
+                                onClick={() => {                                  const newUrls = (
                                     section.readingPassage?.imageUrls || []
                                   ).filter((_, i) => i !== imgIndex);
-                                  const updatedPassage = {
-                                    ...section.readingPassage,
-                                    imageUrls: newUrls,
-                                  };
-                                  onUpdateSection(section.id, {
-                                    readingPassage: updatedPassage,
-                                  });
+                                  
+                                  if (section.readingPassage) {
+                                    const updatedPassage: ReadingPassage = {
+                                      ...section.readingPassage,
+                                      imageUrls: newUrls,
+                                    };
+                                    onUpdateSection(section.id, {
+                                      readingPassage: updatedPassage,
+                                    });
+                                  }
                                 }}
                               >
                                 <X size={14} />

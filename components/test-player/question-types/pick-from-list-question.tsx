@@ -1,112 +1,180 @@
 "use client";
-
-import { useState, useEffect } from "react";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
+import React, { useState, useEffect } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@testComponents/components/ui/select";
 import { Label } from "@testComponents/components/ui/label";
-import type { PickFromListQuestion } from "@testComponents/lib/types";
-import { DraggableItem, DroppableZone } from "./shared/dnd-components";
+import type { PickFromAListQuestion } from "@testComponents/lib/types";
+import { cn } from "@testComponents/lib/utils";
 
 interface PickFromListQuestionProps {
-  question: PickFromListQuestion;
+  question: PickFromAListQuestion;
   value: Record<string, string> | null;
   onChange: (value: Record<string, string>, subQuestionId?: string) => void;
+  readOnly?: boolean;
+  showCorrectAnswer?: boolean;
 }
-
-const ITEM_TYPE = "OPTION";
 
 export default function PickFromListQuestionRenderer({
   question,
   value,
   onChange,
+  readOnly = false,
+  showCorrectAnswer = false,
 }: PickFromListQuestionProps) {
-  const [matches, setMatches] = useState<Record<string, string>>({});
+  const [selectedAnswers, setSelectedAnswers] = useState<
+    Record<string, string>
+  >({});
 
   useEffect(() => {
     if (value) {
-      setMatches(value);
+      setSelectedAnswers(value);
     }
   }, [value]);
 
-  const handleDrop = (optionId: string, subQuestionId: string) => {
-    setMatches((prevMatches) => {
-      const updatedMatches = { ...prevMatches };
-      updatedMatches[subQuestionId] = optionId;
+  // Get list of all currently selected items
+  const getSelectedItems = () => Object.values(selectedAnswers);
+
+  const handleItemSelection = (itemId: string, subQuestionId: string) => {
+    if (readOnly) return;
+
+    setSelectedAnswers((prev) => {
+      const updated = { ...prev };
+      updated[subQuestionId] = itemId;
 
       if (question.scoringStrategy === "partial") {
-        onChange(updatedMatches, subQuestionId);
+        onChange(updated, subQuestionId);
       } else {
-        onChange(updatedMatches);
+        onChange(updated);
       }
 
-      return updatedMatches;
+      return updated;
     });
   };
 
+  const subQuestions = question.subQuestions || [];
+
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div className="space-y-4">
-        <p className="font-medium">{question.text}</p>
-        <div className="space-y-2 w-fit">
-          {question.options.map((option, optionIndex) => (
-            <DraggableItem
-              key={option.id}
-              text={option.text}
-              index={option.id}
-              itemType={ITEM_TYPE}
-              prefix={String.fromCharCode(65 + optionIndex) + "."}
-            />
-          ))}
-        </div>
+    <div className="space-y-2">
+      <div>
+        <p className="font-medium text-sm mb-2">{question.text}</p>
 
-        <div className="space-y-2">
-          {question.items.map((item, index) => {
-            // Find the corresponding subQuestion
-            const subQuestion = question.subQuestions?.find(
-              (sq) => sq.item === item.id,
-            );
-
-            if (!subQuestion) {
-              console.error("No subQuestion found for item:", item.id);
-              return null;
-            }
-
-            const matchedOption = question.options.find(
-              (opt) => opt.id === matches[subQuestion.subId],
-            );
-
-            return (
-              <div key={item.id} className="flex items-center gap-2">
-                <Label className="w-[200px]">
-                  {question.scoringStrategy === "partial" && subQuestion
-                    ? `Question ${question.index + index + 1}.`
-                    : `${index + 1}.`}{" "}
-                  {item.text}
-                </Label>
-                <DroppableZone
-                  key={subQuestion.subId}
-                  subQuestionId={subQuestion.subId}
-                  matchedId={matches[subQuestion.subId]}
-                  matchedText={matchedOption?.text}
-                  prefix={
-                    matchedOption
-                      ? String.fromCharCode(
-                          65 +
-                            question.options.findIndex(
-                              (o) => o.id === matchedOption.id,
-                            ),
-                        ) + "."
-                      : ""
-                  }
-                  onDrop={handleDrop}
-                  itemType={ITEM_TYPE}
-                  placeholder="Drag an option here"
-                />
+        <div className="bg-muted/30 p-2 rounded-md text-sm">
+          <h4 className="font-medium mb-1">List of Items:</h4>
+          <div className="pl-3">
+            {question.items.map((item, index) => (
+              <div key={item.id} className="mb-0.5">
+                <span className="font-medium">
+                  {String.fromCharCode(65 + index)}.
+                </span>{" "}
+                {item.text}
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
       </div>
-    </DndProvider>
+
+      <div className="space-y-2">
+        {subQuestions.map((subQuestion, index) => {
+          const questionNumber =
+            question.scoringStrategy === "partial"
+              ? question.index + index + 1
+              : index + 1;          const selectedItemId = selectedAnswers[subQuestion.subId];
+          
+          // Check if the selected item is ANY of the correct answers
+          const isCorrect =
+            showCorrectAnswer && 
+            selectedItemId && 
+            question.subQuestions.some(sq => sq.item === selectedItemId);
+          
+          const isIncorrect = showCorrectAnswer && !isCorrect;          // Find all correct item IDs from the subQuestions
+          const allCorrectItemIds = question.subQuestions.map(sq => sq.item);
+          
+          // Find correct items that aren't currently selected in any field
+          const availableCorrectItemIds = allCorrectItemIds.filter(
+            itemId => !Object.values(selectedAnswers).includes(itemId ?? "") || itemId === selectedItemId
+          );
+          
+          // Default to showing the original assigned correct answer
+          let suggestedCorrectItemId = subQuestion.item || "";
+            // If that's already selected somewhere else, suggest another available correct answer
+          if (availableCorrectItemIds.length > 0 && 
+             (Object.values(selectedAnswers).includes(subQuestion.item ?? "") && subQuestion.item !== selectedItemId)) {
+            suggestedCorrectItemId = availableCorrectItemIds[0] || "";
+          }
+          
+          const correctAnswerIndex = question.items.findIndex(
+            (item) => item.id === suggestedCorrectItemId,
+          );
+          const correctAnswer = question.items[correctAnswerIndex]?.text || "";
+          const correctAnswerLabel = correctAnswerIndex >= 0 ? 
+            String.fromCharCode(65 + correctAnswerIndex) : "";
+
+          // Get all currently selected items except the one selected for this sub-question
+          const selectedItems = getSelectedItems().filter(
+            id => id !== selectedItemId
+          );
+
+          return (
+            <div
+              key={subQuestion.subId}
+              className="flex items-center gap-1.5 text-sm"
+            >
+              <Label className="w-16">
+                {question.scoringStrategy === "partial"
+                  ? `Q${questionNumber}:`
+                  : `#${questionNumber}:`}
+              </Label>
+              <div className="flex items-center gap-6">
+                <Select
+                  value={selectedItemId || ""}
+                  onValueChange={(value) =>
+                    handleItemSelection(value, subQuestion.subId)
+                  }
+                  disabled={readOnly}
+                >
+                  <SelectTrigger
+                    className={cn(
+                      "h-8 w-[200px]",
+                      isCorrect && "border-green-500 bg-green-50",
+                      isIncorrect && "border-red-500 bg-red-50",
+                    )}
+                  >
+                    <SelectValue
+                      placeholder={
+                        showCorrectAnswer ? "Not answered" : "Select an item"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {question.items.map((item, itemIndex) => {
+                      // Skip if this item is already selected in another sub-question
+                      const isAlreadySelected = selectedItems.includes(item.id);
+                      if (isAlreadySelected && item.id !== selectedItemId) {
+                        return null;
+                      }
+
+                      return (
+                        <SelectItem key={item.id} value={item.id}>
+                          {String.fromCharCode(65 + itemIndex)}. {item.text}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>                {showCorrectAnswer && isIncorrect && suggestedCorrectItemId && (
+                  <div className="text-sm text-green-600">
+                    ✓ {correctAnswerLabel} . {correctAnswer}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

@@ -1,10 +1,11 @@
 import { getSectionStats, getTestStats } from "@testComponents/lib/test-utils";
-import { getQuestionText } from "@testComponents/lib/test";
 import type {
   MultipleChoiceOption,
+  SectionResult,
   SubQuestionMeta,
   Test,
   TestProgress,
+  TestResult,
   UserAnswer,
 } from "@testComponents/lib/types";
 import { create } from "zustand";
@@ -12,7 +13,7 @@ import { create } from "zustand";
 // Type for the submission function
 export type SubmitResultFn = (
   testId: number,
-  results: TestResult
+  results: TestResult,
 ) => Promise<any>;
 
 type ScoreEssayFn = (param: {
@@ -26,41 +27,6 @@ type ScoreEssayFn = (param: {
   error?: string;
 }>;
 
-// Define a structure for the section results
-interface QuestionResult {
-  questionNumber: number;
-  questionText?: string;
-  userAnswer: any;
-  correctAnswer: any;
-  isCorrect: boolean;
-  isAnswered: boolean;
-}
-
-export interface SectionResult {
-  title: string;
-  id: string;
-  correctCount: number;
-  incorrectCount: number;
-  unansweredCount: number;
-  totalCount: number;
-  totalScore: number;
-  maxScore: number;
-  percentageScore: number;
-  questions: QuestionResult[];
-}
-
-export interface TestResult {
-  totalScore: number;
-  maxPossibleScore: number;
-  sectionResults: SectionResult[];
-  totalQuestions: number;
-  answeredQuestions: number;
-  correctAnswers: number;
-  percentageScore: number;
-  startedAt: string;
-  completedAt: string;
-}
-
 interface TestState {
   currentTest: Test | null;
   progress: TestProgress | null;
@@ -71,10 +37,8 @@ interface TestState {
   submitAnswer: (
     questionId: string,
     answer: any,
-    subQuestionId?: string
+    subQuestionId?: string,
   ) => void;
-  nextQuestion: () => void;
-  previousQuestion: () => void;
   completeTest: () => void;
   resetTest: () => void;
   updateTimeRemaining: (time: number) => void;
@@ -84,7 +48,6 @@ interface TestState {
   questionById: (id: string, subId?: string) => any;
   // Computed
   currentSection: () => any;
-  isLastQuestion: () => boolean;
 
   scoreEssayFn: ScoreEssayFn | null;
   setScoreEssayFn: (fn: ScoreEssayFn) => void;
@@ -127,7 +90,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
     if (!currentTest || !progress || !progress.answers || !submitResultFn) {
       console.error(
-        "Cannot submit test results: missing test data or submission function"
+        "Cannot submit test results: missing test data or submission function",
       );
       return false;
     }
@@ -140,59 +103,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
       // Calculate section results for display
       const sectionResults: SectionResult[] = currentTest.sections.map(
         (section) => {
-          const sectionQuestions: QuestionResult[] = [];
-
           const sectionStats = getSectionStats(section, progress.answers);
-
-          // Process each question in the section
-          section.questions.forEach((question, qIndex) => {
-            // Handle questions with subquestions
-            if (
-              question.scoringStrategy === "partial" &&
-              question.partialEndingIndex !== undefined &&
-              question.subQuestions?.length
-            ) {
-              // Handle partial questions with subquestions
-              question.subQuestions.forEach((subQuestion, subIndex) => {
-                const displayNumber = (question.index || 0) + subIndex + 1;
-                const subId = subQuestion.subId;
-                const answer = subId ? progress.answers[subId] : null;
-
-                // Get the correct answer text
-                const { questionText, answerText } = currentTest
-                  ? getQuestionText(currentTest, question.id, subQuestion.subId)
-                  : { questionText: undefined, answerText: undefined };
-
-                sectionQuestions.push({
-                  questionNumber: displayNumber,
-                  questionText,
-                  userAnswer: answer ? answer.answerReadable : null,
-                  correctAnswer: answerText || "No correct answer provided",
-                  isCorrect: answer ? !!answer.isCorrect : false,
-                  isAnswered: !!answer,
-                });
-              });
-            } else {
-              // Handle standard questions
-              const answer = progress.answers[question.id];
-              const displayNumber =
-                (question.index !== undefined ? question.index : 0) + 1;
-
-              // Get the correct answer text for main questions
-              const { questionText, answerText } = currentTest
-                ? getQuestionText(currentTest, question.id)
-                : { questionText: undefined, answerText: undefined };
-
-              sectionQuestions.push({
-                questionNumber: displayNumber,
-                questionText,
-                userAnswer: answer ? answer.answerReadable : null,
-                correctAnswer: answerText,
-                isCorrect: answer ? !!answer.isCorrect : false,
-                isAnswered: !!answer,
-              });
-            }
-          });
 
           return {
             title: section.title,
@@ -201,12 +112,11 @@ export const useTestStore = create<TestState>()((set, get) => ({
             incorrectCount: sectionStats.sectionIncorrectAnswers,
             unansweredCount: sectionStats.sectionUnansweredQuestions,
             totalCount: sectionStats.sectionTotalQuestions,
-            totalScore: sectionStats.sectionTotalScore,
+            totalScore: sectionStats.sectionScore,
             maxScore: sectionStats.sectionTotalScore,
-            questions: sectionQuestions,
             percentageScore: sectionStats.sectionPercentage,
           };
-        }
+        },
       );
 
       const testResults = {
@@ -227,10 +137,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
       await submitResultFn(testId, {
         ...testResults,
-        sectionResults: sectionResults.map((section) => ({
-          ...section,
-          questions: section.questions.filter((q) => q.isAnswered),
-        })),
+        sectionResults,
       });
 
       return true;
@@ -259,7 +166,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
     // Find the relevant subQuestion if one exists
     const subQuestion = question.subQuestions?.find(
-      (sq: { subId: string }) => sq.subId === subQuestionId
+      (sq: { subId: string }) => sq.subId === subQuestionId,
     );
 
     // Find the question index in the test
@@ -269,7 +176,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
       for (let i = 0; i < currentTest.sections.length; i++) {
         const section = currentTest.sections[i];
         const indexInSection = section.questions.findIndex(
-          (q) => q.id === questionId
+          (q) => q.id === questionId,
         );
         if (indexInSection !== -1) {
           questionIndex = indexInSection;
@@ -284,7 +191,6 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
     // If we have a subQuestion, use its correct answer, otherwise use the question's
     const correctAnswer = subQuestion?.correctAnswer;
-    let answerReadable = [];
 
     if (subQuestion && correctAnswer) {
       isCorrect = answer === correctAnswer;
@@ -298,13 +204,8 @@ export const useTestStore = create<TestState>()((set, get) => ({
       case "multiple-choice":
         isCorrect = question.options.some(
           (option: MultipleChoiceOption) =>
-            option.id === answer && option.isCorrect
+            option.id === answer && option.isCorrect,
         );
-
-        const selected = question.items.find(
-          (option: MultipleChoiceOption) => option.id === answer
-        );
-        answerReadable = [["", selected?.text]];
 
         score = isCorrect ? question.points : 0;
         break;
@@ -312,30 +213,53 @@ export const useTestStore = create<TestState>()((set, get) => ({
       case "completion":
         if (scoringStrategy === "partial") {
           const subQuestion = question.subQuestions?.find(
-            (sq: { subId: string }) => sq.subId === subQuestionId
+            (sq: SubQuestionMeta) => sq.subId === subQuestionId,
           );
 
-          isCorrect = subQuestion.correctAnswer === answer;
+          console.log({
+            subQuestion,
+            answer,
+            subQuestionId,
+          });
 
-          answerReadable = [["", answer]];
+          if (subQuestion) {
+            const normalizedAnswer = answer
+              ?.trim()
+              .toLowerCase()
+              .replace(/\s+/g, " ");
+            isCorrect =
+              subQuestion.acceptableAnswers?.some(
+                (acceptableAnswer: string) =>
+                  acceptableAnswer.trim().toLowerCase().replace(/\s+/g, " ") ===
+                  normalizedAnswer,
+              ) || false;
 
-          score = isCorrect ? subQuestion.points : 0;
+            console.log({
+              normalizedAnswer,
+              acceptableAnswers: subQuestion.acceptableAnswers,
+            });
+
+            score = isCorrect ? subQuestion.points : 0;
+          }
         } else {
           const totalSubQuestions = question.subQuestions?.length || 0;
           const correctCount = Object.entries(answer).filter(([key, value]) =>
             question.subQuestions?.some(
               (sq: SubQuestionMeta) =>
-                sq.subId === key && sq.correctAnswer === value
-            )
+                sq.subId === key &&
+                sq.acceptableAnswers?.some((acceptableAnswer: string) => {
+                  const normalizedAcceptableAnswer = acceptableAnswer
+                    .trim()
+                    .toLowerCase()
+                    .replace(/\s+/g, " ");
+                  const normalizedValue = (value as string)
+                    .trim()
+                    .toLowerCase()
+                    .replace(/\s+/g, " ");
+                  return normalizedAcceptableAnswer === normalizedValue;
+                }),
+            ),
           ).length;
-
-          question.subQuestions?.forEach(
-            (sq: SubQuestionMeta, index: number) => {
-              const subAnswer = answer[sq.subId];
-
-              answerReadable.push([`${index + 1}`, subAnswer]);
-            }
-          );
 
           isCorrect = correctCount === totalSubQuestions;
           score = isCorrect ? question.points : 0;
@@ -345,47 +269,60 @@ export const useTestStore = create<TestState>()((set, get) => ({
       case "matching":
       case "matching-headings":
       case "labeling":
-      case "pick-from-list":
         if (scoringStrategy === "partial") {
           const subQuestion = question.subQuestions?.find(
-            (sq: { subId: string }) => sq.subId === subQuestionId
+            (sq: { subId: string }) => sq.subId === subQuestionId,
           );
 
           isCorrect = subQuestion?.correctAnswer === answer;
           score = isCorrect ? subQuestion?.points || 0 : 0;
-
-          const selectedOption = question.options?.find(
-            (option: { id: string }) => option.id === answer
-          );
-
-          answerReadable = [["", selectedOption?.text || answer]];
         } else {
           const totalSubQuestions = question.subQuestions?.length || 0;
           const correctCount = Object.entries(answer).filter(([key, value]) =>
             question.subQuestions?.some(
               (sq: SubQuestionMeta) =>
-                sq.subId === key && sq.correctAnswer === value
-            )
+                sq.subId === key && sq.correctAnswer === value,
+            ),
           ).length;
 
-          question.subQuestions?.forEach(
-            (sq: SubQuestionMeta, index: number) => {
-              const subAnswer = answer[sq.subId];
+          isCorrect = correctCount === totalSubQuestions;
+          score = isCorrect ? question.points : 0;
+        }
+        break;
 
-              // Find the matching item and options
-              const item = question.items?.find(
-                (item: { id: string }) => item.id === sq.subId
-              );
-              const selectedOption = question.options?.find(
-                (option: { id: string }) => option.id === subAnswer
-              );
+      case "pick-from-a-list":
+        if (scoringStrategy === "partial") {
+          // if answer is already choosen, skip because it is already checked
+          if (question.subQuestions?.some((sq: { subId: string | number; item: any; }) => 
+            answer[sq.subId] === sq.item
+          )) {
+            isCorrect = false;
+            score = 0;
+            break;
+          }
 
-              answerReadable.push([
-                item?.text || `${index + 1}`,
-                selectedOption?.text || subAnswer,
-              ]);
-            }
-          );
+          isCorrect = question.subQuestions?.some(
+            (sq: SubQuestionMeta) =>
+              sq.item === answer,
+          )
+
+          score = isCorrect ? question.points : 0;
+        } else {
+          // For all-or-nothing scoring
+          const totalSubQuestions = question.subQuestions?.length || 0;
+
+          const totalAnswers = Object.entries(answer)?.length || 0;
+
+          if(totalAnswers !== totalSubQuestions) {
+            isCorrect = false;
+            score = 0;
+            break;
+          }          const correctCount = Object.entries(answer).filter(([key, value]) =>
+            // Check if the answer value is ANY of the correct items in subQuestions
+            question.subQuestions?.some(
+              (sq: SubQuestionMeta) => sq.item === value
+            ),
+          ).length;
 
           isCorrect = correctCount === totalSubQuestions;
           score = isCorrect ? question.points : 0;
@@ -394,30 +331,14 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
       case "true-false-not-given":
         if (scoringStrategy === "partial") {
-          answerReadable = [["", answer]];
         } else {
           const totalSubQuestions = question.subQuestions?.length || 0;
           const correctCount = Object.entries(answer).filter(([key, value]) =>
             question.subQuestions?.some(
               (sq: SubQuestionMeta) =>
-                sq.subId === key && sq.correctAnswer === value
-            )
+                sq.subId === key && sq.correctAnswer === value,
+            ),
           ).length;
-
-          question.subQuestions?.forEach(
-            (sq: SubQuestionMeta, index: number) => {
-              const subAnswer = answer[sq.subId];
-
-              const statement = question.statements?.find(
-                (stmt: { id: string }) => stmt.id === sq.subId
-              );
-
-              answerReadable.push([
-                statement?.text || `${index + 1}`,
-                subAnswer,
-              ]);
-            }
-          );
 
           isCorrect = correctCount === totalSubQuestions;
           score = isCorrect ? question.points : 0;
@@ -428,16 +349,22 @@ export const useTestStore = create<TestState>()((set, get) => ({
       case "short-answer":
         if (scoringStrategy === "partial") {
           const subQuestion = question.subQuestions?.find(
-            (sq: { subId: string }) => sq.subId === subQuestionId
+            (sq: { subId: string }) => sq.subId === subQuestionId,
           );
 
           if (subQuestion) {
             const acceptableAnswers =
               (subQuestion as any).acceptableAnswers || [];
-            isCorrect = acceptableAnswers.includes(answer);
+            const normalizedAnswer = answer
+              .trim()
+              .toLowerCase()
+              .replace(/\s+/g, " ");
+            isCorrect = acceptableAnswers.some(
+              (acceptableAnswer: string) =>
+                acceptableAnswer.trim().toLowerCase().replace(/\s+/g, " ") ===
+                normalizedAnswer,
+            );
             score = isCorrect ? subQuestion.points : 0;
-
-            answerReadable = [["", answer]];
           }
         } else {
           const totalQuestions = question.questions?.length || 0;
@@ -445,28 +372,20 @@ export const useTestStore = create<TestState>()((set, get) => ({
             const sq = question.subQuestions?.find(
               (sq: SubQuestionMeta & { acceptableAnswers?: string[] }) =>
                 sq.subId === key &&
-                sq.acceptableAnswers?.includes((value as string).toString())
+                sq.acceptableAnswers?.some((acceptableAnswer: string) => {
+                  const normalizedAcceptableAnswer = acceptableAnswer
+                    .trim()
+                    .toLowerCase()
+                    .replace(/\s+/g, " ");
+                  const normalizedValue = (value as string)
+                    .trim()
+                    .toLowerCase()
+                    .replace(/\s+/g, " ");
+                  return normalizedAcceptableAnswer === normalizedValue;
+                }),
             );
             return !!sq;
           }).length;
-
-          question.subQuestions?.forEach(
-            (
-              sq: SubQuestionMeta & { acceptableAnswers?: string[] },
-              index: number
-            ) => {
-              const subAnswer = answer[sq.subId];
-
-              const questionItem = question.questions?.find(
-                (q: { id: string }) => q.id === sq.subId
-              );
-
-              answerReadable.push([
-                questionItem?.text || `${index + 1}`,
-                subAnswer || "",
-              ]);
-            }
-          );
 
           isCorrect = correctCount === totalQuestions;
           score = isCorrect ? question.points : 0;
@@ -479,11 +398,10 @@ export const useTestStore = create<TestState>()((set, get) => ({
           const aiScore = answer.score as number | undefined;
           score = aiScore ?? 0;
           isCorrect = true;
-          answerReadable = [["", answer.text]];
         } else {
           console.warn(
             "Invalid answer format received for writing task:",
-            answer
+            answer,
           );
           score = 0;
           feedback = "";
@@ -499,7 +417,6 @@ export const useTestStore = create<TestState>()((set, get) => ({
     const userAnswer: UserAnswer = {
       questionId,
       answer,
-      answerReadable,
       isCorrect,
       score,
       maxScore,
@@ -522,75 +439,6 @@ export const useTestStore = create<TestState>()((set, get) => ({
     });
   },
 
-  nextQuestion: () => {
-    const { progress, currentTest } = get();
-    if (!progress || !currentTest) return;
-
-    const currentSection = currentTest.sections[progress.currentSectionIndex];
-    const isLastQuestionInSection =
-      progress.currentQuestionIndex === currentSection.questions.length - 1;
-    const isLastSection =
-      progress.currentSectionIndex === currentTest.sections.length - 1;
-
-    if (isLastQuestionInSection) {
-      if (isLastSection) {
-        // End of test
-        get().completeTest();
-      } else {
-        // Move to next section
-        set({
-          progress: {
-            ...progress,
-            currentSectionIndex: progress.currentSectionIndex + 1,
-            currentQuestionIndex: 0,
-          },
-        });
-      }
-    } else {
-      // Move to next question in current section
-      set({
-        progress: {
-          ...progress,
-          currentQuestionIndex: progress.currentQuestionIndex + 1,
-        },
-      });
-    }
-  },
-
-  previousQuestion: () => {
-    const { progress, currentTest } = get();
-    if (!progress || !currentTest) return;
-
-    const isFirstQuestionInSection = progress.currentQuestionIndex === 0;
-    const isFirstSection = progress.currentSectionIndex === 0;
-
-    if (isFirstQuestionInSection) {
-      if (isFirstSection) {
-        // Already at the beginning of the test
-        return;
-      } else {
-        // Move to previous section
-        const previousSection =
-          currentTest.sections[progress.currentSectionIndex - 1];
-        set({
-          progress: {
-            ...progress,
-            currentSectionIndex: progress.currentSectionIndex - 1,
-            currentQuestionIndex: previousSection.questions.length - 1,
-          },
-        });
-      }
-    } else {
-      // Move to previous question in current section
-      set({
-        progress: {
-          ...progress,
-          currentQuestionIndex: progress.currentQuestionIndex - 1,
-        },
-      });
-    }
-  },
-
   completeTest: () => {
     const { progress, currentTest } = get();
     if (!progress || !currentTest) return;
@@ -599,7 +447,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
     // This ensures we properly account for both main questions and sub-questions
     const totalScore = Object.values(progress.answers).reduce(
       (sum, answer) => sum + (answer.score || 0),
-      0
+      0,
     );
 
     set({
@@ -650,18 +498,5 @@ export const useTestStore = create<TestState>()((set, get) => ({
     if (!currentTest || !progress) return null;
 
     return currentTest.sections[progress.currentSectionIndex];
-  },
-
-  isLastQuestion: () => {
-    const { currentTest, progress } = get();
-    if (!currentTest || !progress) return false;
-
-    const isLastSection =
-      progress.currentSectionIndex === currentTest.sections.length - 1;
-    const currentSection = currentTest.sections[progress.currentSectionIndex];
-    const isLastQuestionInSection =
-      progress.currentQuestionIndex === currentSection.questions.length - 1;
-
-    return isLastSection && isLastQuestionInSection;
   },
 }));

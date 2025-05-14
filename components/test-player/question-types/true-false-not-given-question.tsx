@@ -1,75 +1,122 @@
 "use client";
-
+import React from "react";
 import {
   RadioGroup,
   RadioGroupItem,
 } from "@testComponents/components/ui/radio-group";
 import { Label } from "@testComponents/components/ui/label";
 import type { TrueFalseNotGivenQuestion } from "@testComponents/lib/types";
+import { cn } from "@testComponents/lib/utils";
 
 interface TrueFalseNotGivenQuestionProps {
   question: TrueFalseNotGivenQuestion;
   value: Record<string, string> | null;
   onChange: (value: Record<string, string>, subId?: string) => void;
+  readOnly?: boolean;
+  showCorrectAnswer?: boolean;
 }
 
 export default function TrueFalseNotGivenQuestion({
   question,
   value,
   onChange,
+  readOnly = false,
+  showCorrectAnswer = false,
 }: TrueFalseNotGivenQuestionProps) {
   return (
-    <div className="space-y-4">
-      <p className="font-medium">{question.text}</p>
-      <div className="space-y-4">
+    <div className="space-y-2">
+      <p className="font-medium text-sm">{question.text}</p>
+      <div className="space-y-2">
         {question.statements.map((statement, index) => {
-          // Find the corresponding subQuestion
           const subQuestion = question.subQuestions?.find(
-            (sq) => sq.item === statement.id
+            (sq) => sq.item === statement.id,
           );
 
+          if (!subQuestion) return null;
+
+          const userAnswer = value?.[subQuestion.subId];
+          const isCorrect =
+            showCorrectAnswer && userAnswer === subQuestion.correctAnswer;
+          const isIncorrect = showCorrectAnswer && !isCorrect;
+
           return (
-            <div key={statement.id} className="space-y-2">
+            <div key={statement.id} className="space-y-1.5 text-sm">
               <p className="font-medium">
                 {question.scoringStrategy === "partial" && subQuestion
-                  ? `Question ${question.index + index + 1}.`
-                  : `Statement ${index + 1}.`}{" "}
+                  ? `Q${question.index + index + 1}.`
+                  : `#${index + 1}.`}{" "}
                 {statement.text}
               </p>
               <RadioGroup
-                value={
-                  value && value[subQuestion?.subId]
-                    ? value[subQuestion?.subId]
-                    : undefined
-                }
+                value={userAnswer}
                 onValueChange={(val) => {
-                  const newAnswers = { ...(value || {}) };
-                  newAnswers[subQuestion?.subId] = val;
+                  if (!readOnly) {
+                    const newAnswers = { ...(value || {}) };
+                    newAnswers[subQuestion.subId] = val;
 
-                  if (question.scoringStrategy === "partial" && subQuestion) {
-                    onChange(newAnswers, subQuestion.subId);
-                  } else {
-                    onChange(newAnswers);
+                    if (question.scoringStrategy === "partial") {
+                      onChange(newAnswers, subQuestion.subId);
+                    } else {
+                      onChange(newAnswers);
+                    }
                   }
                 }}
-                className="flex space-x-4"
+                className={cn(
+                  "flex gap-4 p-1.5 rounded",
+                  isCorrect && "bg-green-50 border border-green-500",
+                  isIncorrect && "bg-red-50 border border-red-500",
+                )}
               >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="true" id={`true-${statement.id}`} />
+                <div className="flex items-center gap-1.5">
+                  <RadioGroupItem
+                    value="true"
+                    id={`true-${statement.id}`}
+                    disabled={readOnly}
+                    className={cn(
+                      isCorrect && userAnswer === "true" && "text-green-600",
+                      isIncorrect && userAnswer === "true" && "text-red-600",
+                    )}
+                  />
                   <Label htmlFor={`true-${statement.id}`}>True</Label>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="false" id={`false-${statement.id}`} />
+                <div className="flex items-center gap-1.5">
+                  <RadioGroupItem
+                    value="false"
+                    id={`false-${statement.id}`}
+                    disabled={readOnly}
+                    className={cn(
+                      isCorrect && userAnswer === "false" && "text-green-600",
+                      isIncorrect && userAnswer === "false" && "text-red-600",
+                    )}
+                  />
                   <Label htmlFor={`false-${statement.id}`}>False</Label>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-1.5">
                   <RadioGroupItem
                     value="not-given"
                     id={`not-given-${statement.id}`}
+                    disabled={readOnly}
+                    className={cn(
+                      isCorrect &&
+                        userAnswer === "not-given" &&
+                        "text-green-600",
+                      isIncorrect &&
+                        userAnswer === "not-given" &&
+                        "text-red-600",
+                    )}
                   />
                   <Label htmlFor={`not-given-${statement.id}`}>Not Given</Label>
                 </div>
               </RadioGroup>
+              {isIncorrect && showCorrectAnswer && (
+                <div className="text-sm text-green-600 mt-0.5">
+                  ✓{" "}
+                  {subQuestion.correctAnswer
+                    .split("-")
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(" ")}
+                </div>
+              )}
             </div>
           );
         })}

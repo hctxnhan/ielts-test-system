@@ -67,9 +67,8 @@ export interface StandardLabelingQuestion extends StandardBaseQuestion {
 }
 
 export interface StandardPickFromListQuestion extends StandardBaseQuestion {
-  type: "pick-from-list";
+  type: "pick-from-a-list";
   items: StandardQuestionItem[];
-  options: StandardQuestionOption[];
   subQuestions: StandardSubQuestionMeta[];
 }
 

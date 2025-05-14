@@ -1,5 +1,5 @@
 "use client";
-
+import React from "react";
 import type {
   AnswerType,
   Question,
@@ -16,7 +16,6 @@ import PickFromListQuestionComponent from "./question-types/pick-from-list-quest
 import ShortAnswerQuestionComponent from "./question-types/short-answer-question";
 import TrueFalseNotGivenQuestionComponent from "./question-types/true-false-not-given-question";
 import WritingTask1QuestionRenderer from "./question-types/writing-task1-question"; // Correct component import
-import WritingTask2QuestionRenderer from "./question-types/writing-task2-question"; // Correct component import
 
 import { supportsPartialScoring } from "@testComponents/lib/test-utils";
 import { useTestStore } from "@testComponents/store/test-store";
@@ -25,6 +24,7 @@ import { useEffect, useRef, useState } from "react";
 interface QuestionRendererProps {
   question: Question;
   sectionId: string;
+  isReviewMode?: boolean;
 }
 
 // Type guard for questions with subQuestions
@@ -119,7 +119,7 @@ function submitQuestionAnswer(
       const answerForSubQuestion =
         question.type === "matching" ||
         question.type === "labeling" ||
-        question.type === "pick-from-list" ||
+        question.type === "pick-from-a-list" ||
         question.type === "matching-headings" ||
         question.type === "short-answer" ||
         question.type === "true-false-not-given" ||
@@ -139,6 +139,7 @@ function submitQuestionAnswer(
 export default function QuestionRenderer({
   question,
   sectionId,
+  isReviewMode = false,
 }: QuestionRendererProps) {
   const { submitAnswer, progress } = useTestStore();
   const [localAnswer, setLocalAnswer] = useState<
@@ -181,6 +182,8 @@ export default function QuestionRenderer({
           // Adjust cast: if null, pass undefined
           value={(localAnswer as string | null) ?? undefined}
           onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
         />
       );
 
@@ -190,6 +193,8 @@ export default function QuestionRenderer({
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
         />
       );
 
@@ -199,6 +204,8 @@ export default function QuestionRenderer({
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
         />
       );
 
@@ -208,15 +215,19 @@ export default function QuestionRenderer({
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
         />
       );
 
-    case "pick-from-list":
+    case "pick-from-a-list":
       return (
         <PickFromListQuestionComponent
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
         />
       );
 
@@ -226,6 +237,8 @@ export default function QuestionRenderer({
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
         />
       );
 
@@ -235,6 +248,8 @@ export default function QuestionRenderer({
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
         />
       );
 
@@ -244,29 +259,22 @@ export default function QuestionRenderer({
           question={question}
           value={localAnswer as Record<string, string> | null}
           onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
         />
       );
 
     case "writing-task1":
+    case "writing-task2":
       return (
         // Use the correct component name
         <WritingTask1QuestionRenderer
           question={question}
           value={localAnswer as WritingTaskAnswer | null}
           onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
         />
       );
-
-    case "writing-task2":
-      return (
-        // Use the correct component name
-        <WritingTask2QuestionRenderer
-          question={question}
-          value={localAnswer as WritingTaskAnswer | null}
-          onChange={handleChange}
-        />
-      );
-
-    // No default case needed if the union is exhaustive
   }
 }

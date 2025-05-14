@@ -45,7 +45,7 @@ export default function QuestionEditorInline({
     "completion",
     "matching",
     "labeling",
-    "pick-from-list",
+    "pick-from-a-list",
     "true-false-not-given",
     "matching-headings",
     "short-answer",
@@ -152,7 +152,7 @@ export default function QuestionEditorInline({
             />
           )}
 
-          {question.type === "pick-from-list" && (
+          {question.type === "pick-from-a-list" && (
             <PickFromListEditor
               question={question}
               sectionId={sectionId}

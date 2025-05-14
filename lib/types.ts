@@ -12,6 +12,7 @@ export type QuestionType =
   | "matching"
   | "labeling"
   | "pick-from-list"
+  | "pick-from-a-list"
   | "true-false-not-given"
   | "matching-headings"
   | "short-answer"
@@ -21,7 +22,8 @@ export type QuestionType =
 export interface SubQuestionMeta {
   subId: string;
   item?: string;
-  correctAnswer?: any;
+  correctAnswer?: string;
+  acceptableAnswers?: string[];
   points: number;
   subIndex?: number;
   questionText?: string; // The actual text of the question (item, statement, etc.)
@@ -54,7 +56,9 @@ export interface MultipleChoiceQuestion extends BaseQuestion {
 export interface CompletionQuestion extends BaseQuestion {
   type: "completion";
   blanks: number;
-  subQuestions: SubQuestionMeta[];
+  subQuestions: (Omit<SubQuestionMeta, "correctAnswer"> & {
+    acceptableAnswers: string[];
+  })[];
 }
 
 export interface MatchingItem {
@@ -86,6 +90,12 @@ export interface PickFromListQuestion extends BaseQuestion {
   type: "pick-from-list";
   items: { id: string; text: string }[];
   options: { id: string; text: string }[];
+  subQuestions: SubQuestionMeta[];
+}
+
+export interface PickFromAListQuestion extends BaseQuestion {
+  type: "pick-from-a-list";
+  items: { id: string; text: string }[];
   subQuestions: SubQuestionMeta[];
 }
 
@@ -141,6 +151,7 @@ export type Question =
   | MatchingQuestion
   | LabelingQuestion
   | PickFromListQuestion
+  | PickFromAListQuestion
   | TrueFalseNotGivenQuestion
   | MatchingHeadingsQuestion
   | ShortAnswerQuestion
@@ -182,7 +193,6 @@ export interface Test {
 export interface UserAnswer {
   questionId: string;
   answer: any;
-  answerReadable: any;
   isCorrect?: boolean;
   score?: number;
   maxScore?: number;
@@ -205,6 +215,31 @@ export interface TestProgress {
   startedAt: string;
   completedAt?: string;
   score?: number;
+}
+
+export interface SectionResult {
+  title: string;
+  id: string;
+  correctCount: number;
+  incorrectCount: number;
+  unansweredCount: number;
+  totalCount: number;
+  totalScore: number;
+  maxScore: number;
+  percentageScore: number;
+}
+
+export interface TestResult {
+  totalScore: number;
+  maxPossibleScore: number;
+  totalQuestions: number;
+  answeredQuestions: number;
+  correctAnswers: number;
+  percentageScore: number;
+  sectionResults: SectionResult[];
+  startedAt: string;
+  completedAt: string;
+  answers?: Record<string, UserAnswer>;
 }
 
 export interface TestTemplate {

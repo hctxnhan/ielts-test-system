@@ -5,7 +5,7 @@ import { Question, UserAnswer } from "./types";
  */
 export function getQuestionStatus(
   questionId: string,
-  answers: Record<string, UserAnswer>
+  answers: Record<string, UserAnswer>,
 ): "completed" | "partial" | "untouched" {
   const answer = answers[questionId];
 
@@ -38,7 +38,7 @@ export function countSectionQuestion(questions: Question[]): number {
  */
 export function getQuestionScore(
   question: Question,
-  answers: Record<string, UserAnswer>
+  answers: Record<string, UserAnswer>,
 ): { score: number; maxScore: number } {
   let score = 0;
   let maxScore = 0;
@@ -53,12 +53,12 @@ export function getQuestionScore(
       const answer = answers[subQ.subId];
       maxScore += subQ.points;
 
-      return acc + (answer?.isCorrect ? answer.score ?? subQ.points : 0);
+      return acc + (answer?.isCorrect ? (answer.score ?? subQ.points) : 0);
     }, 0);
   } else {
     maxScore = question.points;
     const answer = answers[question.id];
-    score = answer?.isCorrect ? answer.score ?? question.points : 0;
+    score = answer?.isCorrect ? (answer.score ?? question.points) : 0;
   }
 
   return {
@@ -71,7 +71,7 @@ export function getQuestionScore(
  * Get the status color class based on question status
  */
 export function getStatusColorClass(
-  status: "correct" | "partial" | "incorrect" | "untouched"
+  status: "correct" | "partial" | "incorrect" | "untouched",
 ): string {
   switch (status) {
     case "correct":
@@ -90,7 +90,7 @@ export function getStatusColorClass(
  */
 export function getTestStats(
   test: { sections: { questions: Question[] }[] },
-  answers: Record<string, UserAnswer>
+  answers: Record<string, UserAnswer>,
 ) {
   let totalQuestions = 0;
   let answeredQuestions = 0;
@@ -126,7 +126,7 @@ export const supportsPartialScoring = [
   "completion",
   "matching",
   "labeling",
-  "pick-from-list",
+  "pick-from-a-list",
   "true-false-not-given",
   "matching-headings",
   "short-answer",
@@ -137,7 +137,7 @@ export const supportsPartialScoring = [
  */
 export function getSectionStats(
   section: { questions: Question[] },
-  answers: Record<string, UserAnswer>
+  answers: Record<string, UserAnswer>,
 ) {
   let sectionScore = 0;
   let sectionTotalScore = 0;

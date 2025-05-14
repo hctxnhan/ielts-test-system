@@ -1,9 +1,14 @@
 "use client";
 
+import React from "react";
+import { Button } from "@testComponents/components/ui/button";
 import { Input } from "@testComponents/components/ui/input";
 import { Label } from "@testComponents/components/ui/label";
-import type { CompletionQuestion } from "@testComponents/lib/types";
-import { CheckCircle, Hash } from "lucide-react";
+import type {
+  CompletionQuestion,
+  SubQuestionMeta,
+} from "@testComponents/lib/types";
+import { CheckCircle, Hash, PlusCircle, X } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 
 interface CompletionEditorProps {
@@ -12,7 +17,7 @@ interface CompletionEditorProps {
   onUpdateQuestion: (
     sectionId: string,
     questionId: string,
-    updates: Partial<CompletionQuestion>
+    updates: Partial<CompletionQuestion>,
   ) => void;
 }
 
@@ -46,7 +51,7 @@ export default function CompletionEditor({
                 subIndex: newIndex,
                 subId: uuidv4(),
                 points: 1,
-                correctAnswer: "",
+                acceptableAnswers: [""],
               });
             }
             while (currentSubQuestions.length > newBlanks) {
@@ -75,7 +80,7 @@ export default function CompletionEditor({
               subIndex: blankIndex + 1,
               subId: uuidv4(),
               points: 1,
-              correctAnswer: "",
+              acceptableAnswers: [""],
             };
 
             return (
@@ -87,25 +92,93 @@ export default function CompletionEditor({
                   <span>Blank {blankIndex + 1}</span>
                 </div>
 
-                <div className="flex gap-1.5 items-center pl-6">
-                  <Input
-                    value={subQuestion.correctAnswer || ""}
-                    onChange={(e) => {
+                <div className="pl-6 space-y-1">
+                  <Label className="text-xs text-muted-foreground">
+                    Acceptable Answers
+                  </Label>
+
+                  {(subQuestion.acceptableAnswers || [""]).map(
+                    (answer: string, ansIndex: number) => (
+                      <div key={ansIndex} className="flex gap-1.5 items-center">
+                        <Input
+                          value={answer}
+                          onChange={(e) => {
+                            const newSubQuestions = [
+                              ...(question.subQuestions || []),
+                            ];
+                            if (!newSubQuestions[blankIndex]) {
+                              newSubQuestions[blankIndex] = { ...subQuestion };
+                            }
+                            const answers = [
+                              ...(newSubQuestions[blankIndex]
+                                .acceptableAnswers || []),
+                            ];
+                            answers[ansIndex] = e.target.value;
+                            newSubQuestions[blankIndex].acceptableAnswers =
+                              answers;
+                            onUpdateQuestion(sectionId, question.id, {
+                              subQuestions: newSubQuestions,
+                            });
+                          }}
+                          placeholder={`Acceptable answer ${ansIndex + 1}`}
+                          className="h-7 text-xs"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 shrink-0"
+                          onClick={() => {
+                            const newSubQuestions = [
+                              ...(question.subQuestions || []),
+                            ];
+                            if (!newSubQuestions[blankIndex]) {
+                              newSubQuestions[blankIndex] = { ...subQuestion };
+                            }
+                            const answers =
+                              newSubQuestions[
+                                blankIndex
+                              ].acceptableAnswers?.filter(
+                                (_: string, i: number) => i !== ansIndex,
+                              ) || [];
+                            newSubQuestions[blankIndex].acceptableAnswers =
+                              answers;
+                            onUpdateQuestion(sectionId, question.id, {
+                              subQuestions: newSubQuestions,
+                            });
+                          }}
+                          disabled={subQuestion.acceptableAnswers?.length <= 1}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ),
+                  )}
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs w-full justify-start bg-muted/30 hover:bg-muted/50"
+                    onClick={() => {
                       const newSubQuestions = [
                         ...(question.subQuestions || []),
                       ];
                       if (!newSubQuestions[blankIndex]) {
                         newSubQuestions[blankIndex] = { ...subQuestion };
                       }
-                      newSubQuestions[blankIndex].correctAnswer =
-                        e.target.value;
+                      const answers = [
+                        ...(newSubQuestions[blankIndex].acceptableAnswers ||
+                          []),
+                        "",
+                      ];
+                      newSubQuestions[blankIndex].acceptableAnswers = answers;
                       onUpdateQuestion(sectionId, question.id, {
                         subQuestions: newSubQuestions,
                       });
                     }}
-                    placeholder={`Answer for blank ${blankIndex + 1}`}
-                    className="h-7 text-xs"
-                  />
+                  >
+                    <PlusCircle className="mr-1.5 h-3 w-3" /> Add Alternative
+                    Answer
+                  </Button>
                 </div>
               </div>
             );

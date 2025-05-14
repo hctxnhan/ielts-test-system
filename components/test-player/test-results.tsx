@@ -1,23 +1,18 @@
 "use client";
 
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@testComponents/components/ui/accordion";
-import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@testComponents/components/ui/card";
 import { Progress } from "@testComponents/components/ui/progress";
-import { getSectionStats, getTestStats } from "@testComponents/lib/test-utils";
-import { Section, UserAnswer } from "@testComponents/lib/types";
-import { SectionResult, TestResult } from "@testComponents/store/test-store";
-import { BarChart3, CheckCircle2, Clock } from "lucide-react";
-import { useMemo } from "react";
+import { SectionResult, Test, TestResult } from "@testComponents/lib/types";
+import { BarChart3, CheckCircle2, Clock, Search } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { Button } from "@testComponents/components/ui/button";
+import { Dialog, DialogContent } from "@testComponents/components/ui/dialog";
+import TestReview from "./test-review-container";
 
 // Helper function to determine color based on percentage score
 const getScoreColorClass = (percentage: number) => {
@@ -94,128 +89,6 @@ const MetricCard = ({
   </div>
 );
 
-// StatusBadge component for section question stats
-const StatusBadge = ({
-  count,
-  type,
-}: {
-  count: number;
-  type: "correct" | "incorrect" | "unanswered";
-}) => {
-  if (count <= 0) return null;
-
-  const config = {
-    correct: {
-      bg: "bg-green-100 dark:bg-green-900",
-      text: "text-green-800 dark:text-green-100",
-      symbol: "✓",
-    },
-    incorrect: {
-      bg: "bg-red-100 dark:bg-red-900",
-      text: "text-red-800 dark:text-red-100",
-      symbol: "✗",
-    },
-    unanswered: {
-      bg: "bg-gray-100 dark:bg-gray-700",
-      text: "text-gray-800 dark:text-gray-300",
-      symbol: "-",
-    },
-  };
-
-  const { bg, text, symbol } = config[type];
-
-  return (
-    <span
-      className={`${bg} ${text} text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded`}
-    >
-      {count} {symbol}
-    </span>
-  );
-};
-
-// Component to display answer comparison item
-const AnswerComparisonItem = ({
-  questionNumber,
-  questionText,
-  userAnswer,
-  correctAnswer,
-  isCorrect,
-  isAnswered = true,
-}: {
-  questionNumber: number;
-  questionText?: string;
-  userAnswer: any;
-  correctAnswer: any;
-  isCorrect: boolean;
-  isAnswered?: boolean;
-}) => {
-  // Format the answers for display
-  const formatAnswer = (answer: any) => {
-    if (!answer) return "-";
-
-    if (typeof answer === "string") {
-      return (
-        <div className="flex flex-col gap-1">
-          {answer.split("\n").map((line: string, lineIdx: number) => (
-            <span key={lineIdx}>{line}</span>
-          ))}
-        </div>
-      );
-    } else if (Array.isArray(answer)) {
-      return (
-        <div className="flex flex-col gap-1">
-          {answer.map((line, lineIdx: number) => (
-            <span key={lineIdx}>{line[1]}</span>
-          ))}
-        </div>
-      );
-    }
-  };
-
-  return (
-    <div className={`border rounded-md p-2 flex flex-col gap-2`}>
-      <div className="flex items-start">
-        <div className="text-xs font-bold w-[50px]">Q{questionNumber}</div>
-        {questionText && (
-          <div className="text-xs text-gray-700 dark:text-gray-300 flex-1 flex flex-col gap-1 font-bold">
-            {questionText.split("\n").map((line: string, lineIdx: number) => (
-              <span key={lineIdx}>{line}</span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="flex gap-5 items-start">
-        {isAnswered ? (
-          <>
-            <div
-              className={`text-xs ml-[50px] ${
-                isCorrect
-                  ? "text-green-600 dark:text-green-600 font-bold"
-                  : "text-red-600 line-through"
-              }`}
-            >
-              {formatAnswer(userAnswer)}
-            </div>
-            {!isCorrect && (
-              <div className="text-xs flex-1 text-green-600 dark:text-green-600 font-bold">
-                {formatAnswer(correctAnswer)}
-              </div>
-            )}
-          </>
-        ) : (
-          <>
-            <div className="text-xs text-gray-500 ml-[50px]">Not answered</div>
-            <div className="text-xs flex-1 text-green-600 dark:text-green-600 font-bold">
-              {formatAnswer(correctAnswer)}
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-};
-
 // SectionPerformance component for section score visualization
 const SectionPerformance = ({ section }: { section: SectionResult }) => {
   if (!section) return null;
@@ -235,7 +108,7 @@ const SectionPerformance = ({ section }: { section: SectionResult }) => {
           <Progress
             value={section?.percentageScore}
             className={`h-2 flex-1 bg-muted ${getScoreColorClass(
-              section.percentageScore
+              section.percentageScore,
             )}`}
           />
           <span className="text-xs font-medium w-8 text-right">
@@ -257,47 +130,8 @@ const SectionPerformance = ({ section }: { section: SectionResult }) => {
   );
 };
 
-// SectionAccordionItem component for the question review accordion
-const SectionAccordionItem = ({ section }: { section: SectionResult }) => {
-  if (!section) return null;
-  return (
-    <AccordionItem
-      key={section.id}
-      value={section.id}
-      className="border rounded-md overflow-hidden"
-    >
-      <AccordionTrigger className="hover:bg-muted px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium">
-        <div className="flex justify-between items-center w-full">
-          <span>{section.title}</span>
-          <div className="flex gap-1 mr-4 sm:mr-8">
-            <StatusBadge count={section.correctCount} type="correct" />
-            <StatusBadge count={section.incorrectCount} type="incorrect" />
-            <StatusBadge count={section.unansweredCount} type="unanswered" />
-          </div>
-        </div>
-      </AccordionTrigger>
-      <AccordionContent className="pt-1 pb-1.5 sm:pb-2">
-        <div className="flex flex-col gap-4 sm:gap-4 p-2 sm:p-4">
-          {/* Use pre-calculated question data */}
-          {section?.questions.map((question, index) => (
-            <AnswerComparisonItem
-              key={index}
-              questionNumber={question.questionNumber}
-              questionText={question.questionText}
-              userAnswer={question.userAnswer}
-              correctAnswer={question.correctAnswer}
-              isCorrect={question.isCorrect}
-              isAnswered={question.isAnswered}
-            />
-          ))}
-        </div>
-      </AccordionContent>
-    </AccordionItem>
-  );
-};
-
 export interface TestResultsProps {
-  currentTest: any;
+  currentTest: Test;
   testResults: TestResult;
 }
 
@@ -305,6 +139,8 @@ export default function TestResults({
   currentTest,
   testResults,
 }: TestResultsProps) {
+  const [showReview, setShowReview] = useState(false);
+
   if (!currentTest) {
     return (
       <div className="flex justify-center items-center h-96">
@@ -337,104 +173,111 @@ export default function TestResults({
   }, [scorePercentage]);
 
   return (
-    <Card className="overflow-hidden border-2 shadow-md">
-      <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 pb-2 px-3 sm:px-6 py-3 sm:py-4">
-        <CardTitle className="text-base sm:text-xl flex items-center justify-center">
-          <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center mr-2">
-            <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
-          </span>
-          {currentTest.title} - {currentTest.type.toUpperCase()}
-        </CardTitle>
-      </CardHeader>
+    <>
+      <Card className="overflow-hidden border-2 shadow-md">
+        <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 pb-2 px-3 sm:px-6 py-3 sm:py-4">
+          <CardTitle className="text-base sm:text-xl flex items-center justify-center">
+            <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center mr-2">
+              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
+            </span>
+            {currentTest.title} - {currentTest.type.toUpperCase()}
+          </CardTitle>
+        </CardHeader>
 
-      <CardContent className="space-y-4 sm:space-y-5 pt-4 sm:pt-5 px-3 sm:px-6">
-        {/* Stats Summary */}
+        <CardContent className="space-y-4 sm:space-y-5 pt-4 sm:pt-5 px-3 sm:px-6">
+          {/* Stats Summary */}
 
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-6">
-          <ScoreCircle percentage={scorePercentage} />
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-6">
+            <ScoreCircle percentage={scorePercentage} />
 
-          <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
-            <MetricCard
-              icon={Clock}
-              title="Time"
-              value={`${timeTakenMinutes}m ${remainingSeconds}s`}
-            />
-            <MetricCard
-              icon={CheckCircle2}
-              title="Accuracy"
-              value={`${correctAnswers}/${answeredQuestions}`}
-              iconColor="text-green-500"
-            />
-            <MetricCard
-              icon={BarChart3}
-              title="Completion"
-              value={`${answeredQuestions}/${totalQuestions}`}
-            />
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
+              <MetricCard
+                icon={Clock}
+                title="Time"
+                value={`${timeTakenMinutes}m ${remainingSeconds}s`}
+              />
+              <MetricCard
+                icon={CheckCircle2}
+                title="Accuracy"
+                value={`${correctAnswers}/${answeredQuestions}`}
+                iconColor="text-green-500"
+              />
+              <MetricCard
+                icon={BarChart3}
+                title="Completion"
+                value={`${answeredQuestions}/${totalQuestions}`}
+              />
+            </div>
           </div>
-        </div>
 
-        {/* Score Summary */}
-        <div className="bg-muted/40 rounded-lg p-2 sm:p-3 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
-          <div className="text-sm w-full sm:w-auto">
-            <h3 className="font-medium text-center sm:text-left">
-              Final Score
+          {/* Score Summary */}
+          <div className="bg-muted/40 rounded-lg p-2 sm:p-3 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
+            <div className="text-sm w-full sm:w-auto">
+              <h3 className="font-medium text-center sm:text-left">
+                Final Score
+              </h3>
+              <div className="text-lg font-semibold mt-1 text-center sm:text-left">
+                {totalScore.toFixed(1)} / {maxPossibleScore}
+                <span className="text-xs text-muted-foreground ml-2">
+                  points
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-1 flex-1 w-full sm:max-w-xs sm:mx-auto px-2">
+              <div className="flex text-sm text-muted-foreground gap-4">
+                <span>Band Score Estimate</span>
+                <span className="font-bold">{estimatedBandScore}/9</span>
+              </div>
+              <div className="bg-muted h-1.5 sm:h-2 rounded-full overflow-hidden bg-neutral-100">
+                <div
+                  className={`h-full transition-all duration-1000 ease-out ${getScoreBgClass(
+                    scorePercentage,
+                  )}`}
+                  style={{ width: `${scorePercentage}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section Breakdown */}
+          <div>
+            <h3 className="text-xs sm:text-sm font-medium mb-2 flex items-center">
+              <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-primary" />
+              Section Performance
             </h3>
-            <div className="text-lg font-semibold mt-1 text-center sm:text-left">
-              {totalScore.toFixed(1)} / {maxPossibleScore}
-              <span className="text-xs text-muted-foreground ml-2">points</span>
+            <div className="space-y-2 text-xs sm:text-sm">
+              {testResults.sectionResults.map((section: SectionResult) => (
+                <SectionPerformance key={section.id} section={section} />
+              ))}
             </div>
           </div>
 
-          <div className="space-y-1 flex-1 w-full sm:max-w-xs sm:mx-auto px-2">
-            <div className="flex text-sm text-muted-foreground gap-4">
-              <span>Band Score Estimate</span>
-              <span className="font-bold">{estimatedBandScore}/9</span>
-            </div>
-            <div className="bg-muted h-1.5 sm:h-2 rounded-full overflow-hidden bg-neutral-100">
-              <div
-                className={`h-full transition-all duration-1000 ease-out ${getScoreBgClass(
-                  scorePercentage
-                )}`}
-                style={{ width: `${scorePercentage}%` }}
-              ></div>
-            </div>
+          {/* Question Review */}
+          <div className="flex justify-center">
+            <Button
+              onClick={() => setShowReview(true)}
+              className="w-full sm:w-auto"
+              variant="outline"
+            >
+              <Search className="w-4 h-4 mr-2" />
+              Review Answers
+            </Button>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Section Breakdown */}
-        <div>
-          <h3 className="text-xs sm:text-sm font-medium mb-2 flex items-center">
-            <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-primary" />
-            Section Performance
-          </h3>
-          <div className="space-y-2 text-xs sm:text-sm">
-            {testResults.sectionResults.map((section: any) => (
-              <SectionPerformance key={section.id} section={section} />
-            ))}
+      <Dialog open={showReview} onOpenChange={setShowReview}>
+        <DialogContent className="max-w-6xl max-h-[90vh] w-[90vw] overflow-y-auto">
+          <div className="min-h-fit">
+            <TestReview
+              test={currentTest}
+              testResults={testResults}
+              onBack={() => setShowReview(false)}
+            />
           </div>
-        </div>
-
-        {/* Question Review */}
-        <div>
-          <h3 className="text-xs sm:text-sm font-medium mb-2 sm:mb-3 flex items-center">
-            <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-primary" />
-            Question Review
-          </h3>
-          <Accordion
-            type="multiple"
-            defaultValue={testResults.sectionResults.map(
-              (section: any) => section.id
-            )}
-            className="w-full space-y-1.5 sm:space-y-2"
-          >
-            {testResults.sectionResults.map((section: any, index: number) => {
-              return (
-                <SectionAccordionItem key={section.id} section={section} />
-              );
-            })}
-          </Accordion>
-        </div>
-      </CardContent>
-    </Card>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

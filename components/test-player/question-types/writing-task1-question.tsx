@@ -1,10 +1,12 @@
 "use client";
 
+import { AutoResizeTextarea } from "@testComponents/components/ui/auto-resize-textarea";
 import { Button } from "@testComponents/components/ui/button";
 import { Card } from "@testComponents/components/ui/card";
 import { Textarea } from "@testComponents/components/ui/textarea";
 import type {
   WritingTask1Question,
+  WritingTask2Question,
   WritingTaskAnswer,
 } from "@testComponents/lib/types";
 import { useTestStore } from "@testComponents/store/test-store";
@@ -17,9 +19,11 @@ import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 
 interface WritingTask1QuestionProps {
-  question: WritingTask1Question;
+  question: WritingTask1Question | WritingTask2Question;
   value: WritingTaskAnswer | null;
   onChange: (value: WritingTaskAnswer) => void;
+  readOnly?: boolean;
+  showCorrectAnswer?: boolean;
 }
 
 interface ScoringResult {
@@ -33,20 +37,21 @@ export default function WritingTask1QuestionRenderer({
   question,
   value,
   onChange,
+  readOnly = false,
+  showCorrectAnswer = false,
 }: WritingTask1QuestionProps) {
+  console.log(value)
+
   const [currentEssay, setCurrentEssay] = useState<string | null>(
-    value?.text ?? null
+    value?.text ?? null,
   );
   const [aiScore, setAiScore] = useState<ScoringResult | null>(
     value?.score !== undefined && value?.feedback !== undefined
       ? { score: value.score, feedback: value.feedback }
-      : null
+      : null,
   );
-  const [isScoring, setIsScoring] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showSampleAnswer, setShowSampleAnswer] = useState(false);
-
-  const getEssayScore = useTestStore.getState().scoreEssayFn;
 
   // Update local state if the external value changes (e.g., loading from progress)
   useEffect(() => {
@@ -54,7 +59,7 @@ export default function WritingTask1QuestionRenderer({
     setAiScore(
       value?.score !== undefined && value?.feedback !== undefined
         ? { score: value.score, feedback: value.feedback }
-        : null
+        : null,
     );
     // Reset feedback visibility if score/feedback is cleared
     if (value?.score === undefined || value?.feedback === undefined) {
@@ -62,74 +67,24 @@ export default function WritingTask1QuestionRenderer({
     }
   }, [value]);
 
+  // Show sample answer automatically in review mode
+  useEffect(() => {
+    if (showCorrectAnswer && question.sampleAnswer) {
+      setShowSampleAnswer(true);
+    }
+  }, [showCorrectAnswer, question.sampleAnswer]);
+
   const wordCount = currentEssay
     ? (currentEssay.match(/\b\w+\b/g) || []).length
     : 0;
-
-  // Function to score the essay using OpenRouter and save the essay content
-  const scoreEssay = async () => {
-    if (isScoring) {
-      return;
-    }
-
-    if (getEssayScore === null) {
-      alert("Essay scoring function is not available.");
-      return;
-    }
-
-    if (!currentEssay || currentEssay.trim().length < 50) {
-      alert("Please write more content before scoring.");
-      return;
-    }
-
-    setIsScoring(true);
-
-    try {
-      const response = await getEssayScore({
-        prompt: question.text,
-        essay: currentEssay || "",
-        scoringPrompt: question?.prompt || "",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to score essay");
-      }
-
-      const result = {
-        score: response.score,
-        feedback: response.feedback,
-      };
-
-      setAiScore(
-        result?.score !== undefined && result?.feedback !== undefined
-          ? {
-              score: (result?.score * question.points) / 9, // Convert from 1-9 scale to question.points scale
-              feedback: result?.feedback,
-            }
-          : null
-      );
-
-      // Call onChange with the full WritingTaskAnswer object including the score and feedback
-      onChange({
-        text: currentEssay,
-        score: (result.score * question.points) / 9, // Convert from 1-9 scale to question.points scale
-        feedback: result.feedback,
-      });
-
-      setIsScoring(false);
-      setShowFeedback(true); // Automatically show feedback after scoring
-    } catch (error) {
-      console.error("Error scoring essay:", error);
-      setIsScoring(false);
-      alert("There was an error scoring your essay. Please try again later.");
-    }
-  };
 
   // Handle changes in the textarea - only update local state, don't save
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newText = e.target.value;
     setCurrentEssay(newText);
     // No auto-save - only update local state
+    // onChange({ text: newText, score: aiScore?.score, feedback: aiScore?.feedback });
+    onChange({ text: newText });
   };
 
   return (
@@ -140,6 +95,7 @@ export default function WritingTask1QuestionRenderer({
 
       <Card className="p-4">
         <p className="font-medium mb-4">{question.text}</p>
+        <p>{question.prompt}</p>
 
         {question.imageUrl && (
           <div className="my-4 flex justify-center">
@@ -156,20 +112,15 @@ export default function WritingTask1QuestionRenderer({
         </p>
       </Card>
 
-      <Textarea
+      <AutoResizeTextarea
         value={currentEssay || ""}
         onChange={handleTextChange}
         placeholder="Write your answer here..."
         className="min-h-[300px]"
+        disabled={readOnly}
+        minRows={20}
+        maxRows={40}
       />
-
-      {/* Updated save notification message */}
-      <div className="text-sm text-muted-foreground italic flex items-center">
-        <span>
-          Click &quot;Get AI Score&quot; button to save your answer and receive
-          feedback. Changes are not saved automatically.
-        </span>
-      </div>
 
       <div className="flex justify-between items-center">
         <p
@@ -183,19 +134,7 @@ export default function WritingTask1QuestionRenderer({
         </p>
 
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={scoreEssay}
-            disabled={
-              isScoring || !currentEssay || currentEssay.trim().length < 50
-            }
-          >
-            <Award className="mr-2 h-4 w-4" />
-            {isScoring ? "Scoring..." : "Get AI Score"}
-          </Button>
-
-          {question.sampleAnswer && (
+          {question.sampleAnswer && (showCorrectAnswer || !readOnly) && (
             <Button
               variant="outline"
               size="sm"

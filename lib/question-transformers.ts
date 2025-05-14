@@ -4,7 +4,7 @@ import {
   MatchingHeadingsQuestion,
   MatchingQuestion,
   MultipleChoiceQuestion,
-  PickFromListQuestion,
+  PickFromAListQuestion,
   Question,
   ShortAnswerQuestion,
   TrueFalseNotGivenQuestion,
@@ -50,10 +50,10 @@ function isLabelingQuestion(question: Question): question is LabelingQuestion {
   return question.type === "labeling";
 }
 
-function isPickFromListQuestion(
+function isPickFromAListQuestion(
   question: Question,
-): question is PickFromListQuestion {
-  return question.type === "pick-from-list";
+): question is PickFromAListQuestion {
+  return question.type === "pick-from-a-list";
 }
 
 function isTrueFalseNotGivenQuestion(
@@ -193,9 +193,8 @@ function transformCompletion(
     question.subQuestions.map((sub) => ({
       subId: sub.subId,
       points: sub.points,
-      correctAnswer: sub.correctAnswer,
+      acceptableAnswers: sub.acceptableAnswers,
       questionText: question.text,
-      answerText: String(sub.correctAnswer || ""),
     }));
 
   return {
@@ -205,35 +204,35 @@ function transformCompletion(
 }
 
 function transformPickFromList(
-  question: PickFromListQuestion,
+  question: PickFromAListQuestion,
 ): StandardPickFromListQuestion {
   const standardItems: StandardQuestionItem[] = question.items.map((item) => ({
     id: item.id,
     text: item.text,
   }));
 
-  const standardOptions: StandardQuestionOption[] = question.options.map(
-    (opt) => ({
-      id: opt.id,
-      text: opt.text,
-    }),
-  );
+  // Handle subquestions - each represents a correct item
+  const standardSubQuestions: StandardSubQuestionMeta[] = [];
 
-  const standardSubQuestions: StandardSubQuestionMeta[] =
-    question.subQuestions.map((sub) => ({
-      subId: sub.subId,
-      item: sub.item,
-      points: sub.points,
-      correctAnswer: sub.correctAnswer,
-      questionText: standardItems.find((item) => item.id === sub.item)?.text,
-      answerText: standardOptions.find((opt) => opt.id === sub.correctAnswer)
-        ?.text,
-    }));
+  if (question.subQuestions && question.subQuestions.length > 0) {
+    for (const sub of question.subQuestions) {
+      const itemId = sub.item || "";
+      const itemData = standardItems.find((item) => item.id === itemId);
+
+      standardSubQuestions.push({
+        subId: sub.subId,
+        item: itemId,
+        points: sub.points,
+        correctAnswer: "true", // Using "true" to indicate this item is correct
+        questionText: itemData?.text || "",
+        answerText: itemData?.text || "", // The answer is the item itself since it's marked as correct
+      });
+    }
+  }
 
   return {
     ...question,
     items: standardItems,
-    options: standardOptions,
     subQuestions: standardSubQuestions,
   } as StandardPickFromListQuestion;
 }
@@ -366,8 +365,8 @@ export function transformToStandardQuestion(
   if (isLabelingQuestion(question)) {
     return transformLabeling(question);
   }
-  if (isPickFromListQuestion(question)) {
-    return transformPickFromList(question);
+  if (isPickFromAListQuestion(question)) {
+    return transformPickFromList(question); // Use the same transformer for both types
   }
   if (isTrueFalseNotGivenQuestion(question)) {
     return transformTrueFalseNotGiven(question);
