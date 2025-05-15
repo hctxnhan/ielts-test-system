@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Badge } from "@testComponents/components/ui/badge";
-import { Button } from "@testComponents/components/ui/button";
+import React from 'react';
+import { Badge } from '@testComponents/components/ui/badge';
+import { Button } from '@testComponents/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogTitle
-} from "@testComponents/components/ui/dialog";
-import "react-quill-new/dist/quill.snow.css";
+} from '@testComponents/components/ui/dialog';
+import 'react-quill-new/dist/quill.snow.css';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
-} from "@testComponents/components/ui/tooltip";
-import type { ReadingPassage } from "@testComponents/lib/types";
+  TooltipTrigger
+} from '@testComponents/components/ui/tooltip';
+import type { ReadingPassage } from '@testComponents/lib/types';
 import {
   BookOpen,
   ExternalLink,
@@ -23,8 +23,8 @@ import {
   Maximize2,
   ZoomIn,
   ZoomOut
-} from "lucide-react";
-import { useState } from "react";
+} from 'lucide-react';
+import { useState } from 'react';
 
 interface ReadingPassageViewerProps {
   passage: ReadingPassage;
@@ -33,10 +33,10 @@ interface ReadingPassageViewerProps {
 
 export default function ReadingPassageViewer({
   passage,
-  containerRef,
+  containerRef
 }: ReadingPassageViewerProps) {
-  const [fontSize, setFontSize] = useState<"normal" | "large" | "larger">(
-    "normal"
+  const [fontSize, setFontSize] = useState<'normal' | 'large' | 'larger'>(
+    'normal'
   );
   const [selectedImage, setSelectedImage] = useState<{
     url: string;
@@ -45,20 +45,20 @@ export default function ReadingPassageViewer({
 
   // Text size controls
   const fontSizeClass =
-    fontSize === "normal"
-      ? "text-base"
-      : fontSize === "large"
-      ? "text-lg"
-      : "text-xl";
+    fontSize === 'normal'
+      ? 'text-base'
+      : fontSize === 'large'
+      ? 'text-lg'
+      : 'text-xl';
 
   const increaseFontSize = () => {
-    if (fontSize === "normal") setFontSize("large");
-    else if (fontSize === "large") setFontSize("larger");
+    if (fontSize === 'normal') setFontSize('large');
+    else if (fontSize === 'large') setFontSize('larger');
   };
 
   const decreaseFontSize = () => {
-    if (fontSize === "larger") setFontSize("large");
-    else if (fontSize === "large") setFontSize("normal");
+    if (fontSize === 'larger') setFontSize('large');
+    else if (fontSize === 'large') setFontSize('normal');
   };
 
   // Image zoom handling
@@ -84,7 +84,7 @@ export default function ReadingPassageViewer({
         <DialogContent className="sm:max-w-[85vw] max-h-[90vh] flex flex-col">
           <div className="flex justify-between items-center">
             <DialogTitle>
-              Figure {selectedImage ? selectedImage.index + 1 : ""}
+              Figure {selectedImage ? selectedImage.index + 1 : ''}
             </DialogTitle>
           </div>
           <div className="flex-1 overflow-auto flex items-center justify-center p-2">
@@ -98,7 +98,6 @@ export default function ReadingPassageViewer({
           </div>
         </DialogContent>
       </Dialog>
-
       {/* Header with controls - sticky at the top */}
       <div className="sticky top-0 z-10 bg-white dark:bg-gray-950 border-b pb-3 mb-4">
         <div className="flex justify-between items-center mb-2">
@@ -117,7 +116,7 @@ export default function ReadingPassageViewer({
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0"
-                    disabled={fontSize === "normal"}
+                    disabled={fontSize === 'normal'}
                     onClick={decreaseFontSize}
                   >
                     <ZoomOut className="h-4 w-4" />
@@ -136,7 +135,7 @@ export default function ReadingPassageViewer({
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0"
-                    disabled={fontSize === "larger"}
+                    disabled={fontSize === 'larger'}
                     onClick={increaseFontSize}
                   >
                     <ZoomIn className="h-4 w-4" />
@@ -148,17 +147,31 @@ export default function ReadingPassageViewer({
               </Tooltip>
             </TooltipProvider>
           </div>
-        </div>        {/* Reading guide */}
+        </div>{' '}
+        {/* Reading guide */}
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <span>Words: ~{passage.content.replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length}</span>
+          <span>
+            Words: ~
+            {
+              passage.content
+                .replace(/<[^>]*>/g, '')
+                .split(/\s+/)
+                .filter(Boolean).length
+            }
+          </span>
           <span>·</span>
           <span>
-            Est. reading time:{" "}
-            {Math.ceil(passage.content.replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length / 200)} min
+            Est. reading time:{' '}
+            {Math.ceil(
+              passage.content
+                .replace(/<[^>]*>/g, '')
+                .split(/\s+/)
+                .filter(Boolean).length / 200
+            )}{' '}
+            min
           </span>
         </div>
       </div>
-
       {/* Images section with improved styling and click to zoom */}
       {passage.hasImages &&
         passage.imageUrls &&
@@ -180,7 +193,7 @@ export default function ReadingPassageViewer({
                       <Maximize2 className="h-6 w-6 text-white drop-shadow-md" />
                     </div>
                     <img
-                      src={url || "/placeholder.svg"}
+                      src={url || '/placeholder.svg'}
                       alt={`Figure ${index + 1}`}
                       className="max-w-full h-auto object-contain max-h-[300px]"
                       loading="lazy"
@@ -200,19 +213,22 @@ export default function ReadingPassageViewer({
               questions. Click on any image to view it in full size.
             </p>
           </div>
-        )}      {/* Content with rich text styling */}
-      <div 
+        )}{' '}
+      {/* Content with rich text styling */}
+      <div
         className={`prose dark:prose-invert max-w-none ${fontSizeClass} quill-content`}
         dangerouslySetInnerHTML={renderRichContent()}
       ></div>
-      
       {/* Styles for Quill content */}
       <style jsx global>{`
         .quill-content {
           line-height: 1.6;
-          font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+          font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
+            Arial, sans-serif;
         }
-        .quill-content h1, .quill-content h2, .quill-content h3 {
+        .quill-content h1,
+        .quill-content h2,
+        .quill-content h3 {
           font-weight: 600;
           margin-top: 1.5em;
           margin-bottom: 0.5em;
@@ -230,7 +246,8 @@ export default function ReadingPassageViewer({
         .quill-content p {
           margin-bottom: 1em;
         }
-        .quill-content ul, .quill-content ol {
+        .quill-content ul,
+        .quill-content ol {
           padding-left: 1.5em;
           margin-bottom: 1em;
         }
@@ -283,7 +300,6 @@ export default function ReadingPassageViewer({
           text-align: justify;
         }
       `}</style>
-
       {/* Footer with source information */}
       {passage.source && (
         <div className="mt-6 pt-4 border-t">

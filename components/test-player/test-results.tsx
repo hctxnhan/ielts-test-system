@@ -1,33 +1,32 @@
-"use client";
+'use client';
 
+import { Button } from '@testComponents/components/ui/button';
 import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
-} from "@testComponents/components/ui/card";
-import { Progress } from "@testComponents/components/ui/progress";
-import { SectionResult, Test, TestResult } from "@testComponents/lib/types";
-import { BarChart3, CheckCircle2, Clock, Search } from "lucide-react";
-import React, { useMemo, useState } from "react";
-import { Button } from "@testComponents/components/ui/button";
-import { Dialog, DialogContent } from "@testComponents/components/ui/dialog";
-import TestReview from "./test-review-container";
+  CardTitle
+} from '@testComponents/components/ui/card';
+import { Progress } from '@testComponents/components/ui/progress';
+import { SectionResult, Test, TestResult } from '@testComponents/lib/types';
+import { BarChart3, CheckCircle2, Clock, Search } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import TestReview from './test-review-container';
 
 // Helper function to determine color based on percentage score
 const getScoreColorClass = (percentage: number) => {
-  if (percentage == 0) return "bg-neutral-200";
-  if (percentage >= 70) return "text-green-500";
-  if (percentage >= 50) return "text-amber-500";
-  return "text-rose-500";
+  if (percentage == 0) return 'bg-neutral-200';
+  if (percentage >= 70) return 'text-green-500';
+  if (percentage >= 50) return 'text-amber-500';
+  return 'text-rose-500';
 };
 
 // Helper function to determine background color based on percentage score
 const getScoreBgClass = (percentage: number) => {
-  if (percentage == 0) return "bg-neutral-200";
-  if (percentage >= 70) return "bg-green-500";
-  if (percentage >= 50) return "bg-amber-500";
-  return "bg-rose-500";
+  if (percentage == 0) return 'bg-neutral-200';
+  if (percentage >= 70) return 'bg-green-500';
+  if (percentage >= 50) return 'bg-amber-500';
+  return 'bg-rose-500';
 };
 
 // ScoreCircle component for the circular progress visualization
@@ -37,10 +36,7 @@ const ScoreCircle = ({ percentage }: { percentage: number }) => {
   return (
     <div className="relative w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32">
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl sm:text-3xl font-bold">{percentage}%</span>
-        <span className="text-[10px] sm:text-xs text-muted-foreground">
-          Your Score
-        </span>
+        <span className="text-2xl sm:text-3xl font-bold">{percentage}%</span>{' '}
       </div>
       <svg className="w-full h-full" viewBox="0 0 100 100">
         <circle
@@ -73,7 +69,7 @@ const MetricCard = ({
   icon: Icon,
   title,
   value,
-  iconColor = "text-primary",
+  iconColor = 'text-primary'
 }: {
   icon: React.ElementType;
   title: string;
@@ -83,7 +79,7 @@ const MetricCard = ({
   <div className="flex items-center gap-1.5 sm:gap-2 bg-muted p-1.5 sm:p-2 rounded-md">
     <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${iconColor} shrink-0`} />
     <div className="text-xs sm:text-sm">
-      <div className="font-medium">{title}</div>
+      <div className="font-bold">{title}</div>
       <div className="text-muted-foreground">{value}</div>
     </div>
   </div>
@@ -108,7 +104,7 @@ const SectionPerformance = ({ section }: { section: SectionResult }) => {
           <Progress
             value={section?.percentageScore}
             className={`h-2 flex-1 bg-muted ${getScoreColorClass(
-              section.percentageScore,
+              section.percentageScore
             )}`}
           />
           <span className="text-xs font-medium w-8 text-right">
@@ -118,11 +114,11 @@ const SectionPerformance = ({ section }: { section: SectionResult }) => {
 
         <div className="flex justify-between items-center text-xs text-muted-foreground">
           <div>
-            {section.totalScore}/{section.maxScore} points
+            {section.totalScore}/{section.maxScore} điểm
           </div>
           <div>
-            {section.totalCount - section.unansweredCount}/{section.totalCount}{" "}
-            answered
+            {section.totalCount - section.unansweredCount}/{section.totalCount}{' '}
+            đã trả lời
           </div>
         </div>
       </div>
@@ -135,10 +131,7 @@ export interface TestResultsProps {
   testResults: TestResult;
 }
 
-export default function TestResults({
-  currentTest,
-  testResults,
-}: TestResultsProps) {
+export default function TestResults({ currentTest, testResults }: TestResultsProps) {
   const [showReview, setShowReview] = useState(false);
 
   if (!currentTest) {
@@ -164,7 +157,7 @@ export default function TestResults({
     correctAnswers,
     totalScore,
     maxPossibleScore,
-    percentageScore: scorePercentage,
+    percentageScore: scorePercentage
   } = testResults;
 
   // Estimate band score
@@ -180,7 +173,8 @@ export default function TestResults({
             <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center mr-2">
               <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
             </span>
-            {currentTest.title} - {currentTest.type.toUpperCase()}
+            {currentTest.title} -{' '}
+            {(currentTest.skill ?? currentTest.type ?? '').toUpperCase()}
           </CardTitle>
         </CardHeader>
 
@@ -193,18 +187,18 @@ export default function TestResults({
             <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
               <MetricCard
                 icon={Clock}
-                title="Time"
+                title="Thời gian làm bài"
                 value={`${timeTakenMinutes}m ${remainingSeconds}s`}
               />
               <MetricCard
                 icon={CheckCircle2}
-                title="Accuracy"
+                title="Mức độ chính xác"
                 value={`${correctAnswers}/${answeredQuestions}`}
                 iconColor="text-green-500"
               />
               <MetricCard
                 icon={BarChart3}
-                title="Completion"
+                title="Mức độ hoàn thành"
                 value={`${answeredQuestions}/${totalQuestions}`}
               />
             </div>
@@ -214,25 +208,23 @@ export default function TestResults({
           <div className="bg-muted/40 rounded-lg p-2 sm:p-3 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
             <div className="text-sm w-full sm:w-auto">
               <h3 className="font-medium text-center sm:text-left">
-                Final Score
+                Tổng Điểm
               </h3>
               <div className="text-lg font-semibold mt-1 text-center sm:text-left">
                 {totalScore.toFixed(1)} / {maxPossibleScore}
-                <span className="text-xs text-muted-foreground ml-2">
-                  points
-                </span>
+                <span className="text-xs text-muted-foreground ml-2">điểm</span>
               </div>
             </div>
 
             <div className="space-y-1 flex-1 w-full sm:max-w-xs sm:mx-auto px-2">
               <div className="flex text-sm text-muted-foreground gap-4">
-                <span>Band Score Estimate</span>
+                <span>Ước Tính Band Điểm</span>
                 <span className="font-bold">{estimatedBandScore}/9</span>
               </div>
               <div className="bg-muted h-1.5 sm:h-2 rounded-full overflow-hidden bg-neutral-100">
                 <div
                   className={`h-full transition-all duration-1000 ease-out ${getScoreBgClass(
-                    scorePercentage,
+                    scorePercentage
                   )}`}
                   style={{ width: `${scorePercentage}%` }}
                 ></div>
@@ -244,7 +236,7 @@ export default function TestResults({
           <div>
             <h3 className="text-xs sm:text-sm font-medium mb-2 flex items-center">
               <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-primary" />
-              Section Performance
+              Hiệu Suất Theo Phần
             </h3>
             <div className="space-y-2 text-xs sm:text-sm">
               {testResults.sectionResults.map((section: SectionResult) => (
@@ -261,23 +253,21 @@ export default function TestResults({
               variant="outline"
             >
               <Search className="w-4 h-4 mr-2" />
-              Review Answers
+              Xem lại kết quả
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      <Dialog open={showReview} onOpenChange={setShowReview}>
-        <DialogContent className="max-w-6xl max-h-[90vh] w-[90vw] overflow-y-auto">
-          <div className="min-h-fit">
-            <TestReview
-              test={currentTest}
-              testResults={testResults}
-              onBack={() => setShowReview(false)}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      {!!showReview && (
+        <div className="mt-9">
+          <TestReview
+            test={currentTest}
+            testResults={testResults}
+            onBack={() => setShowReview(false)}
+          />
+        </div>
+      )}
     </>
   );
 }

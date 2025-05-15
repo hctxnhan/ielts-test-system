@@ -181,13 +181,14 @@ export interface Test {
   id?: number;
   title: string;
   type: TestType;
+  skill: TestType;
   readingVariant?: ReadingVariant;
   description: string;
   sections: Section[];
   totalDuration: number;
   totalQuestions: number;
   instructions: string;
-  skillLevel?: "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
+  skillLevel?: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 }
 
 export interface UserAnswer {
@@ -210,7 +211,6 @@ export interface TestProgress {
   currentQuestionIndex: number;
   timeRemaining: number;
   answers: Record<string, UserAnswer>;
-  answerMap?: Record<string, any>; // New field for { subquestionId: answerId } format
   completed: boolean;
   startedAt: string;
   completedAt?: string;

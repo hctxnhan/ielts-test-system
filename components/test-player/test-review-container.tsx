@@ -12,7 +12,7 @@ interface TestReviewProps {
 export default function TestReview({
   test,
   testResults,
-  onBack,
+  onBack
 }: TestReviewProps) {
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
 
@@ -27,27 +27,27 @@ export default function TestReview({
     answers: testResults.answers || {},
     completed: true,
     startedAt: testResults.startedAt,
-    completedAt: testResults.completedAt,
+    completedAt: testResults.completedAt
   };
 
   const handleNextSection = () => {
     if (currentSectionIndex < test.sections.length - 1) {
       setCurrentSectionIndex(currentSectionIndex + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handlePreviousSection = () => {
     if (currentSectionIndex > 0) {
       setCurrentSectionIndex(currentSectionIndex - 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const jumpToSection = (index: number) => {
     if (index >= 0 && index < test.sections.length) {
       setCurrentSectionIndex(index);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -61,8 +61,6 @@ export default function TestReview({
       onNextSection={handleNextSection}
       currentSectionIndex={currentSectionIndex}
       currentSection={currentSection}
-      testResults={testResults}
-      showResults={true}
       readOnly={true}
       jumpToSection={jumpToSection}
     />

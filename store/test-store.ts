@@ -127,8 +127,9 @@ export const useTestStore = create<TestState>()((set, get) => ({
         correctAnswers: testStats.correctAnswers,
         percentageScore: testStats.percentageScore,
         sectionResults,
+        answers: progress.answers,
         startedAt: progress.startedAt,
-        completedAt: new Date().toISOString(),
+        completedAt: new Date().toISOString()
       };
 
       set({
@@ -216,28 +217,17 @@ export const useTestStore = create<TestState>()((set, get) => ({
             (sq: SubQuestionMeta) => sq.subId === subQuestionId,
           );
 
-          console.log({
-            subQuestion,
-            answer,
-            subQuestionId,
-          });
-
           if (subQuestion) {
             const normalizedAnswer = answer
               ?.trim()
               .toLowerCase()
-              .replace(/\s+/g, " ");
+              .replace(/\s+/g, ' ');
             isCorrect =
               subQuestion.acceptableAnswers?.some(
                 (acceptableAnswer: string) =>
-                  acceptableAnswer.trim().toLowerCase().replace(/\s+/g, " ") ===
-                  normalizedAnswer,
+                  acceptableAnswer.trim().toLowerCase().replace(/\s+/g, ' ') ===
+                  normalizedAnswer
               ) || false;
-
-            console.log({
-              normalizedAnswer,
-              acceptableAnswers: subQuestion.acceptableAnswers,
-            });
 
             score = isCorrect ? subQuestion.points : 0;
           }

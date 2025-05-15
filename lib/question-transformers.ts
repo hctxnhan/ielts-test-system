@@ -382,5 +382,5 @@ export function transformToStandardQuestion(
   }
 
   const type = (question as Question).type;
-  throw new Error(`Unsupported question type: ${type}`);
+  // throw new Error(`Unsupported question type: ${type}`);
 }

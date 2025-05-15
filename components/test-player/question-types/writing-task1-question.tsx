@@ -38,17 +38,15 @@ export default function WritingTask1QuestionRenderer({
   value,
   onChange,
   readOnly = false,
-  showCorrectAnswer = false,
+  showCorrectAnswer = false
 }: WritingTask1QuestionProps) {
-  console.log(value)
-
   const [currentEssay, setCurrentEssay] = useState<string | null>(
-    value?.text ?? null,
+    value?.text ?? null
   );
   const [aiScore, setAiScore] = useState<ScoringResult | null>(
     value?.score !== undefined && value?.feedback !== undefined
       ? { score: value.score, feedback: value.feedback }
-      : null,
+      : null
   );
   const [showFeedback, setShowFeedback] = useState(false);
   const [showSampleAnswer, setShowSampleAnswer] = useState(false);
@@ -59,7 +57,7 @@ export default function WritingTask1QuestionRenderer({
     setAiScore(
       value?.score !== undefined && value?.feedback !== undefined
         ? { score: value.score, feedback: value.feedback }
-        : null,
+        : null
     );
     // Reset feedback visibility if score/feedback is cleared
     if (value?.score === undefined || value?.feedback === undefined) {
@@ -100,7 +98,7 @@ export default function WritingTask1QuestionRenderer({
         {question.imageUrl && (
           <div className="my-4 flex justify-center">
             <img
-              src={question.imageUrl || "/placeholder.svg"}
+              src={question.imageUrl || '/placeholder.svg'}
               alt="Task visual"
               className="max-w-full max-h-[400px] object-contain border rounded-md"
             />
@@ -113,7 +111,7 @@ export default function WritingTask1QuestionRenderer({
       </Card>
 
       <AutoResizeTextarea
-        value={currentEssay || ""}
+        value={currentEssay || ''}
         onChange={handleTextChange}
         placeholder="Write your answer here..."
         className="min-h-[300px]"
@@ -126,8 +124,8 @@ export default function WritingTask1QuestionRenderer({
         <p
           className={`text-sm ${
             wordCount < (question.wordLimit || 150)
-              ? "text-amber-600"
-              : "text-green-600"
+              ? 'text-amber-600'
+              : 'text-green-600'
           }`}
         >
           Word count: {wordCount} / {question.wordLimit || 150} minimum
@@ -168,7 +166,7 @@ export default function WritingTask1QuestionRenderer({
               onClick={() => setShowFeedback(!showFeedback)}
               className="p-0 h-auto text-green-600 dark:text-green-400"
             >
-              {showFeedback ? "Hide feedback" : "Show feedback"}
+              {showFeedback ? 'Hide feedback' : 'Show feedback'}
             </Button>
 
             {showFeedback && (

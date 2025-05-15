@@ -6,12 +6,14 @@ interface SectionQuestionsRendererProps {
   questions: Question[];
   sectionId: string;
   isReviewMode?: boolean;
+  answers: any;
 }
 
 const SectionQuestionsRenderer: React.FC<SectionQuestionsRendererProps> = ({
   questions,
   sectionId,
   isReviewMode = false,
+  answers
 }) => {
   return (
     <div className="space-y-8">
@@ -23,7 +25,7 @@ const SectionQuestionsRenderer: React.FC<SectionQuestionsRendererProps> = ({
         >
           <span className="flex gap-2 uppercase font-bold">
             <p>
-              {question.scoringStrategy === "partial" &&
+              {question.scoringStrategy === 'partial' &&
               question.partialEndingIndex !== question.index
                 ? `Question ${question.index + 1} - ${
                     question.partialEndingIndex + 1
@@ -33,6 +35,7 @@ const SectionQuestionsRenderer: React.FC<SectionQuestionsRendererProps> = ({
             <p>{question.type}</p>
           </span>
           <QuestionRenderer
+            answers={answers}
             isReviewMode={isReviewMode}
             question={question}
             sectionId={sectionId}
@@ -40,7 +43,6 @@ const SectionQuestionsRenderer: React.FC<SectionQuestionsRendererProps> = ({
         </div>
       ))}
     </div>
-
   );
 };
 

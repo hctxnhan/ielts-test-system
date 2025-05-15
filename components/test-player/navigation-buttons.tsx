@@ -10,6 +10,7 @@ interface NavigationButtonsProps {
   onNextSection: () => void;
   onCompleteTest: () => void;
   isSubmitting: boolean;
+  readOnly: boolean;
 }
 
 export default function NavigationButtons({
@@ -19,8 +20,32 @@ export default function NavigationButtons({
   onNextSection,
   onCompleteTest,
   isSubmitting,
+  readOnly
 }: NavigationButtonsProps) {
   const isLastSection = currentSectionIndex === totalSections - 1;
+  const nextButton = (() => {
+    if (isLastSection && !readOnly) {
+      return (
+        <Button size="sm" onClick={onCompleteTest} disabled={isSubmitting}>
+          <CheckCircle2 className="h-3 w-3 mr-1" />
+          {isSubmitting ? 'Submitting...' : 'Finish Test'}
+        </Button>
+      );
+    } else if (isLastSection && readOnly) {
+      return (
+        <Button size="sm" disabled={true}>
+          <CheckCircle2 className="h-3 w-3 mr-1" />
+          Next
+        </Button>
+      );
+    } else {
+      return (
+        <Button size="sm" onClick={onNextSection}>
+          Next <ArrowRight className="h-3 w-3 ml-1" />
+        </Button>
+      );
+    }
+  })();
 
   return (
     <div className="flex justify-between mt-4">
@@ -33,16 +58,7 @@ export default function NavigationButtons({
         <ArrowLeft className="h-3 w-3 mr-1" /> Previous
       </Button>
 
-      {isLastSection ? (
-        <Button size="sm" onClick={onCompleteTest} disabled={isSubmitting}>
-          <CheckCircle2 className="h-3 w-3 mr-1" />
-          {isSubmitting ? "Submitting..." : "Finish Test"}
-        </Button>
-      ) : (
-        <Button size="sm" onClick={onNextSection}>
-          Next <ArrowRight className="h-3 w-3 ml-1" />
-        </Button>
-      )}
+      {nextButton}
     </div>
   );
 }

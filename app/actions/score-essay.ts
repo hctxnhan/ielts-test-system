@@ -40,16 +40,13 @@ const schema = jsonSchema<AIScoreResponse>({
 export async function scoreEssayWithAI(
   prompt: string,
   essay: string,
-  scoringPrompt?: string,
+  scoringPrompt?: string
 ) {
-  console.log("Scoring essay with AI...", process.env.OPENROUTER_MODEL_ID);
   try {
     const openrouter = createOpenRouter({
-      apiKey: process.env.OPENROUTER_API_KEY,
+      apiKey: process.env.OPENROUTER_API_KEY
     });
-    const model = openrouter(
-      process.env.OPENROUTER_MODEL_ID || '',
-    );
+    const model = openrouter(process.env.OPENROUTER_MODEL_ID || '');
 
     // Refined instruction prompt for the AI model
     const instruction = `
@@ -74,7 +71,7 @@ export async function scoreEssayWithAI(
       : defaultPrompt;
 
     if (!process.env.OPENROUTER_API_KEY) {
-      throw new Error("OPENROUTER_API_KEY is not set in environment variables");
+      throw new Error('OPENROUTER_API_KEY is not set in environment variables');
     }
 
     const fullPrompt = `
@@ -100,8 +97,8 @@ export async function scoreEssayWithAI(
       model,
       schema,
       headers: {
-        "X-Title": "IELTS Insight", // Add a title for API tracking
-      },
+        'X-Title': 'IELTS Insight' // Add a title for API tracking
+      }
     });
 
     if (
@@ -110,7 +107,7 @@ export async function scoreEssayWithAI(
       !result.object.score ||
       !result.object.detailedBreakdown
     ) {
-      throw new Error("Invalid response from AI model");
+      throw new Error('Invalid response from AI model');
     }
 
     // Process explanation to ensure it's not a JSON string
@@ -121,7 +118,7 @@ export async function scoreEssayWithAI(
       const parsedFeedback = JSON.parse(feedback);
       if (
         parsedFeedback &&
-        typeof parsedFeedback === "object" &&
+        typeof parsedFeedback === 'object' &&
         parsedFeedback.detailedBreakdown
       ) {
         // If it parsed as JSON and has an explanation field, use that instead
@@ -133,10 +130,10 @@ export async function scoreEssayWithAI(
 
     return {
       score: result.object.score,
-      feedback,
+      feedback
     };
   } catch (error) {
-    console.error("Error scoring essay:", error);
+    console.error('Error scoring essay:', error);
     throw error;
   }
 }

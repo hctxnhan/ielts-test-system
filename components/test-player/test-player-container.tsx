@@ -36,7 +36,7 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
 
     const getEssayScore = useTestStore.getState().scoreEssayFn;
     if (!getEssayScore) {
-      console.warn("Debug: Essay scoring function is not available");
+      console.warn('Debug: Essay scoring function is not available');
       return;
     }
 
@@ -44,27 +44,23 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
     let hasChanges = false;
 
     const processQuestion = async (question: any, answer: any) => {
-      console.log({
-        answer,
-      });
-
       if (answer?.answer?.text && answer.answer.text.length < 100) {
         return {
           ...answer,
           score: 0,
-          feedback: "Answer is too short.",
+          feedback: 'Answer is too short.',
           answer: {
             ...answer.answer,
             score: 0,
-            feedback: "Answer is too short.",
-          },
+            feedback: 'Answer is too short.'
+          }
         };
       } else if (!answer.score && !answer.feedback) {
         try {
           const response = await getEssayScore({
             prompt: question.text,
             essay: answer.answer.text,
-            scoringPrompt: question.scoringPrompt || "",
+            scoringPrompt: question.scoringPrompt || ''
           });
 
           if (response.ok) {
@@ -75,21 +71,21 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
               answer: {
                 ...answer.answer,
                 score: (response.score * question.points) / 9,
-                feedback: response.feedback,
-              },
+                feedback: response.feedback
+              }
             };
           } else {
             console.warn(
-              "Debug: Scoring failed for question",
+              'Debug: Scoring failed for question',
               question.id,
-              "Response:",
-              response,
+              'Response:',
+              response
             );
           }
         } catch (error) {
           console.error(
             `Error scoring writing question ${question.id}:`,
-            error,
+            error
           );
         }
       }
@@ -100,17 +96,12 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
       for (const question of section.questions) {
         const answer = currentAnswers[question.id];
         if (
-          (question.type === "writing-task1" ||
-            question.type === "writing-task2") &&
+          (question.type === 'writing-task1' ||
+            question.type === 'writing-task2') &&
           answer?.answer?.text
         ) {
           const updatedAnswer = await processQuestion(question, answer);
-          console.log({
-            updatedAnswer,
-            answer,
-            hasChanges: updatedAnswer !== answer,
-            question,
-          });
+
           if (updatedAnswer !== answer) {
             currentAnswers[question.id] = updatedAnswer;
             hasChanges = true;
@@ -121,7 +112,7 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
 
     if (hasChanges) {
       useTestStore.setState({
-        progress: { ...progress, answers: currentAnswers },
+        progress: { ...progress, answers: currentAnswers }
       });
     } else {
     }
@@ -142,7 +133,7 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
   }, [test]);
 
   const handleStartTest = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setShowInstructions(false);
     startTest();
   };
@@ -159,7 +150,7 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
         await useTestStore.getState().submitTestResults(test.id);
         completeTest();
       } catch (error) {
-        console.error("Error submitting test results:", error);
+        console.error('Error submitting test results:', error);
       } finally {
         setIsSubmitting(false);
       }
@@ -180,10 +171,10 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
       const updatedProgress = {
         ...progress,
         currentSectionIndex: progress.currentSectionIndex + 1,
-        currentQuestionIndex: 0,
+        currentQuestionIndex: 0
       };
       useTestStore.setState({ progress: updatedProgress });
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [progress, test, handleCompleteTest]);
 
@@ -195,12 +186,12 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
       const updatedProgress = {
         ...progress,
         currentSectionIndex: sectionIndex,
-        currentQuestionIndex: 0,
+        currentQuestionIndex: 0
       };
 
       useTestStore.setState({ progress: updatedProgress });
     },
-    [progress],
+    [progress]
   );
 
   const handlePreviousSection = useCallback(() => {
@@ -215,7 +206,7 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
       const updatedProgress = {
         ...progress,
         currentSectionIndex: progress.currentSectionIndex - 1,
-        currentQuestionIndex: 0,
+        currentQuestionIndex: 0
       };
       useTestStore.setState({ progress: updatedProgress });
     }
