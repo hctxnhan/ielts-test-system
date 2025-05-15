@@ -8,7 +8,7 @@ import {
   DialogContent,
   DialogTitle
 } from "@testComponents/components/ui/dialog";
-import "react-quill/dist/quill.snow.css"; // Import Quill styles for compatibility
+import "react-quill-new/dist/quill.snow.css";
 import {
   Tooltip,
   TooltipContent,
