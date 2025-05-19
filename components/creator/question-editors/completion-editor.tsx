@@ -1,13 +1,9 @@
 "use client";
-
 import React from "react";
 import { Button } from "@testComponents/components/ui/button";
 import { Input } from "@testComponents/components/ui/input";
 import { Label } from "@testComponents/components/ui/label";
-import type {
-  CompletionQuestion,
-  SubQuestionMeta,
-} from "@testComponents/lib/types";
+import type { CompletionQuestion } from "@testComponents/lib/types";
 import { CheckCircle, Hash, PlusCircle, X } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 
@@ -26,56 +22,26 @@ export default function CompletionEditor({
   sectionId,
   onUpdateQuestion,
 }: CompletionEditorProps) {
+  const length = question.text?.match(/_{3,}/g)?.length || 0;
+
+  if (length === 0) {
+    return (
+      // please use ___ to create blanks
+      <p className="text-sm text-muted-foreground">
+        Please include <strong>___</strong> (3 or more underscores) to create
+        blanks in question text.
+      </p>
+    );
+  }
   return (
     <div className="space-y-3">
-      <div className="space-y-1.5">
-        <Label
-          htmlFor={`blanks-${question.id}`}
-          className="text-xs font-medium flex items-center gap-1.5"
-        >
-          <Hash className="w-3 h-3" />
-          Number of Blanks
-        </Label>
-        <Input
-          id={`blanks-${question.id}`}
-          type="number"
-          value={question.blanks}
-          onChange={(e) => {
-            const newBlanks = Number.parseInt(e.target.value) || 1;
-            const currentSubQuestions = [...(question.subQuestions || [])];
-
-            // Adjust the subQuestions array size
-            while (currentSubQuestions.length < newBlanks) {
-              const newIndex = currentSubQuestions.length + 1;
-              currentSubQuestions.push({
-                subIndex: newIndex,
-                subId: uuidv4(),
-                points: 1,
-                acceptableAnswers: [""],
-              });
-            }
-            while (currentSubQuestions.length > newBlanks) {
-              currentSubQuestions.pop();
-            }
-
-            onUpdateQuestion(sectionId, question.id, {
-              blanks: newBlanks,
-              subQuestions: currentSubQuestions,
-            });
-          }}
-          min="1"
-          max="10"
-          className="h-7 text-sm"
-        />
-      </div>
-
       <div className="space-y-1.5">
         <Label className="text-xs font-medium flex items-center gap-1.5">
           <CheckCircle className="w-3 h-3" />
           Answers
         </Label>
         <div className="space-y-2">
-          {Array.from({ length: question.blanks || 0 }).map((_, blankIndex) => {
+          {Array.from({ length }).map((_, blankIndex) => {
             const subQuestion = question.subQuestions?.[blankIndex] || {
               subIndex: blankIndex + 1,
               subId: uuidv4(),

@@ -33,7 +33,7 @@ export default function TestSidebar({
   return (
     <>
       {!isReviewMode && (
-        <div className="flex justify-between items-center mb-3">
+        <div className="flex justify-between items-center mb-2 gap-1">
           <TestTimer
             initialTime={progress.timeRemaining}
             onTimeEnd={onCompleteTest}
@@ -42,35 +42,32 @@ export default function TestSidebar({
             disabled={isSubmitting}
             variant="destructive"
             size="sm"
+            className=""
             onClick={onCompleteTest}
           >
-            {isSubmitting ? "Submitting..." : "Finish Test"}
+            {isSubmitting ? "Submitting..." : "Finish"}
           </Button>
         </div>
       )}
 
       <ScrollArea className="flex-1">
-        {test.sections.map((testSection, sectionIndex) => {
-          const isCurrentSection = currentSectionIndex === sectionIndex;
+        <div className="space-y-2">
+          {test.sections.map((testSection, sectionIndex) => {
+            const isCurrentSection = currentSectionIndex === sectionIndex;
 
-          return (
-            <div key={testSection.id} className="mb-6">
-              <div className="mb-3">
-                <h3 className="text-sm font-medium">
-                  Section {sectionIndex + 1}
-                </h3>
+            return (
+              <div key={testSection.id} className="mb-1">
+                <SectionNavigationButton
+                  section={testSection}
+                  sectionIndex={sectionIndex}
+                  answers={progress.answers}
+                  isCurrentSection={isCurrentSection}
+                  onJumpToSection={onJumpToSection}
+                />
               </div>
-
-              <SectionNavigationButton
-                section={testSection}
-                sectionIndex={sectionIndex}
-                answers={progress.answers}
-                isCurrentSection={isCurrentSection}
-                onJumpToSection={onJumpToSection}
-              />
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </ScrollArea>
     </>
   );

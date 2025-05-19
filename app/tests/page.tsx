@@ -52,7 +52,7 @@ export default function TestsPage() {
   };
 
   return (
-    <main className="container mx-auto py-10 px-4">
+    <main className="mx-auto py-10 px-4">
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle className="text-center">Test Player</CardTitle>

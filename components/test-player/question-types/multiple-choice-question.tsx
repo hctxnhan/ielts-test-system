@@ -25,7 +25,14 @@ export default function MultipleChoiceQuestion({
 }: MultipleChoiceQuestionProps) {
   return (
     <div className="space-y-2">
-      <p className="font-medium text-sm">{question.text}</p>
+      <p className="font-medium text-sm whitespace-pre-line">
+        {question.text?.split(/_{3,}/g)?.map((part, index) => (
+          <React.Fragment key={index}>
+            {part}
+            <span className="border-b border-gray-400 w-[60px] inline-block"></span>
+          </React.Fragment>
+        ))}
+      </p>
       <RadioGroup
         value={value}
         unselectable="on"

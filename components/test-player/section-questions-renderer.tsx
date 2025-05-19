@@ -13,7 +13,7 @@ const SectionQuestionsRenderer: React.FC<SectionQuestionsRendererProps> = ({
   questions,
   sectionId,
   isReviewMode = false,
-  answers
+  answers,
 }) => {
   return (
     <div className="space-y-8">
@@ -25,14 +25,14 @@ const SectionQuestionsRenderer: React.FC<SectionQuestionsRendererProps> = ({
         >
           <span className="flex gap-2 uppercase font-bold">
             <p>
-              {question.scoringStrategy === 'partial' &&
+              {question.scoringStrategy === "partial" &&
               question.partialEndingIndex !== question.index
                 ? `Question ${question.index + 1} - ${
                     question.partialEndingIndex + 1
                   }`
                 : `Question ${question.index + 1}`}
             </p>
-            <p>{question.type}</p>
+            <p>{question.type?.split("-").join(" ")}</p>
           </span>
           <QuestionRenderer
             answers={answers}

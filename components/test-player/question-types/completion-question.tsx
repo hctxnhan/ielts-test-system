@@ -22,7 +22,21 @@ export default function CompletionQuestionRenderer({
 }: CompletionQuestionProps) {
   return (
     <div className="space-y-2">
-      <p className="font-medium text-sm">{question.text}</p>
+      <p className="font-medium text-sm whitespace-pre-line">
+        {question.text?.split(/_{3,}/g)?.map((part, index) => (
+          <React.Fragment key={index}>
+            {part}
+            <span className="inline-block text-xs py-1 px-2 bg-muted rounded-2xl">
+              <span className="mr-2">
+                {question.scoringStrategy === "partial"
+                  ? `Q${question.index + index + 1}:`
+                  : `#${index + 1}:`}
+              </span>
+              <span className="border-b border-gray-400 w-[60px] inline-block"></span>
+            </span>
+          </React.Fragment>
+        ))}
+      </p>
       <div className="space-y-2">
         {question.subQuestions.map((subQuestion, index) => {
           const userAnswer = value?.[subQuestion.subId] || "";

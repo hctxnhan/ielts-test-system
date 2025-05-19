@@ -1,5 +1,5 @@
 "use client";
-
+import React from "react";
 import { useState, useEffect, useRef } from "react";
 import { useTestStore } from "@testComponents/store/test-store";
 import { Button } from "@testComponents/components/ui/button";
@@ -83,14 +83,14 @@ export default function TestTimer({ initialTime, onTimeEnd }: TestTimerProps) {
 
   return (
     <Button
-      size="sm"
+      size="default"
       variant="outline"
-      className={`font-mono px-2 ${
+      className={`font-mono h-auto ${
         isWarning ? "text-red-500 border-red-500 animate-pulse" : ""
       }`}
       disabled
     >
-      <Clock className="mr-1 h-3 w-3" />
+      <Clock className="mr-0.5 h-2.5 w-2.5" />
       {formatTime(timeRemaining)}
     </Button>
   );

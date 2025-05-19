@@ -1,5 +1,5 @@
 "use client";
-
+import React from "react";
 import { Button } from "@testComponents/components/ui/button";
 import {
   Tooltip,
@@ -51,36 +51,35 @@ export default function SectionNavigationButton({
 
   // Get section completion percentage
   const completionPercentage = Math.round(
-    (answeredQuestionsCount / sectionStatus.sectionTotalQuestions) * 100
+    (answeredQuestionsCount / sectionStatus.sectionTotalQuestions) * 100,
   );
 
   const isFullyAnswered = completionPercentage === 100;
 
   return (
-    <div className="mb-2">
+    <div className="mb-1">
       {/* Section header with compact styling */}
       <div
         className={`
           rounded-md overflow-hidden border transition-all duration-200
           ${isCurrentSection ? "border-primary/40" : "border-muted"}
           ${isFullyAnswered ? "bg-green-50 dark:bg-green-900/20" : ""}
-          
         `}
       >
         {/* Top section with title and controls */}
         <div
           onClick={() => onJumpToSection(sectionIndex)}
           className={`
-            px-2 py-2 flex items-center justify-between cursor-pointer
+            px-1.5 py-1 flex items-center justify-between cursor-pointer
             ${isCurrentSection ? "bg-primary/10" : ""}
           `}
         >
           {/* Left side: Section info */}
-          <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex items-center gap-1 min-w-0">
             {/* Section number indicator */}
             <div
               className={`
-              w-5 h-5 rounded-full flex items-center justify-center shrink-0
+              w-4 h-4 rounded-full flex items-center justify-center shrink-0
               ${
                 isCurrentSection
                   ? "bg-primary text-white"
@@ -88,20 +87,20 @@ export default function SectionNavigationButton({
               }
             `}
             >
-              <span className="text-xs font-medium">{sectionIndex + 1}</span>
+              <span className="text-sm font-medium">{sectionIndex + 1}</span>
             </div>
 
             {/* Section title and stats */}
             <div className="min-w-0 flex-1">
-              <div className="font-medium text-xs truncate">
+              <div className="font-medium text-sm truncate">
                 {section.title}
               </div>
-              <div className="flex items-center text-[10px] text-muted-foreground">
+              <div className="flex items-center text-sm text-muted-foreground">
                 <span>{questionCount} Q</span>
-                <span className="mx-1">•</span>
+                <span className="mx-0.5">•</span>
                 <span className="flex items-center">
                   {isFullyAnswered ? (
-                    <CheckCircle className="w-3 h-3 text-green-500 mr-0.5" />
+                    <CheckCircle className="w-2.5 h-2.5 text-green-500 mr-0.5" />
                   ) : (
                     <span>{completionPercentage}%</span>
                   )}
@@ -111,10 +110,10 @@ export default function SectionNavigationButton({
           </div>
 
           {/* Right side: Controls */}
-          <div className="flex items-center pl-1">
+          <div className="flex items-center pl-0.5">
             {/* Compact progress indicator */}
             {!isFullyAnswered && completionPercentage > 0 && (
-              <div className="w-8 h-1 mr-1 bg-muted rounded-full overflow-hidden">
+              <div className="w-6 h-0.5 mr-0.5 bg-muted rounded-full overflow-hidden">
                 <div
                   className="h-full bg-amber-500"
                   style={{ width: `${completionPercentage}%` }}
@@ -127,12 +126,12 @@ export default function SectionNavigationButton({
               variant="ghost"
               size="sm"
               onClick={toggleExpand}
-              className="p-0 h-6 w-6 rounded-full"
+              className="p-0 h-4 w-4 rounded-full"
             >
               {expanded ? (
-                <ChevronUp className="h-3.5 w-3.5" />
+                <ChevronUp className="h-2.5 w-2.5" />
               ) : (
-                <ChevronDown className="h-3.5 w-3.5" />
+                <ChevronDown className="h-2.5 w-2.5" />
               )}
             </Button>
           </div>
@@ -140,7 +139,7 @@ export default function SectionNavigationButton({
 
         {expanded && (
           <div className="bg-muted/5 px-1.5 py-2 border-t">
-            <div className="grid grid-cols-6 gap-1">
+            <div className="grid gap-2 justify-start [grid-template-columns:repeat(auto-fit,minmax(30px,1fr))] w-full">
               {section.questions.map((question: any, qIndex: number) => {
                 // Check if this is a partial question with a range
                 if (
@@ -170,10 +169,10 @@ export default function SectionNavigationButton({
                       <TooltipProvider key={`${qIndex}-${i}`}>
                         <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
-                            <div className="w-full">
+                            <div className="">
                               <div
                                 className={`
-                                  w-full aspect-square flex items-center justify-center text-xs font-medium 
+                                  w-full aspect-square flex items-center justify-center text-sm font-medium 
                                   rounded transition-colors duration-150 relative
                                   ${
                                     status === "completed"
@@ -191,7 +190,7 @@ export default function SectionNavigationButton({
                             align="center"
                             className="py-1 px-2"
                           >
-                            <p className="text-[10px]">
+                            <p className="text-sm">
                               Q{displayNumber}:{" "}
                               {status === "completed"
                                 ? "Completed"
@@ -199,7 +198,7 @@ export default function SectionNavigationButton({
                             </p>
                           </TooltipContent>
                         </Tooltip>
-                      </TooltipProvider>
+                      </TooltipProvider>,
                     );
                   }
 
@@ -218,7 +217,7 @@ export default function SectionNavigationButton({
                         <div className="w-full">
                           <div
                             className={`
-                            w-full aspect-square flex items-center justify-center text-xs font-medium 
+                            w-full aspect-square flex items-center justify-center text-sm font-medium 
                             rounded transition-colors duration-150 relative
                             ${
                               status === "completed"
@@ -236,7 +235,7 @@ export default function SectionNavigationButton({
                         align="center"
                         className="py-1 px-2"
                       >
-                        <p className="text-[10px]">
+                        <p className="text-sm">
                           Q{displayNumber}:{" "}
                           {status === "completed"
                             ? "Completed"

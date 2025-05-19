@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { cn } from "@testComponents/lib/utils";
 import type { RefCallback } from "react";
 import { useDrag, useDrop } from "react-dnd";
@@ -10,6 +11,7 @@ interface DraggableItemProps {
   itemType: string;
   prefix?: string;
   disabled?: boolean;
+  className?: string;
 }
 
 interface DroppableZoneProps {
@@ -24,9 +26,10 @@ interface DroppableZoneProps {
   className?: string;
 }
 
-
 interface DragItem {
   index: string;
+  text: string;
+  prefix?: string;
 }
 
 export function DraggableItem({
@@ -35,6 +38,7 @@ export function DraggableItem({
   itemType,
   prefix = "",
   disabled = false,
+  className = "",
 }: DraggableItemProps) {
   const [{ isDragging }, dragRef] = useDrag<
     DragItem,
@@ -42,7 +46,7 @@ export function DraggableItem({
     { isDragging: boolean }
   >(() => ({
     type: itemType,
-    item: { index: String(index) },
+    item: { index: String(index), text, prefix },
     canDrag: !disabled,
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
@@ -52,9 +56,18 @@ export function DraggableItem({
   return (
     <div
       ref={dragRef as unknown as RefCallback<HTMLDivElement>}
-      className={`border px-2 py-1 rounded text-xs ${
-        isDragging ? "opacity-50" : "opacity-100"
-      } ${disabled ? "cursor-default opacity-50" : "cursor-move"}`}
+      className={cn(
+        "border px-3 py-2 rounded text-sm transition-all duration-200 shadow-sm",
+        {
+          "opacity-50 scale-95 border-dashed": isDragging,
+          "opacity-100": !isDragging,
+          "cursor-default opacity-50": disabled,
+          "cursor-grab hover:border-blue-400 hover:shadow-md active:cursor-grabbing hover:bg-blue-50":
+            !disabled && !isDragging,
+        },
+        className,
+      )}
+      title={disabled ? undefined : "Drag this item"}
     >
       {prefix && <span className="font-bold mr-1">{prefix}</span>}
       {text}
@@ -72,39 +85,62 @@ export function DroppableZone({
   disabled = false,
   className = "",
 }: DroppableZoneProps) {
-  const [{ isOver }, dropRef] = useDrop<DragItem, unknown, { isOver: boolean }>(
-    () => ({
-      accept: itemType,
-      canDrop: () => !disabled,
-      drop: (item) => onDrop(item.index, subQuestionId),
-      collect: (monitor) => ({
-        isOver: !!monitor.isOver(),
-      }),
+  const [{ isOver, canDrop }, dropRef] = useDrop<
+    DragItem,
+    unknown,
+    { isOver: boolean; canDrop: boolean }
+  >(() => ({
+    accept: itemType,
+    canDrop: () => !disabled,
+    drop: (item) => {
+      onDrop(item.index, subQuestionId);
+    },
+    collect: (monitor) => ({
+      isOver: !!monitor.isOver(),
+      canDrop: !!monitor.canDrop(),
     }),
-  );
+  }));
 
   return (
     <div
       ref={dropRef as unknown as RefCallback<HTMLDivElement>}
       className={cn(
-        "border rounded px-2 py-1 min-h-[1.75rem] min-w-[200px]",
+        "border-2 rounded px-3 py-2 min-h-[2.5rem] min-w-[150px] transition-all duration-200 shadow-sm",
         {
-          "bg-gray-100": isOver,
+          "bg-blue-100 border-blue-500 shadow-md": isOver,
           "bg-gray-200": matchedText && !isOver,
           "bg-white": !matchedText && !isOver,
+          "hover:border-blue-400 hover:bg-blue-50": !disabled && !matchedText,
+          "cursor-not-allowed opacity-60": disabled,
         },
         className,
       )}
+      title={disabled ? "This drop zone is disabled" : "Drop item here"}
     >
       {matchedText ? (
-        <span className="text-xs">
+        <span className="text-sm font-medium">
           {prefix && <span className="font-bold mr-1">{prefix}</span>}
           {matchedText}
         </span>
       ) : (
-        <span className="text-gray-400 text-xs">{placeholder}</span>
+        <span className="text-gray-500 text-sm flex items-center justify-center h-full">
+          <svg
+            className="w-4 h-4 mr-1"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+          {placeholder}
+        </span>
       )}
     </div>
   );
 }
-

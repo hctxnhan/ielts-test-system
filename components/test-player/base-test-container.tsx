@@ -79,9 +79,9 @@ export default function BaseTestContainer({
     );
   }
 
-  const isReadingTest = test.type === 'reading' || test.skill === 'reading';
+  const isReadingTest = test.type === "reading" || test.skill === "reading";
   const isListeningTest =
-    test.type === 'listening' || test.skill === 'listening';
+    test.type === "listening" || test.skill === "listening";
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -103,7 +103,7 @@ export default function BaseTestContainer({
         <Sheet open={sidebarOpen && !readOnly} onOpenChange={setSidebarOpen}>
           <SheetContent
             side="right"
-            className="w-full sm:max-w-md p-4 flex flex-col"
+            className="w-full sm:max-w-sm p-2 flex flex-col"
           >
             <SheetHeader className="flex-shrink-0">
               <div className="flex justify-between items-center">
@@ -158,8 +158,8 @@ export default function BaseTestContainer({
               ref={passageContainerRef}
               className={`lg:transition-all lg:duration-300 ${
                 showPassage
-                  ? 'lg:w-1/3 opacity-100'
-                  : 'lg:w-0 lg:opacity-0 lg:overflow-hidden'
+                  ? "lg:w-1/2 min-w-[400px] opacity-100"
+                  : "lg:w-0 lg:opacity-0 lg:overflow-hidden"
               }`}
             >
               <div className="sticky top-20 z-20 h-[calc(100vh-65px-2rem)]">
@@ -183,7 +183,7 @@ export default function BaseTestContainer({
             {isReadingTest && currentSection.readingPassage && (
               <div className="justify-start mb-4  lg:flex hidden">
                 <Button variant="outline" size="sm" onClick={togglePassage}>
-                  {showPassage ? 'Hide Passage' : 'Show Passage'}
+                  {showPassage ? "Hide Passage" : "Show Passage"}
                   <SplitSquareVertical className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -212,9 +212,9 @@ export default function BaseTestContainer({
           </div>
           {/* Sidebar - hidden on mobile, last column on desktop */}
           {!readOnly && (
-            <div className="lg:w-1/4 hidden lg:block">
+            <div className="lg:w-[300px] hidden lg:block">
               <div className="sticky top-20 z-20">
-                <Card className="shadow-sm p-3 flex flex-col h-[calc(100vh-65px-2rem)]">
+                <Card className="shadow-sm p-2 flex flex-col h-[calc(100vh-65px-2rem)]">
                   <TestSidebar
                     isReviewMode={readOnly}
                     isSubmitting={isSubmitting}

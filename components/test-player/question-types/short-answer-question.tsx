@@ -18,7 +18,7 @@ export default function ShortAnswerQuestionRenderer({
   value = {},
   onChange,
   readOnly = false,
-  showCorrectAnswer = false
+  showCorrectAnswer = false,
 }: ShortAnswerQuestionProps) {
   const handleChange = (subId: string, newValue: string) => {
     if (readOnly) return;
@@ -26,7 +26,7 @@ export default function ShortAnswerQuestionRenderer({
     const newAnswers = { ...(value || {}) };
     newAnswers[subId] = newValue;
 
-    if (question.scoringStrategy === 'partial') {
+    if (question.scoringStrategy === "partial") {
       onChange(newAnswers, subId);
     } else {
       onChange(newAnswers);
@@ -36,7 +36,14 @@ export default function ShortAnswerQuestionRenderer({
   return (
     <div className="space-y-2">
       <div className="space-y-1">
-        <p className="font-medium text-sm">{question.text}</p>
+        <p className="font-medium text-sm whitespace-pre-line">
+          {question.text?.split(/_{3,}/g)?.map((part, index) => (
+            <React.Fragment key={index}>
+              {part}
+              <span className="border-b border-gray-400 w-[60px] inline-block"></span>
+            </React.Fragment>
+          ))}
+        </p>
         {question.wordLimit && (
           <p className="text-xs text-muted-foreground">
             Word limit: {question.wordLimit} words per answer
@@ -47,21 +54,21 @@ export default function ShortAnswerQuestionRenderer({
       <div className="space-y-2">
         {question.subQuestions.map((subQuestion, index) => {
           const questionNumber =
-            question.scoringStrategy === 'partial'
+            question.scoringStrategy === "partial"
               ? `Q${question.index + index + 1}.`
               : `#${index + 1}.`;
 
-          const userAnswer = value?.[subQuestion.subId] || '';
+          const userAnswer = value?.[subQuestion.subId] || "";
           const isCorrect =
             showCorrectAnswer &&
             userAnswer &&
             subQuestion.acceptableAnswers?.some(
-              (answer) => answer.toLowerCase() === userAnswer.toLowerCase()
+              (answer) => answer.toLowerCase() === userAnswer.toLowerCase(),
             );
           const isIncorrect = showCorrectAnswer && !isCorrect;
 
           const questionText = question.questions.find(
-            (q) => q.id === subQuestion.item
+            (q) => q.id === subQuestion.item,
           );
 
           return (
@@ -78,11 +85,11 @@ export default function ShortAnswerQuestionRenderer({
                 onChange={(e) =>
                   handleChange(subQuestion.subId, e.target.value)
                 }
-                placeholder={showCorrectAnswer ? 'Not answered' : 'Your answer'}
+                placeholder={showCorrectAnswer ? "Not answered" : "Your answer"}
                 className={cn(
-                  'resize-none text-sm h-[60px] min-h-[60px]',
-                  isCorrect && 'border-green-500 bg-green-50',
-                  isIncorrect && 'border-red-500 bg-red-50'
+                  "resize-none text-sm h-[60px] min-h-[60px]",
+                  isCorrect && "border-green-500 bg-green-50",
+                  isIncorrect && "border-red-500 bg-red-50",
                 )}
                 readOnly={readOnly}
               />
@@ -90,8 +97,8 @@ export default function ShortAnswerQuestionRenderer({
                 isIncorrect &&
                 subQuestion.acceptableAnswers && (
                   <div className="text-sm text-green-600">
-                    ✓ One of following:{' '}
-                    {subQuestion.acceptableAnswers.join(' / ')}
+                    ✓ One of following:{" "}
+                    {subQuestion.acceptableAnswers.join(" / ")}
                   </div>
                 )}
             </div>

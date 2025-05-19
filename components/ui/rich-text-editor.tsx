@@ -19,10 +19,10 @@ interface RichTextEditorProps {
 const modules = {
   toolbar: [
     [{ header: [false, 1, 2, 3] }], // Normal, h1, h2, h3
-    [{ font: [] }],                 // Font dropdown
+    [{ font: [] }], // Font dropdown
     ["bold", "italic", "underline"], // Basic formatting
     [{ list: "ordered" }, { list: "bullet" }, { align: [] }], // Lists and alignment
-    ["clean"],                      // Remove formatting
+    ["clean"], // Remove formatting
   ],
   clipboard: {
     matchVisual: false,
@@ -48,11 +48,8 @@ export function RichTextEditor({
   if (!isMounted) {
     // Return a placeholder while we wait for client-side rendering
     return (
-      <div 
-        className={cn(
-          "border rounded-md p-3 bg-background", 
-          className
-        )}
+      <div
+        className={cn("border rounded-md p-3 bg-background", className)}
         style={{ minHeight, maxHeight: "auto" }}
       >
         Loading editor...
@@ -81,7 +78,14 @@ export function RichTextEditor({
           border-bottom-left-radius: 0.375rem;
           border-bottom-right-radius: 0.375rem;
           border-color: #e2e8f0;
-          font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+          font-family:
+            system-ui,
+            -apple-system,
+            "Segoe UI",
+            Roboto,
+            Helvetica,
+            Arial,
+            sans-serif;
         }
         .rich-text-editor .ql-editor {
           min-height: ${minHeight - 42}px; /* Subtract toolbar height */
@@ -91,20 +95,44 @@ export function RichTextEditor({
         .rich-text-editor .ql-editor p {
           margin-bottom: 0.75rem;
         }
-        .rich-text-editor .ql-snow .ql-picker.ql-header .ql-picker-label::before,
-        .rich-text-editor .ql-snow .ql-picker.ql-header .ql-picker-item::before {
+        .rich-text-editor
+          .ql-snow
+          .ql-picker.ql-header
+          .ql-picker-label::before,
+        .rich-text-editor
+          .ql-snow
+          .ql-picker.ql-header
+          .ql-picker-item::before {
           content: "Normal";
         }
-        .rich-text-editor .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="1"]::before,
-        .rich-text-editor .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="1"]::before {
+        .rich-text-editor
+          .ql-snow
+          .ql-picker.ql-header
+          .ql-picker-label[data-value="1"]::before,
+        .rich-text-editor
+          .ql-snow
+          .ql-picker.ql-header
+          .ql-picker-item[data-value="1"]::before {
           content: "Heading 1";
         }
-        .rich-text-editor .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="2"]::before,
-        .rich-text-editor .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="2"]::before {
+        .rich-text-editor
+          .ql-snow
+          .ql-picker.ql-header
+          .ql-picker-label[data-value="2"]::before,
+        .rich-text-editor
+          .ql-snow
+          .ql-picker.ql-header
+          .ql-picker-item[data-value="2"]::before {
           content: "Heading 2";
         }
-        .rich-text-editor .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="3"]::before,
-        .rich-text-editor .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::before {
+        .rich-text-editor
+          .ql-snow
+          .ql-picker.ql-header
+          .ql-picker-label[data-value="3"]::before,
+        .rich-text-editor
+          .ql-snow
+          .ql-picker.ql-header
+          .ql-picker-item[data-value="3"]::before {
           content: "Heading 3";
         }
         /* Improve button and picker styling */
@@ -124,13 +152,13 @@ export function RichTextEditor({
           width: 24px;
           padding: 2px;
           margin: 0 1px;
-        }        /* Add hover effect for better UX */
+        } /* Add hover effect for better UX */
         .rich-text-editor .ql-snow .ql-formats button:hover,
         .rich-text-editor .ql-snow .ql-picker:hover {
           color: #3182ce;
         }
         /* Style the editor content like the screenshot */
-        .rich-text-editor .ql-editor h1, 
+        .rich-text-editor .ql-editor h1,
         .rich-text-editor .ql-editor h2,
         .rich-text-editor .ql-editor h3 {
           font-weight: 600;

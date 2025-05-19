@@ -48,112 +48,131 @@ export default function MatchingQuestionRenderer({
   };
 
   return (
-    <div className="space-y-4">
-      <p className="font-medium">{question.text}</p>
-      <div className="space-y-2 w-fit">
-        <p className="font-medium">Options</p>
-        {question.options.map((option, optionIndex) => (
-          <DraggableItem
-            key={option.id}
-            text={option.text}
-            index={option.id}
-            itemType={ITEM_TYPE}
-            prefix={String.fromCharCode(65 + optionIndex) + "."}
-            disabled={readOnly}
-          />
+    <div className="mx-auto space-y-6">
+      <p className="font-medium text-sm whitespace-pre-line">
+        {question.text?.split(/_{3,}/g)?.map((part, index) => (
+          <React.Fragment key={index}>
+            {part}
+            <span className="border-b border-gray-400 w-[60px] inline-block"></span>
+          </React.Fragment>
         ))}
-      </div>
+      </p>
 
-      <div className="space-y-2">
-        <p className="font-medium">Items</p>
-        {question.items.map((item, index) => {
-          const subQuestion = question.subQuestions?.find(
-            (sq) => sq.item === item.id,
-          );
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(250px,1fr)_minmax(250px,1fr)] gap-6">
+        <div className="space-y-3">
+          <p className="text-base font-semibold text-gray-700">Options</p>
+          <div className="space-y-2">
+            {question.options.map((option, optionIndex) => (
+              <DraggableItem
+                key={option.id}
+                text={option.text}
+                index={option.id}
+                itemType={ITEM_TYPE}
+                prefix={String.fromCharCode(65 + optionIndex) + "."}
+                disabled={readOnly}
+                className="hover:shadow-md transition-shadow duration-200"
+              />
+            ))}
+          </div>
+        </div>
 
-          if (!subQuestion) {
-            console.error("No subQuestion found for item:", item.id);
-            return null;
-          }
+        <div className="space-y-3">
+          <p className="text-base font-semibold text-gray-700">Items</p>
+          <div className="space-y-4">
+            {question.items.map((item, index) => {
+              const subQuestion = question.subQuestions?.find(
+                (sq) => sq.item === item.id,
+              );
 
-          const matchedOption = question.options.find(
-            (opt) => opt.id === matches[subQuestion.subId],
-          );
+              if (!subQuestion) {
+                console.error("No subQuestion found for item:", item.id);
+                return null;
+              }
 
-          const isCorrect =
-            showCorrectAnswer &&
-            matchedOption?.id === subQuestion.correctAnswer;
+              const matchedOption = question.options.find(
+                (opt) => opt.id === matches[subQuestion.subId],
+              );
 
-          const isIncorrect =
-            showCorrectAnswer &&
-            (!matchedOption || matchedOption.id !== subQuestion.correctAnswer);
+              const isCorrect =
+                showCorrectAnswer &&
+                matchedOption?.id === subQuestion.correctAnswer;
 
-          const correctOption = question.options.find(
-            (opt) => opt.id === subQuestion.correctAnswer,
-          );
+              const isIncorrect =
+                showCorrectAnswer &&
+                (!matchedOption ||
+                  matchedOption.id !== subQuestion.correctAnswer);
 
-          return (
-            <div key={item.id} className="flex gap-2 items-center">
-              <Label className="w-[200px]">
-                {question.scoringStrategy === "partial" && subQuestion
-                  ? `Question ${question.index + index + 1}.`
-                  : `${index + 1}.`}{" "}
-                {item.text}
-              </Label>
-              <div className="relative flex gap-6">
+              const correctOption = question.options.find(
+                (opt) => opt.id === subQuestion.correctAnswer,
+              );
+
+              return (
                 <div
-                  className={cn(
-                    "rounded",
-                    isCorrect && "border-green-500 bg-green-50",
-                    isIncorrect && "border-red-500 bg-red-50",
-                  )}
+                  key={item.id}
+                  className="flex flex-col justify-center gap-3"
                 >
-                  <DroppableZone
-                    key={subQuestion.subId}
-                    subQuestionId={subQuestion.subId}
-                    matchedId={matches[subQuestion.subId]}
-                    matchedText={matchedOption?.text}
-                    prefix={
-                      matchedOption
-                        ? String.fromCharCode(
+                  <Label className="min-w-[180px] text-gray-700">
+                    {question.scoringStrategy === "partial" && subQuestion
+                      ? `Question ${question.index + index + 1}.`
+                      : `${index + 1}.`}{" "}
+                    {item.text}
+                  </Label>
+                  <div className="flex-1 flex gap-4 items-center">
+                    <div
+                      className={cn(
+                        "flex-1 rounded-lg transition-colors duration-200",
+                        isCorrect && "border-green-500 bg-green-50",
+                        isIncorrect && "border-red-500 bg-red-50",
+                      )}
+                    >
+                      <DroppableZone
+                        key={subQuestion.subId}
+                        subQuestionId={subQuestion.subId}
+                        matchedId={matches[subQuestion.subId]}
+                        matchedText={matchedOption?.text}
+                        prefix={
+                          matchedOption
+                            ? String.fromCharCode(
+                                65 +
+                                  question.options.findIndex(
+                                    (o) => o.id === matchedOption.id,
+                                  ),
+                              ) + "."
+                            : ""
+                        }
+                        onDrop={handleDrop}
+                        itemType={ITEM_TYPE}
+                        placeholder={
+                          readOnly ? "Not answered" : "Drag an option here"
+                        }
+                        disabled={readOnly}
+                        className={cn(
+                          "border shadow-sm hover:shadow transition-shadow duration-200",
+                          isCorrect && "border-green-500",
+                          isIncorrect && "border-red-500",
+                        )}
+                      />
+                    </div>
+                    {isIncorrect && showCorrectAnswer && correctOption && (
+                      <div className="text-sm flex items-center space-x-2">
+                        <span className="text-green-600 whitespace-nowrap">
+                          ✓{" "}
+                          {String.fromCharCode(
                             65 +
                               question.options.findIndex(
-                                (o) => o.id === matchedOption.id,
+                                (o) => o.id === correctOption.id,
                               ),
-                          ) + "."
-                        : ""
-                    }
-                    onDrop={handleDrop}
-                    itemType={ITEM_TYPE}
-                    placeholder={
-                      readOnly ? "Not answered" : "Drag an option here"
-                    }
-                    disabled={readOnly}
-                    className={cn(
-                      "border",
-                      isCorrect && "border-green-500",
-                      isIncorrect && "border-red-500",
+                          )}
+                          . {correctOption.text}
+                        </span>
+                      </div>
                     )}
-                  />
-                </div>
-                {isIncorrect && showCorrectAnswer && correctOption && (
-                  <div className="text-sm flex items-center space-x-2 mt-1">
-                    <span className="text-green-600">
-                      ✓{" "}
-                      {String.fromCharCode(
-                        65 +
-                          question.options.findIndex(
-                            (o) => o.id === correctOption.id,
-                          ),
-                      )}
-                      . {correctOption.text}
-                    </span>
                   </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );

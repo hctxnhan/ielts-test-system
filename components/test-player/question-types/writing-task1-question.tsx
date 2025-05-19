@@ -11,7 +11,7 @@ import type {
 } from "@testComponents/lib/types";
 import { useTestStore } from "@testComponents/store/test-store";
 import { Award, Eye, EyeOff } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
@@ -38,15 +38,15 @@ export default function WritingTask1QuestionRenderer({
   value,
   onChange,
   readOnly = false,
-  showCorrectAnswer = false
+  showCorrectAnswer = false,
 }: WritingTask1QuestionProps) {
   const [currentEssay, setCurrentEssay] = useState<string | null>(
-    value?.text ?? null
+    value?.text ?? null,
   );
   const [aiScore, setAiScore] = useState<ScoringResult | null>(
     value?.score !== undefined && value?.feedback !== undefined
       ? { score: value.score, feedback: value.feedback }
-      : null
+      : null,
   );
   const [showFeedback, setShowFeedback] = useState(false);
   const [showSampleAnswer, setShowSampleAnswer] = useState(false);
@@ -57,7 +57,7 @@ export default function WritingTask1QuestionRenderer({
     setAiScore(
       value?.score !== undefined && value?.feedback !== undefined
         ? { score: value.score, feedback: value.feedback }
-        : null
+        : null,
     );
     // Reset feedback visibility if score/feedback is cleared
     if (value?.score === undefined || value?.feedback === undefined) {
@@ -92,26 +92,32 @@ export default function WritingTask1QuestionRenderer({
       </div>
 
       <Card className="p-4">
-        <p className="font-medium mb-4">{question.text}</p>
-        <p>{question.prompt}</p>
-
+        <p className="font-medium text-sm">
+          {question.text?.split(/_{3,}/g)?.map((part, index) => (
+            <React.Fragment key={index}>
+              <div className="whitespace-pre-line">
+                {part}
+                <span className="border-b border-gray-400 w-[60px] inline-block"></span>
+              </div>
+            </React.Fragment>
+          ))}
+        </p>
         {question.imageUrl && (
           <div className="my-4 flex justify-center">
             <img
-              src={question.imageUrl || '/placeholder.svg'}
+              src={question.imageUrl || "/placeholder.svg"}
               alt="Task visual"
               className="max-w-full max-h-[400px] object-contain border rounded-md"
             />
           </div>
         )}
-
         <p className="text-sm text-muted-foreground mb-4">
           Write at least {question.wordLimit || 150} words.
         </p>
       </Card>
 
       <AutoResizeTextarea
-        value={currentEssay || ''}
+        value={currentEssay || ""}
         onChange={handleTextChange}
         placeholder="Write your answer here..."
         className="min-h-[300px]"
@@ -124,8 +130,8 @@ export default function WritingTask1QuestionRenderer({
         <p
           className={`text-sm ${
             wordCount < (question.wordLimit || 150)
-              ? 'text-amber-600'
-              : 'text-green-600'
+              ? "text-amber-600"
+              : "text-green-600"
           }`}
         >
           Word count: {wordCount} / {question.wordLimit || 150} minimum
@@ -166,7 +172,7 @@ export default function WritingTask1QuestionRenderer({
               onClick={() => setShowFeedback(!showFeedback)}
               className="p-0 h-auto text-green-600 dark:text-green-400"
             >
-              {showFeedback ? 'Hide feedback' : 'Show feedback'}
+              {showFeedback ? "Hide feedback" : "Show feedback"}
             </Button>
 
             {showFeedback && (
