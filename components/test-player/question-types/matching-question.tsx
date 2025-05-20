@@ -49,7 +49,7 @@ export default function MatchingQuestionRenderer({
 
   return (
     <div className="mx-auto space-y-6">
-      <p className="font-medium text-sm whitespace-pre-line">
+      <p className="font-medium text-sm whitespace-pre-line leading-relaxed">
         {question.text?.split(/_{3,}/g)?.map((part, index) => (
           <React.Fragment key={index}>
             {part}
@@ -81,7 +81,7 @@ export default function MatchingQuestionRenderer({
           <div className="space-y-4">
             {question.items.map((item, index) => {
               const subQuestion = question.subQuestions?.find(
-                (sq) => sq.item === item.id,
+                (sq) => sq.item === item.id
               );
 
               if (!subQuestion) {
@@ -90,7 +90,7 @@ export default function MatchingQuestionRenderer({
               }
 
               const matchedOption = question.options.find(
-                (opt) => opt.id === matches[subQuestion.subId],
+                (opt) => opt.id === matches[subQuestion.subId]
               );
 
               const isCorrect =
@@ -103,7 +103,7 @@ export default function MatchingQuestionRenderer({
                   matchedOption.id !== subQuestion.correctAnswer);
 
               const correctOption = question.options.find(
-                (opt) => opt.id === subQuestion.correctAnswer,
+                (opt) => opt.id === subQuestion.correctAnswer
               );
 
               return (
@@ -117,12 +117,12 @@ export default function MatchingQuestionRenderer({
                       : `${index + 1}.`}{" "}
                     {item.text}
                   </Label>
-                  <div className="flex-1 flex gap-4 items-center">
+                  <div className="flex-1 flex flex-col gap-4">
                     <div
                       className={cn(
                         "flex-1 rounded-lg transition-colors duration-200",
                         isCorrect && "border-green-500 bg-green-50",
-                        isIncorrect && "border-red-500 bg-red-50",
+                        isIncorrect && "border-red-500 bg-red-50"
                       )}
                     >
                       <DroppableZone
@@ -135,8 +135,8 @@ export default function MatchingQuestionRenderer({
                             ? String.fromCharCode(
                                 65 +
                                   question.options.findIndex(
-                                    (o) => o.id === matchedOption.id,
-                                  ),
+                                    (o) => o.id === matchedOption.id
+                                  )
                               ) + "."
                             : ""
                         }
@@ -149,7 +149,7 @@ export default function MatchingQuestionRenderer({
                         className={cn(
                           "border shadow-sm hover:shadow transition-shadow duration-200",
                           isCorrect && "border-green-500",
-                          isIncorrect && "border-red-500",
+                          isIncorrect && "border-red-500"
                         )}
                       />
                     </div>
@@ -160,8 +160,8 @@ export default function MatchingQuestionRenderer({
                           {String.fromCharCode(
                             65 +
                               question.options.findIndex(
-                                (o) => o.id === correctOption.id,
-                              ),
+                                (o) => o.id === correctOption.id
+                              )
                           )}
                           . {correctOption.text}
                         </span>

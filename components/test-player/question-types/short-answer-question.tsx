@@ -35,8 +35,8 @@ export default function ShortAnswerQuestionRenderer({
 
   return (
     <div className="space-y-2">
-      <div className="space-y-1">
-        <p className="font-medium text-sm whitespace-pre-line">
+      <div className="space-y-1 py-4">
+        <p className="font-medium text-sm whitespace-pre-line leading-relaxed">
           {question.text?.split(/_{3,}/g)?.map((part, index) => (
             <React.Fragment key={index}>
               {part}
@@ -63,12 +63,12 @@ export default function ShortAnswerQuestionRenderer({
             showCorrectAnswer &&
             userAnswer &&
             subQuestion.acceptableAnswers?.some(
-              (answer) => answer.toLowerCase() === userAnswer.toLowerCase(),
+              (answer) => answer.toLowerCase() === userAnswer.toLowerCase()
             );
           const isIncorrect = showCorrectAnswer && !isCorrect;
 
           const questionText = question.questions.find(
-            (q) => q.id === subQuestion.item,
+            (q) => q.id === subQuestion.item
           );
 
           return (
@@ -89,7 +89,7 @@ export default function ShortAnswerQuestionRenderer({
                 className={cn(
                   "resize-none text-sm h-[60px] min-h-[60px]",
                   isCorrect && "border-green-500 bg-green-50",
-                  isIncorrect && "border-red-500 bg-red-50",
+                  isIncorrect && "border-red-500 bg-red-50"
                 )}
                 readOnly={readOnly}
               />

@@ -51,7 +51,7 @@ export default function MatchingHeadingsQuestionRenderer({
 
   return (
     <div className="mx-auto space-y-6">
-      <p className="font-medium text-sm whitespace-pre-line">
+      <p className="font-medium text-sm whitespace-pre-line leading-relaxed">
         {question.text?.split(/_{3,}/g)?.map((part, index) => (
           <React.Fragment key={index}>
             {part}
@@ -82,7 +82,7 @@ export default function MatchingHeadingsQuestionRenderer({
           <div className="space-y-4">
             {question.options.map((item, index) => {
               const subQuestion = question.subQuestions?.find(
-                (sq) => sq.item === item.id,
+                (sq) => sq.item === item.id
               );
 
               if (!subQuestion) {
@@ -91,7 +91,7 @@ export default function MatchingHeadingsQuestionRenderer({
               }
 
               const matchedHeading = question.items.find(
-                (h) => h.id === matches[subQuestion.subId],
+                (h) => h.id === matches[subQuestion.subId]
               );
 
               const isCorrect =
@@ -104,7 +104,7 @@ export default function MatchingHeadingsQuestionRenderer({
                   matchedHeading.id !== subQuestion.correctAnswer);
 
               const correctHeading = question.items.find(
-                (h) => h.id === subQuestion.correctAnswer,
+                (h) => h.id === subQuestion.correctAnswer
               );
 
               return (
@@ -123,7 +123,7 @@ export default function MatchingHeadingsQuestionRenderer({
                       className={cn(
                         "flex-1 rounded-lg transition-colors duration-200",
                         isCorrect && "border-green-500 bg-green-50",
-                        isIncorrect && "border-red-500 bg-red-50",
+                        isIncorrect && "border-red-500 bg-red-50"
                       )}
                     >
                       <DroppableZone
@@ -136,8 +136,8 @@ export default function MatchingHeadingsQuestionRenderer({
                             ? String.fromCharCode(
                                 65 +
                                   question.items.findIndex(
-                                    (h) => h.id === matchedHeading.id,
-                                  ),
+                                    (h) => h.id === matchedHeading.id
+                                  )
                               ) + "."
                             : ""
                         }
@@ -150,7 +150,7 @@ export default function MatchingHeadingsQuestionRenderer({
                         className={cn(
                           "border shadow-sm hover:shadow transition-shadow duration-200",
                           isCorrect && "border-green-500",
-                          isIncorrect && "border-red-500",
+                          isIncorrect && "border-red-500"
                         )}
                       />
                     </div>
@@ -161,8 +161,8 @@ export default function MatchingHeadingsQuestionRenderer({
                           {String.fromCharCode(
                             65 +
                               question.items.findIndex(
-                                (h) => h.id === correctHeading.id,
-                              ),
+                                (h) => h.id === correctHeading.id
+                              )
                           )}
                           . {correctHeading.text}
                         </span>

@@ -51,7 +51,7 @@ export default function SectionNavigationButton({
 
   // Get section completion percentage
   const completionPercentage = Math.round(
-    (answeredQuestionsCount / sectionStatus.sectionTotalQuestions) * 100,
+    (answeredQuestionsCount / sectionStatus.sectionTotalQuestions) * 100
   );
 
   const isFullyAnswered = completionPercentage === 100;
@@ -92,10 +92,10 @@ export default function SectionNavigationButton({
 
             {/* Section title and stats */}
             <div className="min-w-0 flex-1">
-              <div className="font-medium text-sm truncate">
+              <div className="font-medium text-xs truncate">
                 {section.title}
               </div>
-              <div className="flex items-center text-sm text-muted-foreground">
+              <div className="flex items-center text-xs text-muted-foreground">
                 <span>{questionCount} Q</span>
                 <span className="mx-0.5">•</span>
                 <span className="flex items-center">
@@ -172,7 +172,7 @@ export default function SectionNavigationButton({
                             <div className="">
                               <div
                                 className={`
-                                  w-full aspect-square flex items-center justify-center text-sm font-medium 
+                                  w-full aspect-square flex items-center justify-center text-xs font-medium 
                                   rounded transition-colors duration-150 relative
                                   ${
                                     status === "completed"
@@ -188,7 +188,7 @@ export default function SectionNavigationButton({
                           <TooltipContent
                             side="top"
                             align="center"
-                            className="py-1 px-2"
+                            className="py-1 px-2  bg-background"
                           >
                             <p className="text-sm">
                               Q{displayNumber}:{" "}
@@ -198,7 +198,7 @@ export default function SectionNavigationButton({
                             </p>
                           </TooltipContent>
                         </Tooltip>
-                      </TooltipProvider>,
+                      </TooltipProvider>
                     );
                   }
 

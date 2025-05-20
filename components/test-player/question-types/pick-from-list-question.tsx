@@ -65,7 +65,7 @@ export default function PickFromListQuestionRenderer({
 
   return (
     <div className="mx-auto space-y-6">
-      <p className="font-medium text-sm whitespace-pre-line">
+      <p className="font-medium text-sm whitespace-pre-line leading-relaxed">
         {question.text?.split(/_{3,}/g)?.map((part, index) => (
           <React.Fragment key={index}>
             {part}
@@ -108,14 +108,14 @@ export default function PickFromListQuestionRenderer({
 
               // Find all correct item IDs from the subQuestions
               const allCorrectItemIds = question.subQuestions.map(
-                (sq) => sq.item,
+                (sq) => sq.item
               );
 
               // Find correct items that aren't currently selected in any field
               const availableCorrectItemIds = allCorrectItemIds.filter(
                 (itemId) =>
                   !Object.values(selectedAnswers).includes(itemId ?? "") ||
-                  itemId === selectedItemId,
+                  itemId === selectedItemId
               );
 
               // Default to showing the original assigned correct answer
@@ -124,7 +124,7 @@ export default function PickFromListQuestionRenderer({
               if (
                 availableCorrectItemIds.length > 0 &&
                 Object.values(selectedAnswers).includes(
-                  subQuestion.item ?? "",
+                  subQuestion.item ?? ""
                 ) &&
                 subQuestion.item !== selectedItemId
               ) {
@@ -132,7 +132,7 @@ export default function PickFromListQuestionRenderer({
               }
 
               const correctAnswerIndex = question.items.findIndex(
-                (item) => item.id === suggestedCorrectItemId,
+                (item) => item.id === suggestedCorrectItemId
               );
               const correctAnswer =
                 question.items[correctAnswerIndex]?.text || "";
@@ -143,7 +143,7 @@ export default function PickFromListQuestionRenderer({
 
               // Get all currently selected items except the one selected for this sub-question
               const selectedItems = getSelectedItems().filter(
-                (id) => id !== selectedItemId,
+                (id) => id !== selectedItemId
               );
 
               return (
@@ -156,12 +156,12 @@ export default function PickFromListQuestionRenderer({
                       ? `Question ${questionNumber}.`
                       : `${questionNumber}.`}{" "}
                   </Label>
-                  <div className="flex-1 flex gap-4 items-center">
+                  <div className="flex-1 flex-col gap-4 items-center">
                     <div
                       className={cn(
                         "flex-1 rounded-lg transition-colors duration-200",
                         isCorrect && "border-green-500 bg-green-50",
-                        isIncorrect && "border-red-500 bg-red-50",
+                        isIncorrect && "border-red-500 bg-red-50"
                       )}
                     >
                       <Select
@@ -175,7 +175,7 @@ export default function PickFromListQuestionRenderer({
                           className={cn(
                             "h-8 w-full border shadow-sm hover:shadow transition-shadow duration-200",
                             isCorrect && "border-green-500",
-                            isIncorrect && "border-red-500",
+                            isIncorrect && "border-red-500"
                           )}
                         >
                           <SelectValue

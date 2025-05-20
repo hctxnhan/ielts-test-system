@@ -25,7 +25,7 @@ export default function MultipleChoiceQuestion({
 }: MultipleChoiceQuestionProps) {
   return (
     <div className="space-y-2">
-      <p className="font-medium text-sm whitespace-pre-line">
+      <p className="font-medium text-sm whitespace-pre-line leading-relaxed">
         {question.text?.split(/_{3,}/g)?.map((part, index) => (
           <React.Fragment key={index}>
             {part}
@@ -60,7 +60,7 @@ export default function MultipleChoiceQuestion({
                     showCorrectAnswer &&
                     "border-green-500 bg-green-50",
                   isSelectedAndIncorrect && "border-red-500 bg-red-50",
-                  !readOnly && "hover:bg-muted",
+                  !readOnly && "hover:bg-muted"
                 )}
               >
                 <RadioGroupItem
@@ -70,7 +70,7 @@ export default function MultipleChoiceQuestion({
                   className={cn(
                     "h-4 w-4",
                     isCorrect && showCorrectAnswer && "text-green-600",
-                    isSelectedAndIncorrect && "text-red-600",
+                    isSelectedAndIncorrect && "text-red-600"
                   )}
                 />
                 <Label

@@ -41,12 +41,12 @@ export default function WritingTask1QuestionRenderer({
   showCorrectAnswer = false,
 }: WritingTask1QuestionProps) {
   const [currentEssay, setCurrentEssay] = useState<string | null>(
-    value?.text ?? null,
+    value?.text ?? null
   );
   const [aiScore, setAiScore] = useState<ScoringResult | null>(
     value?.score !== undefined && value?.feedback !== undefined
       ? { score: value.score, feedback: value.feedback }
-      : null,
+      : null
   );
   const [showFeedback, setShowFeedback] = useState(false);
   const [showSampleAnswer, setShowSampleAnswer] = useState(false);
@@ -57,7 +57,7 @@ export default function WritingTask1QuestionRenderer({
     setAiScore(
       value?.score !== undefined && value?.feedback !== undefined
         ? { score: value.score, feedback: value.feedback }
-        : null,
+        : null
     );
     // Reset feedback visibility if score/feedback is cleared
     if (value?.score === undefined || value?.feedback === undefined) {
@@ -92,7 +92,7 @@ export default function WritingTask1QuestionRenderer({
       </div>
 
       <Card className="p-4">
-        <p className="font-medium text-sm">
+        <p className="font-medium text-sm leading-relaxed">
           {question.text?.split(/_{3,}/g)?.map((part, index) => (
             <React.Fragment key={index}>
               <div className="whitespace-pre-line">

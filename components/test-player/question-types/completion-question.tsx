@@ -22,7 +22,7 @@ export default function CompletionQuestionRenderer({
 }: CompletionQuestionProps) {
   return (
     <div className="space-y-2">
-      <p className="font-medium text-sm whitespace-pre-line">
+      <p className="font-medium text-sm whitespace-pre-line leading-relaxed">
         {question.text?.split(/_{3,}/g)?.map((part, index) => (
           <React.Fragment key={index}>
             {part}
@@ -49,7 +49,7 @@ export default function CompletionQuestionRenderer({
             subQuestion.acceptableAnswers?.some(
               (answer) =>
                 answer.trim().toLowerCase().replace(/\s+/g, " ") ===
-                normalizedUserAnswer,
+                normalizedUserAnswer
             );
           const isIncorrect = showCorrectAnswer && !isCorrect;
 
@@ -83,7 +83,7 @@ export default function CompletionQuestionRenderer({
                   className={cn(
                     "max-w-md pr-8 h-8 text-sm",
                     isCorrect && "border-green-500 bg-green-50",
-                    isIncorrect && "border-red-500 bg-red-50",
+                    isIncorrect && "border-red-500 bg-red-50"
                   )}
                 />
                 {isIncorrect && showCorrectAnswer && (
