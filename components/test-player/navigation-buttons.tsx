@@ -20,7 +20,7 @@ export default function NavigationButtons({
   onNextSection,
   onCompleteTest,
   isSubmitting,
-  readOnly
+  readOnly,
 }: NavigationButtonsProps) {
   const isLastSection = currentSectionIndex === totalSections - 1;
   const nextButton = (() => {
@@ -28,7 +28,7 @@ export default function NavigationButtons({
       return (
         <Button size="sm" onClick={onCompleteTest} disabled={isSubmitting}>
           <CheckCircle2 className="h-3 w-3 mr-1" />
-          {isSubmitting ? 'Submitting...' : 'Finish Test'}
+          {isSubmitting ? "Submitting..." : "Finish Test"}
         </Button>
       );
     } else if (isLastSection && readOnly) {
@@ -48,7 +48,7 @@ export default function NavigationButtons({
   })();
 
   return (
-    <div className="flex gap-2 justify-between mt-4">
+    <div className="flex gap-2 justify-between">
       <Button
         size="sm"
         variant="outline"
