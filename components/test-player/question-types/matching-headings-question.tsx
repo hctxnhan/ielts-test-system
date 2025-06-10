@@ -4,6 +4,7 @@ import React from "react";
 import { useState, useEffect } from "react";
 import { DraggableItem, DroppableZone } from "./shared/dnd-components";
 import { Label } from "@testComponents/components/ui/label";
+import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
 import { cn } from "@testComponents/lib/utils";
 import type { StandardMatchingHeadingsQuestion } from "@testComponents/lib/standardized-types";
 
@@ -48,17 +49,9 @@ export default function MatchingHeadingsQuestionRenderer({
       return updatedMatches;
     });
   };
-
   return (
     <div className="mx-auto space-y-6">
-      <p className="font-medium text-sm whitespace-pre-line leading-relaxed">
-        {question.text?.split(/_{3,}/g)?.map((part, index) => (
-          <React.Fragment key={index}>
-            {part}
-            <span className="border-b border-gray-400 w-[60px] inline-block"></span>
-          </React.Fragment>
-        ))}
-      </p>
+      <RichTextContent content={question.text || ""} className="text-sm" />{" "}
       <div className="grid grid-cols-1 md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)] gap-6">
         <div className="space-y-3">
           <p className="text-base font-semibold text-gray-700">Headings</p>
@@ -82,7 +75,7 @@ export default function MatchingHeadingsQuestionRenderer({
           <div className="space-y-4">
             {question.options.map((item, index) => {
               const subQuestion = question.subQuestions?.find(
-                (sq) => sq.item === item.id
+                (sq) => sq.item === item.id,
               );
 
               if (!subQuestion) {
@@ -91,7 +84,7 @@ export default function MatchingHeadingsQuestionRenderer({
               }
 
               const matchedHeading = question.items.find(
-                (h) => h.id === matches[subQuestion.subId]
+                (h) => h.id === matches[subQuestion.subId],
               );
 
               const isCorrect =
@@ -104,7 +97,7 @@ export default function MatchingHeadingsQuestionRenderer({
                   matchedHeading.id !== subQuestion.correctAnswer);
 
               const correctHeading = question.items.find(
-                (h) => h.id === subQuestion.correctAnswer
+                (h) => h.id === subQuestion.correctAnswer,
               );
 
               return (
@@ -123,7 +116,7 @@ export default function MatchingHeadingsQuestionRenderer({
                       className={cn(
                         "flex-1 rounded-lg transition-colors duration-200",
                         isCorrect && "border-green-500 bg-green-50",
-                        isIncorrect && "border-red-500 bg-red-50"
+                        isIncorrect && "border-red-500 bg-red-50",
                       )}
                     >
                       <DroppableZone
@@ -136,8 +129,8 @@ export default function MatchingHeadingsQuestionRenderer({
                             ? String.fromCharCode(
                                 65 +
                                   question.items.findIndex(
-                                    (h) => h.id === matchedHeading.id
-                                  )
+                                    (h) => h.id === matchedHeading.id,
+                                  ),
                               ) + "."
                             : ""
                         }
@@ -150,7 +143,7 @@ export default function MatchingHeadingsQuestionRenderer({
                         className={cn(
                           "border shadow-sm hover:shadow transition-shadow duration-200",
                           isCorrect && "border-green-500",
-                          isIncorrect && "border-red-500"
+                          isIncorrect && "border-red-500",
                         )}
                       />
                     </div>
@@ -161,8 +154,8 @@ export default function MatchingHeadingsQuestionRenderer({
                           {String.fromCharCode(
                             65 +
                               question.items.findIndex(
-                                (h) => h.id === correctHeading.id
-                              )
+                                (h) => h.id === correctHeading.id,
+                              ),
                           )}
                           . {correctHeading.text}
                         </span>

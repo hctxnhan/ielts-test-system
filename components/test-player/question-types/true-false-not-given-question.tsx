@@ -5,6 +5,7 @@ import {
   RadioGroupItem,
 } from "@testComponents/components/ui/radio-group";
 import { Label } from "@testComponents/components/ui/label";
+import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
 import type { TrueFalseNotGivenQuestion } from "@testComponents/lib/types";
 import { cn } from "@testComponents/lib/utils";
 
@@ -25,18 +26,11 @@ export default function TrueFalseNotGivenQuestion({
 }: TrueFalseNotGivenQuestionProps) {
   return (
     <div className="space-y-2">
-      <p className="font-medium text-sm whitespace-pre-line leading-relaxed">
-        {question.text?.split(/_{3,}/g)?.map((part, index) => (
-          <React.Fragment key={index}>
-            {part}
-            <span className="border-b border-gray-400 w-[60px] inline-block"></span>
-          </React.Fragment>
-        ))}
-      </p>
+      <RichTextContent content={question.text || ""} className="text-sm" />
       <div className="space-y-2">
         {question.statements.map((statement, index) => {
           const subQuestion = question.subQuestions?.find(
-            (sq) => sq.item === statement.id
+            (sq) => sq.item === statement.id,
           );
 
           if (!subQuestion) return null;
@@ -71,7 +65,7 @@ export default function TrueFalseNotGivenQuestion({
                 className={cn(
                   "flex gap-4 p-1.5 rounded",
                   isCorrect && "bg-green-50 border border-green-500",
-                  isIncorrect && "bg-red-50 border border-red-500"
+                  isIncorrect && "bg-red-50 border border-red-500",
                 )}
               >
                 <div className="flex items-center gap-1.5">
@@ -81,7 +75,7 @@ export default function TrueFalseNotGivenQuestion({
                     disabled={readOnly}
                     className={cn(
                       isCorrect && userAnswer === "true" && "text-green-600",
-                      isIncorrect && userAnswer === "true" && "text-red-600"
+                      isIncorrect && userAnswer === "true" && "text-red-600",
                     )}
                   />
                   <Label htmlFor={`true-${statement.id}`}>True</Label>
@@ -93,7 +87,7 @@ export default function TrueFalseNotGivenQuestion({
                     disabled={readOnly}
                     className={cn(
                       isCorrect && userAnswer === "false" && "text-green-600",
-                      isIncorrect && userAnswer === "false" && "text-red-600"
+                      isIncorrect && userAnswer === "false" && "text-red-600",
                     )}
                   />
                   <Label htmlFor={`false-${statement.id}`}>False</Label>
@@ -109,21 +103,25 @@ export default function TrueFalseNotGivenQuestion({
                         "text-green-600",
                       isIncorrect &&
                         userAnswer === "not-given" &&
-                        "text-red-600"
+                        "text-red-600",
                     )}
                   />
                   <Label htmlFor={`not-given-${statement.id}`}>Not Given</Label>
                 </div>
-              </RadioGroup>
-              {isIncorrect && showCorrectAnswer && (
-                <div className="text-sm text-green-600 mt-0.5">
-                  ✓{" "}
-                  {subQuestion.correctAnswer
-                    .split("-")
-                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(" ")}
-                </div>
-              )}
+              </RadioGroup>{" "}
+              {isIncorrect &&
+                showCorrectAnswer &&
+                subQuestion.correctAnswer && (
+                  <div className="text-sm text-green-600 mt-0.5">
+                    ✓{" "}
+                    {subQuestion.correctAnswer
+                      .split("-")
+                      .map(
+                        (word) => word.charAt(0).toUpperCase() + word.slice(1),
+                      )
+                      .join(" ")}
+                  </div>
+                )}
             </div>
           );
         })}

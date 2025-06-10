@@ -63,11 +63,11 @@ export default function QuestionList({
                 variant="secondary"
                 className="h-5 text-[10px] px-1.5 capitalize"
               >
-                {question.type}
+                {question.type?.replace(/-/g, " ") || "unknown"}
               </Badge>
-              <span className="text-xs truncate">
+              {/* <span className="text-xs truncate">
                 {question.text || "No question text yet"}
-              </span>
+              </span> */}
             </div>
             <div className="flex items-center gap-1 shrink-0">
               <Button

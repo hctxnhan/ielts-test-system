@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import type { MatchingQuestion } from "@testComponents/lib/types";
 import { DraggableItem, DroppableZone } from "./shared/dnd-components";
 import { Label } from "@testComponents/components/ui/label";
+import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
 import { cn } from "@testComponents/lib/utils";
 
 interface MatchingQuestionProps {
@@ -46,18 +47,9 @@ export default function MatchingQuestionRenderer({
       return updatedMatches;
     });
   };
-
   return (
     <div className="mx-auto space-y-6">
-      <p className="font-medium text-sm whitespace-pre-line leading-relaxed">
-        {question.text?.split(/_{3,}/g)?.map((part, index) => (
-          <React.Fragment key={index}>
-            {part}
-            <span className="border-b border-gray-400 w-[60px] inline-block"></span>
-          </React.Fragment>
-        ))}
-      </p>
-
+      <RichTextContent content={question.text || ""} className="text-sm" />
       <div className="grid grid-cols-1 md:grid-cols-[minmax(250px,1fr)_minmax(250px,1fr)] gap-6">
         <div className="space-y-3">
           <p className="text-base font-semibold text-gray-700">Options</p>
@@ -81,7 +73,7 @@ export default function MatchingQuestionRenderer({
           <div className="space-y-4">
             {question.items.map((item, index) => {
               const subQuestion = question.subQuestions?.find(
-                (sq) => sq.item === item.id
+                (sq) => sq.item === item.id,
               );
 
               if (!subQuestion) {
@@ -90,7 +82,7 @@ export default function MatchingQuestionRenderer({
               }
 
               const matchedOption = question.options.find(
-                (opt) => opt.id === matches[subQuestion.subId]
+                (opt) => opt.id === matches[subQuestion.subId],
               );
 
               const isCorrect =
@@ -103,7 +95,7 @@ export default function MatchingQuestionRenderer({
                   matchedOption.id !== subQuestion.correctAnswer);
 
               const correctOption = question.options.find(
-                (opt) => opt.id === subQuestion.correctAnswer
+                (opt) => opt.id === subQuestion.correctAnswer,
               );
 
               return (
@@ -122,7 +114,7 @@ export default function MatchingQuestionRenderer({
                       className={cn(
                         "flex-1 rounded-lg transition-colors duration-200",
                         isCorrect && "border-green-500 bg-green-50",
-                        isIncorrect && "border-red-500 bg-red-50"
+                        isIncorrect && "border-red-500 bg-red-50",
                       )}
                     >
                       <DroppableZone
@@ -135,8 +127,8 @@ export default function MatchingQuestionRenderer({
                             ? String.fromCharCode(
                                 65 +
                                   question.options.findIndex(
-                                    (o) => o.id === matchedOption.id
-                                  )
+                                    (o) => o.id === matchedOption.id,
+                                  ),
                               ) + "."
                             : ""
                         }
@@ -149,7 +141,7 @@ export default function MatchingQuestionRenderer({
                         className={cn(
                           "border shadow-sm hover:shadow transition-shadow duration-200",
                           isCorrect && "border-green-500",
-                          isIncorrect && "border-red-500"
+                          isIncorrect && "border-red-500",
                         )}
                       />
                     </div>
@@ -160,8 +152,8 @@ export default function MatchingQuestionRenderer({
                           {String.fromCharCode(
                             65 +
                               question.options.findIndex(
-                                (o) => o.id === correctOption.id
-                              )
+                                (o) => o.id === correctOption.id,
+                              ),
                           )}
                           . {correctOption.text}
                         </span>

@@ -2,6 +2,7 @@
 import React from "react";
 import { Input } from "@testComponents/components/ui/input";
 import { Label } from "@testComponents/components/ui/label";
+import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
 import type { CompletionQuestion } from "@testComponents/lib/types";
 import { cn } from "@testComponents/lib/utils";
 
@@ -22,21 +23,7 @@ export default function CompletionQuestionRenderer({
 }: CompletionQuestionProps) {
   return (
     <div className="space-y-2">
-      <p className="font-medium text-sm whitespace-pre-line leading-relaxed">
-        {question.text?.split(/_{3,}/g)?.map((part, index) => (
-          <React.Fragment key={index}>
-            {part}
-            <span className="inline-block text-xs py-1 px-2 bg-muted rounded-2xl">
-              <span className="mr-2">
-                {question.scoringStrategy === "partial"
-                  ? `Q${question.index + index + 1}:`
-                  : `#${index + 1}:`}
-              </span>
-              <span className="border-b border-gray-400 w-[60px] inline-block"></span>
-            </span>
-          </React.Fragment>
-        ))}
-      </p>
+      <RichTextContent content={question.text || ""} className="text-sm" />
       <div className="space-y-2">
         {question.subQuestions.map((subQuestion, index) => {
           const userAnswer = value?.[subQuestion.subId] || "";
@@ -49,7 +36,7 @@ export default function CompletionQuestionRenderer({
             subQuestion.acceptableAnswers?.some(
               (answer) =>
                 answer.trim().toLowerCase().replace(/\s+/g, " ") ===
-                normalizedUserAnswer
+                normalizedUserAnswer,
             );
           const isIncorrect = showCorrectAnswer && !isCorrect;
 
@@ -83,7 +70,7 @@ export default function CompletionQuestionRenderer({
                   className={cn(
                     "max-w-md pr-8 h-8 text-sm",
                     isCorrect && "border-green-500 bg-green-50",
-                    isIncorrect && "border-red-500 bg-red-50"
+                    isIncorrect && "border-red-500 bg-red-50",
                   )}
                 />
                 {isIncorrect && showCorrectAnswer && (

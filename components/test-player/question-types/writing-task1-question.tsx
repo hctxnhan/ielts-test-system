@@ -3,13 +3,12 @@
 import { AutoResizeTextarea } from "@testComponents/components/ui/auto-resize-textarea";
 import { Button } from "@testComponents/components/ui/button";
 import { Card } from "@testComponents/components/ui/card";
-import { Textarea } from "@testComponents/components/ui/textarea";
+import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
 import type {
   WritingTask1Question,
   WritingTask2Question,
   WritingTaskAnswer,
 } from "@testComponents/lib/types";
-import { useTestStore } from "@testComponents/store/test-store";
 import { Award, Eye, EyeOff } from "lucide-react";
 import React from "react";
 import { useEffect, useState } from "react";
@@ -41,12 +40,12 @@ export default function WritingTask1QuestionRenderer({
   showCorrectAnswer = false,
 }: WritingTask1QuestionProps) {
   const [currentEssay, setCurrentEssay] = useState<string | null>(
-    value?.text ?? null
+    value?.text ?? null,
   );
   const [aiScore, setAiScore] = useState<ScoringResult | null>(
     value?.score !== undefined && value?.feedback !== undefined
       ? { score: value.score, feedback: value.feedback }
-      : null
+      : null,
   );
   const [showFeedback, setShowFeedback] = useState(false);
   const [showSampleAnswer, setShowSampleAnswer] = useState(false);
@@ -57,7 +56,7 @@ export default function WritingTask1QuestionRenderer({
     setAiScore(
       value?.score !== undefined && value?.feedback !== undefined
         ? { score: value.score, feedback: value.feedback }
-        : null
+        : null,
     );
     // Reset feedback visibility if score/feedback is cleared
     if (value?.score === undefined || value?.feedback === undefined) {
@@ -89,19 +88,9 @@ export default function WritingTask1QuestionRenderer({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Writing Task 1</h3>
-      </div>
-
+      </div>{" "}
       <Card className="p-4">
-        <p className="font-medium text-sm leading-relaxed">
-          {question.text?.split(/_{3,}/g)?.map((part, index) => (
-            <React.Fragment key={index}>
-              <div className="whitespace-pre-line">
-                {part}
-                <span className="border-b border-gray-400 w-[60px] inline-block"></span>
-              </div>
-            </React.Fragment>
-          ))}
-        </p>
+        <RichTextContent content={question.text || ""} className="text-sm" />{" "}
         {question.imageUrl && (
           <div className="my-4 flex justify-center">
             <img
@@ -115,7 +104,6 @@ export default function WritingTask1QuestionRenderer({
           Write at least {question.wordLimit || 150} words.
         </p>
       </Card>
-
       <AutoResizeTextarea
         value={currentEssay || ""}
         onChange={handleTextChange}
@@ -125,7 +113,6 @@ export default function WritingTask1QuestionRenderer({
         minRows={20}
         maxRows={40}
       />
-
       <div className="flex justify-between items-center">
         <p
           className={`text-sm ${
@@ -157,7 +144,6 @@ export default function WritingTask1QuestionRenderer({
           )}
         </div>
       </div>
-
       {aiScore !== null && (
         <Card className="p-4 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
           <h4 className="font-medium mb-2 flex items-center">
@@ -195,7 +181,6 @@ export default function WritingTask1QuestionRenderer({
           </p>
         </Card>
       )}
-
       {showSampleAnswer && question.sampleAnswer && (
         <Card className="p-4 bg-muted/50">
           <h4 className="font-medium mb-2">Sample Answer:</h4>

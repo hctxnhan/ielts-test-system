@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Highlight Feature</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .test-instructions {
+        background: #f0f9ff;
+        border: 1px solid #0ea5e9;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+      .highlight-feature {
+        background: #fef08a;
+        padding: 2px 4px;
+        border-radius: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Rich Text Editor Highlight Feature Test</h1>
+
+    <div class="test-instructions">
+      <h2>🎯 How to Test the Highlight Feature</h2>
+      <ol>
+        <li>
+          <strong>Start the development server:</strong>
+          <pre>
+cd "d:\Projects\ielts-insight-retool-test-creator\packages\test-components" && yarn dev</pre
+          >
+        </li>
+        <li>
+          <strong>Navigate to a page with the RichTextEditor component</strong>
+        </li>
+        <li>
+          <strong>Test the Highlight Button:</strong>
+          <ul>
+            <li>
+              Look for the
+              <span class="highlight-feature">🖍️ highlighter icon</span> in the
+              toolbar
+            </li>
+            <li>Select some text in the editor</li>
+            <li>Click the highlighter button</li>
+            <li>Choose a color from the color picker that appears</li>
+            <li>The selected text should be highlighted with that color</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Test Remove Highlight:</strong>
+          <ul>
+            <li>Click on already highlighted text</li>
+            <li>Click the highlighter button (it should be active/pressed)</li>
+            <li>Choose "Remove Highlight" from the dropdown</li>
+            <li>The highlight should be removed</li>
+          </ul>
+        </li>
+      </ol>
+    </div>
+
+    <h2>✅ Key Features Implemented</h2>
+    <ul>
+      <li>
+        ✅ <strong>Highlight Color Picker:</strong> 6 predefined colors (Yellow,
+        Green, Blue, Pink, Purple, Orange)
+      </li>
+      <li>
+        ✅ <strong>Multi-color Support:</strong> Can apply different colors to
+        different text selections
+      </li>
+      <li>
+        ✅ <strong>Remove Highlight:</strong> Option to remove highlights from
+        selected text
+      </li>
+      <li>
+        ✅ <strong>Smart Button State:</strong> Button shows active state when
+        cursor is on highlighted text
+      </li>
+      <li>
+        ✅ <strong>Fixed Positioning:</strong> Color picker appears above other
+        elements with proper z-index
+      </li>
+      <li>
+        ✅ <strong>Click Outside to Close:</strong> Color picker closes when
+        clicking elsewhere
+      </li>
+      <li>
+        ✅ <strong>Keyboard Accessible:</strong> Works with keyboard navigation
+        and focus
+      </li>
+    </ul>
+
+    <h2>🔧 Technical Implementation</h2>
+    <ul>
+      <li>
+        <strong>Extension:</strong> Uses @tiptap/extension-highlight with
+        multicolor support
+      </li>
+      <li>
+        <strong>Positioning:</strong> Fixed positioning with viewport
+        coordinates
+      </li>
+      <li>
+        <strong>State Management:</strong> React hooks for dropdown state and
+        positioning
+      </li>
+      <li>
+        <strong>Styling:</strong> CSS for highlight marks with rounded corners
+        and padding
+      </li>
+    </ul>
+
+    <h2>📱 Browser Compatibility</h2>
+    <p>
+      The highlight feature should work in all modern browsers that support:
+    </p>
+    <ul>
+      <li>ES6+ JavaScript features</li>
+      <li>CSS Grid (for color picker layout)</li>
+      <li>Fixed positioning</li>
+      <li>DOM manipulation APIs</li>
+    </ul>
+  </body>
+</html>

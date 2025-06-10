@@ -9,6 +9,7 @@ import { Card, CardContent } from "@testComponents/components/ui/card";
 import { ScrollArea } from "@testComponents/components/ui/scroll-area";
 import { LayoutGrid, SplitSquareVertical } from "lucide-react";
 import type { Test } from "@testComponents/lib/types";
+import { useTestStore } from "@testComponents/store/test-store";
 import {
   Sheet,
   SheetContent,
@@ -46,6 +47,7 @@ export default function TestSectionView({
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const passageContainerRef = React.useRef<HTMLDivElement>(null);
   const contentContainerRef = React.useRef<HTMLDivElement>(null);
+  const { updatePassageContent } = useTestStore();
 
   const togglePassage = () => {
     setShowPassage((prev) => !prev);
@@ -128,10 +130,17 @@ export default function TestSectionView({
               <div className="sticky top-20 z-20 h-[calc(100vh-65px-2rem)]">
                 <Card className="shadow-sm overflow-hidden h-full">
                   <ScrollArea className="h-[calc(100vh-65px-2rem)]">
+                    {" "}
                     <CardContent className="p-4">
                       <ReadingPassageViewer
                         passage={currentSection.readingPassage}
                         containerRef={passageContainerRef}
+                        onContentChange={
+                          readOnly
+                            ? undefined
+                            : (content) =>
+                                updatePassageContent(currentSection.id, content)
+                        }
                       />
                     </CardContent>
                   </ScrollArea>

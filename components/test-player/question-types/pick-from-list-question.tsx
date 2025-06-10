@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@testComponents/components/ui/select";
 import { Label } from "@testComponents/components/ui/label";
+import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
 import type { PickFromAListQuestion } from "@testComponents/lib/types";
 import { cn } from "@testComponents/lib/utils";
 
@@ -29,15 +30,11 @@ export default function PickFromListQuestionRenderer({
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<string, string>
   >({});
-
   useEffect(() => {
     if (value) {
       setSelectedAnswers(value);
     }
   }, [value]);
-
-  // Get list of all currently selected items
-  const getSelectedItems = () => Object.values(selectedAnswers);
 
   const handleItemSelection = (itemId: string, subQuestionId: string) => {
     if (readOnly) return;
@@ -62,17 +59,9 @@ export default function PickFromListQuestionRenderer({
   };
 
   const subQuestions = question.subQuestions || [];
-
   return (
     <div className="mx-auto space-y-6">
-      <p className="font-medium text-sm whitespace-pre-line leading-relaxed">
-        {question.text?.split(/_{3,}/g)?.map((part, index) => (
-          <React.Fragment key={index}>
-            {part}
-            <span className="border-b border-gray-400 w-[60px] inline-block"></span>
-          </React.Fragment>
-        ))}
-      </p>
+      <RichTextContent content={question.text || ""} className="text-sm" />
       <div className="grid grid-cols-1 md:grid-cols-[minmax(250px,1fr)_minmax(250px,1fr)] gap-6">
         <div className="space-y-3">
           <p className="text-base font-semibold text-gray-700">List of Items</p>
@@ -108,14 +97,14 @@ export default function PickFromListQuestionRenderer({
 
               // Find all correct item IDs from the subQuestions
               const allCorrectItemIds = question.subQuestions.map(
-                (sq) => sq.item
+                (sq) => sq.item,
               );
 
               // Find correct items that aren't currently selected in any field
               const availableCorrectItemIds = allCorrectItemIds.filter(
                 (itemId) =>
                   !Object.values(selectedAnswers).includes(itemId ?? "") ||
-                  itemId === selectedItemId
+                  itemId === selectedItemId,
               );
 
               // Default to showing the original assigned correct answer
@@ -124,15 +113,14 @@ export default function PickFromListQuestionRenderer({
               if (
                 availableCorrectItemIds.length > 0 &&
                 Object.values(selectedAnswers).includes(
-                  subQuestion.item ?? ""
+                  subQuestion.item ?? "",
                 ) &&
                 subQuestion.item !== selectedItemId
               ) {
                 suggestedCorrectItemId = availableCorrectItemIds[0] || "";
               }
-
               const correctAnswerIndex = question.items.findIndex(
-                (item) => item.id === suggestedCorrectItemId
+                (item) => item.id === suggestedCorrectItemId,
               );
               const correctAnswer =
                 question.items[correctAnswerIndex]?.text || "";
@@ -140,11 +128,6 @@ export default function PickFromListQuestionRenderer({
                 correctAnswerIndex >= 0
                   ? String.fromCharCode(65 + correctAnswerIndex)
                   : "";
-
-              // Get all currently selected items except the one selected for this sub-question
-              const selectedItems = getSelectedItems().filter(
-                (id) => id !== selectedItemId
-              );
 
               return (
                 <div
@@ -161,7 +144,7 @@ export default function PickFromListQuestionRenderer({
                       className={cn(
                         "flex-1 rounded-lg transition-colors duration-200",
                         isCorrect && "border-green-500 bg-green-50",
-                        isIncorrect && "border-red-500 bg-red-50"
+                        isIncorrect && "border-red-500 bg-red-50",
                       )}
                     >
                       <Select
@@ -175,7 +158,7 @@ export default function PickFromListQuestionRenderer({
                           className={cn(
                             "h-8 w-full border shadow-sm hover:shadow transition-shadow duration-200",
                             isCorrect && "border-green-500",
-                            isIncorrect && "border-red-500"
+                            isIncorrect && "border-red-500",
                           )}
                         >
                           <SelectValue

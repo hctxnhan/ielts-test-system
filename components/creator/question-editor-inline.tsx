@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { Label } from "@testComponents/components/ui/label";
-import { AutoResizeTextarea } from "@testComponents/components/ui/auto-resize-textarea";
+import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 import {
   RadioGroup,
   RadioGroupItem,
@@ -32,7 +32,7 @@ interface QuestionEditorInlineProps {
   onUpdateQuestion: (
     sectionId: string,
     questionId: string,
-    updates: any,
+    updates: Partial<Question>,
   ) => void;
 }
 
@@ -59,8 +59,7 @@ export default function QuestionEditorInline({
           Configure the question settings.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3 py-3">
-        <div className="space-y-1.5">
+      <CardContent className="space-y-3 py-3">        <div className="space-y-1.5">
           <Label
             htmlFor={`question-text-${question.id}`}
             className="text-xs font-medium flex items-center gap-1.5"
@@ -68,14 +67,15 @@ export default function QuestionEditorInline({
             <MessageSquare className="h-3 w-3" />
             Question Text
           </Label>
-          <AutoResizeTextarea
+          <RichTextEditor
             id={`question-text-${question.id}`}
             value={question.text}
-            onChange={(e) =>
-              onUpdateQuestion(sectionId, question.id, { text: e.target.value })
+            onChange={(content) =>
+              onUpdateQuestion(sectionId, question.id, { text: content })
             }
-            minRows={4}
-            maxRows={20}
+            placeholder="Enter your question text here..."
+            minHeight={120}
+            maxHeight={400}
             className="text-sm"
           />
         </div>

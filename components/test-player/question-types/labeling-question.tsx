@@ -4,6 +4,7 @@ import type { LabelingQuestion } from "@testComponents/lib/types";
 import { useEffect, useState } from "react";
 import { DraggableItem, DroppableZone } from "./shared/dnd-components";
 import { Label } from "@testComponents/components/ui/label";
+import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
 import { cn } from "@testComponents/lib/utils";
 
 interface LabelingQuestionProps {
@@ -47,17 +48,9 @@ export default function LabelingQuestionRenderer({
       return updatedMatches;
     });
   };
-
   return (
     <div className="space-y-6">
-      <p className="font-medium text-sm whitespace-pre-line leading-relaxed">
-        {question.text?.split(/_{3,}/g)?.map((part, index) => (
-          <React.Fragment key={index}>
-            {part}
-            <span className="border-b border-gray-400 w-[60px] inline-block"></span>
-          </React.Fragment>
-        ))}
-      </p>
+      <RichTextContent content={question.text || ""} className="text-sm" />
       <div className="relative border rounded-lg overflow-hidden bg-gray-50 flex justify-center">
         <img
           src={question.imageUrl || "/placeholder.svg"}
@@ -88,7 +81,7 @@ export default function LabelingQuestionRenderer({
           <div className="grid gap-4">
             {question.labels.map((label, labelIndex) => {
               const subQuestion = question.subQuestions?.find(
-                (sq) => sq.item === label.id
+                (sq) => sq.item === label.id,
               );
 
               if (!subQuestion) {
@@ -97,7 +90,7 @@ export default function LabelingQuestionRenderer({
               }
 
               const matchedOption = question.options.find(
-                (opt) => opt.id === matches[subQuestion.subId]
+                (opt) => opt.id === matches[subQuestion.subId],
               );
 
               const isCorrect =
@@ -110,7 +103,7 @@ export default function LabelingQuestionRenderer({
                   matchedOption.id !== subQuestion.correctAnswer);
 
               const correctOption = question.options.find(
-                (opt) => opt.id === subQuestion.correctAnswer
+                (opt) => opt.id === subQuestion.correctAnswer,
               );
 
               return (
@@ -133,8 +126,8 @@ export default function LabelingQuestionRenderer({
                             ? String.fromCharCode(
                                 65 +
                                   question.options.findIndex(
-                                    (o) => o.id === matchedOption.id
-                                  )
+                                    (o) => o.id === matchedOption.id,
+                                  ),
                               ) + "."
                             : ""
                         }
@@ -149,7 +142,7 @@ export default function LabelingQuestionRenderer({
                         className={cn(
                           "border rounded-lg shadow-sm hover:shadow transition-shadow duration-200",
                           isCorrect && "border-green-500 bg-green-50",
-                          isIncorrect && "border-red-500 bg-red-50"
+                          isIncorrect && "border-red-500 bg-red-50",
                         )}
                       />
                     </div>
@@ -159,8 +152,8 @@ export default function LabelingQuestionRenderer({
                         {String.fromCharCode(
                           65 +
                             question.options.findIndex(
-                              (o) => o.id === correctOption.id
-                            )
+                              (o) => o.id === correctOption.id,
+                            ),
                         )}
                         . {correctOption.text}
                       </div>

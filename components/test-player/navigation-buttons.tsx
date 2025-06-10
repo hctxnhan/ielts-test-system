@@ -1,5 +1,5 @@
 "use client";
-
+import React from "react";
 import { Button } from "@testComponents/components/ui/button";
 import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 
@@ -48,7 +48,7 @@ export default function NavigationButtons({
   })();
 
   return (
-    <div className="flex justify-between mt-4">
+    <div className="flex gap-2 justify-between mt-4">
       <Button
         size="sm"
         variant="outline"

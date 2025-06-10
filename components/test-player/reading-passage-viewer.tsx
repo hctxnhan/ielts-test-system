@@ -1,77 +1,67 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Badge } from '@testComponents/components/ui/badge';
-import { Button } from '@testComponents/components/ui/button';
+import React from "react";
+import { cn } from "@testComponents/lib/utils";
+import { Badge } from "@testComponents/components/ui/badge";
+import { Button } from "@testComponents/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogTitle
-} from '@testComponents/components/ui/dialog';
-import 'react-quill-new/dist/quill.snow.css';
+  DialogTitle,
+} from "@testComponents/components/ui/dialog";
+import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
-  TooltipTrigger
-} from '@testComponents/components/ui/tooltip';
-import type { ReadingPassage } from '@testComponents/lib/types';
+  TooltipTrigger,
+} from "@testComponents/components/ui/tooltip";
+import type { ReadingPassage } from "@testComponents/lib/types";
 import {
   BookOpen,
   ExternalLink,
   Info,
   Maximize2,
   ZoomIn,
-  ZoomOut
-} from 'lucide-react';
-import { useState } from 'react';
+  ZoomOut,
+} from "lucide-react";
+import { useState } from "react";
 
 interface ReadingPassageViewerProps {
   passage: ReadingPassage;
   containerRef?: React.RefObject<HTMLDivElement | null>; // Updated type definition
+  onContentChange?: (content: string) => void;
 }
 
 export default function ReadingPassageViewer({
   passage,
-  containerRef
+  containerRef: _containerRef,
+  onContentChange,
 }: ReadingPassageViewerProps) {
-  const [fontSize, setFontSize] = useState<'normal' | 'large' | 'larger'>(
-    'normal'
+  const [fontSize, setFontSize] = useState<"normal" | "large" | "larger">(
+    "normal",
   );
   const [selectedImage, setSelectedImage] = useState<{
     url: string;
     index: number;
   } | null>(null);
 
-  // Text size controls
-  const fontSizeClass =
-    fontSize === 'normal'
-      ? 'text-base'
-      : fontSize === 'large'
-      ? 'text-lg'
-      : 'text-xl';
-
   const increaseFontSize = () => {
-    if (fontSize === 'normal') setFontSize('large');
-    else if (fontSize === 'large') setFontSize('larger');
+    if (fontSize === "normal") setFontSize("large");
+    else if (fontSize === "large") setFontSize("larger");
   };
 
   const decreaseFontSize = () => {
-    if (fontSize === 'larger') setFontSize('large');
-    else if (fontSize === 'large') setFontSize('normal');
+    if (fontSize === "larger") setFontSize("large");
+    else if (fontSize === "large") setFontSize("normal");
   };
 
   // Image zoom handling
   const openImageModal = (url: string, index: number) => {
     setSelectedImage({ url, index });
   };
-
   const closeImageModal = () => {
     setSelectedImage(null);
-  };
-  // For handling rich text content
-  const renderRichContent = () => {
-    return { __html: passage.content };
   };
 
   return (
@@ -84,7 +74,7 @@ export default function ReadingPassageViewer({
         <DialogContent className="sm:max-w-[85vw] max-h-[90vh] flex flex-col">
           <div className="flex justify-between items-center">
             <DialogTitle>
-              Figure {selectedImage ? selectedImage.index + 1 : ''}
+              Figure {selectedImage ? selectedImage.index + 1 : ""}
             </DialogTitle>
           </div>
           <div className="flex-1 overflow-auto flex items-center justify-center p-2">
@@ -116,7 +106,7 @@ export default function ReadingPassageViewer({
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0"
-                    disabled={fontSize === 'normal'}
+                    disabled={fontSize === "normal"}
                     onClick={decreaseFontSize}
                   >
                     <ZoomOut className="h-4 w-4" />
@@ -135,7 +125,7 @@ export default function ReadingPassageViewer({
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0"
-                    disabled={fontSize === 'larger'}
+                    disabled={fontSize === "larger"}
                     onClick={increaseFontSize}
                   >
                     <ZoomIn className="h-4 w-4" />
@@ -147,27 +137,27 @@ export default function ReadingPassageViewer({
               </Tooltip>
             </TooltipProvider>
           </div>
-        </div>{' '}
+        </div>{" "}
         {/* Reading guide */}
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <span>
             Words: ~
             {
               passage.content
-                .replace(/<[^>]*>/g, '')
+                .replace(/<[^>]*>/g, "")
                 .split(/\s+/)
                 .filter(Boolean).length
             }
           </span>
           <span>·</span>
           <span>
-            Est. reading time:{' '}
+            Est. reading time:{" "}
             {Math.ceil(
               passage.content
-                .replace(/<[^>]*>/g, '')
+                .replace(/<[^>]*>/g, "")
                 .split(/\s+/)
-                .filter(Boolean).length / 200
-            )}{' '}
+                .filter(Boolean).length / 200,
+            )}{" "}
             min
           </span>
         </div>
@@ -193,7 +183,7 @@ export default function ReadingPassageViewer({
                       <Maximize2 className="h-6 w-6 text-white drop-shadow-md" />
                     </div>
                     <img
-                      src={url || '/placeholder.svg'}
+                      src={url || "/placeholder.svg"}
                       alt={`Figure ${index + 1}`}
                       className="max-w-full h-auto object-contain max-h-[300px]"
                       loading="lazy"
@@ -213,93 +203,19 @@ export default function ReadingPassageViewer({
               questions. Click on any image to view it in full size.
             </p>
           </div>
-        )}{' '}
+        )}{" "}
       {/* Content with rich text styling */}
-      <div
-        className={`prose dark:prose-invert max-w-none ${fontSizeClass} quill-content`}
-        dangerouslySetInnerHTML={renderRichContent()}
-      ></div>
-      {/* Styles for Quill content */}
-      <style jsx global>{`
-        .quill-content {
-          line-height: 1.6;
-          font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
-            Arial, sans-serif;
-        }
-        .quill-content h1,
-        .quill-content h2,
-        .quill-content h3 {
-          font-weight: 600;
-          margin-top: 1.5em;
-          margin-bottom: 0.5em;
-          line-height: 1.3;
-        }
-        .quill-content h1 {
-          font-size: 1.75em;
-        }
-        .quill-content h2 {
-          font-size: 1.5em;
-        }
-        .quill-content h3 {
-          font-size: 1.25em;
-        }
-        .quill-content p {
-          margin-bottom: 1em;
-        }
-        .quill-content ul,
-        .quill-content ol {
-          padding-left: 1.5em;
-          margin-bottom: 1em;
-        }
-        .quill-content ul {
-          list-style-type: disc;
-        }
-        .quill-content ol {
-          list-style-type: decimal;
-        }
-        .quill-content li {
-          margin-bottom: 0.5em;
-        }
-        .quill-content code {
-          background-color: rgba(0, 0, 0, 0.05);
-          border-radius: 3px;
-          padding: 2px 4px;
-          font-family: monospace;
-        }
-        .quill-content pre {
-          background-color: rgba(0, 0, 0, 0.05);
-          border-radius: 3px;
-          padding: 0.75em 1em;
-          margin-bottom: 1em;
-          white-space: pre-wrap;
-          font-family: monospace;
-        }
-        .quill-content img {
-          max-width: 100%;
-          height: auto;
-          margin: 1em 0;
-        }
-        .quill-content blockquote {
-          border-left: 4px solid rgba(0, 0, 0, 0.1);
-          padding-left: 1em;
-          margin-left: 0;
-          font-style: italic;
-        }
-        .quill-content a {
-          color: #3182ce;
-          text-decoration: underline;
-        }
-        /* Support different text alignment */
-        .quill-content .ql-align-center {
-          text-align: center;
-        }
-        .quill-content .ql-align-right {
-          text-align: right;
-        }
-        .quill-content .ql-align-justify {
-          text-align: justify;
-        }
-      `}</style>
+      <RichTextEditor
+        value={passage.content}
+        onChange={onContentChange || (() => {})} // Use onContentChange if provided, otherwise no-op for readonly mode
+        readonly={!onContentChange} // Make readonly if no onChange handler provided
+        className={cn(
+          "leading-relaxed w-full h-full",
+          fontSize === "large" && "text-lg",
+          fontSize === "larger" && "text-xl",
+        )}
+        minHeight={100}
+      />
       {/* Footer with source information */}
       {passage.source && (
         <div className="mt-6 pt-4 border-t">

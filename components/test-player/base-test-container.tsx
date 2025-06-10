@@ -5,22 +5,16 @@ import { Alert, AlertDescription } from "@testComponents/components/ui/alert";
 import { Button } from "@testComponents/components/ui/button";
 import { Card, CardContent } from "@testComponents/components/ui/card";
 import { ScrollArea } from "@testComponents/components/ui/scroll-area";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@testComponents/components/ui/sheet";
 import type { Test, TestProgress } from "@testComponents/lib/types";
-import { LayoutGrid, SplitSquareVertical } from "lucide-react";
+import { useTestStore } from "@testComponents/store/test-store";
+import { SplitSquareVertical } from "lucide-react";
 import { useRef, useState } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import AudioPlayer from "./audio-player";
-import NavigationButtons from "./navigation-buttons";
 import ReadingPassageViewer from "./reading-passage-viewer";
 import SectionQuestionsRenderer from "./section-questions-renderer";
-import TestSidebar from "./test-sidebar";
+import TestBottomNavigation from "./test-bottom-navigation";
 
 export interface BaseTestContainerProps {
   test: Test;
@@ -30,7 +24,7 @@ export interface BaseTestContainerProps {
   onCompleteTest: () => void;
   onPreviousSection: () => void;
   onNextSection: () => void;
-  currentSectionIndex: number;
+  currentSectionIndex: number; // eslint-disable-next-line @typescript-eslint/no-explicit-any
   currentSection: any;
   readOnly?: boolean;
   jumpToSection: (index: number) => void;
@@ -50,9 +44,9 @@ export default function BaseTestContainer({
 }: BaseTestContainerProps) {
   const [showPassage, setShowPassage] = useState(true);
   const [audioPlayed, setAudioPlayed] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const passageContainerRef = useRef<HTMLDivElement>(null);
   const contentContainerRef = useRef<HTMLDivElement>(null);
+  const { updatePassageContent } = useTestStore();
 
   const togglePassage = () => {
     setShowPassage((prev) => !prev);
@@ -82,49 +76,10 @@ export default function BaseTestContainer({
   const isReadingTest = test.type === "reading" || test.skill === "reading";
   const isListeningTest =
     test.type === "listening" || test.skill === "listening";
-
   return (
     <DndProvider backend={HTML5Backend}>
-      <div>
-        {/* Floating button for mobile */}
-        {!readOnly && (
-          <div className="fixed bottom-4 left-4 z-50 lg:hidden">
-            <Button
-              onClick={() => setSidebarOpen(true)}
-              size="icon"
-              className="h-12 w-12 rounded-full shadow-lg"
-            >
-              <LayoutGrid className="h-5 w-5" />
-            </Button>
-          </div>
-        )}
-
-        {/* Mobile sidebar as a sheet */}
-        <Sheet open={sidebarOpen && !readOnly} onOpenChange={setSidebarOpen}>
-          <SheetContent
-            side="right"
-            className="w-full sm:max-w-sm p-2 flex flex-col"
-          >
-            <SheetHeader className="flex-shrink-0">
-              <div className="flex justify-between items-center">
-                <SheetTitle>Test Navigation</SheetTitle>
-              </div>
-            </SheetHeader>
-            <div className="flex flex-col flex-1 mt-4">
-              <div className="flex flex-col flex-1 mt-4">
-                <TestSidebar
-                  isSubmitting={isSubmitting}
-                  test={test}
-                  progress={progress}
-                  currentSectionIndex={progress.currentSectionIndex}
-                  onJumpToSection={jumpToSection}
-                  onCompleteTest={onCompleteTest}
-                  isReviewMode={readOnly}
-                />
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
+      <div className="pb-20">
+        {/* Add bottom padding for fixed navigation */}
 
         <div className="mb-6">
           <h1 className="text-2xl font-bold">{test.title}</h1>
@@ -162,21 +117,27 @@ export default function BaseTestContainer({
                   : "lg:w-0 lg:opacity-0 lg:overflow-hidden"
               }`}
             >
-              <div className="sticky top-20 z-20 h-[calc(100vh-65px-2rem)]">
+              <div className="sticky top-20 z-20 h-[calc(100vh-65px-85px-2rem)]">
                 <Card className="shadow-sm overflow-hidden h-full">
-                  <ScrollArea className="h-[calc(100vh-65px-2rem)]">
+                  <ScrollArea className="h-full">
+                    {" "}
                     <CardContent className="p-4">
                       <ReadingPassageViewer
                         passage={currentSection.readingPassage}
                         containerRef={passageContainerRef}
+                        onContentChange={
+                          readOnly
+                            ? undefined
+                            : (content) =>
+                                updatePassageContent(currentSection.id, content)
+                        }
                       />
                     </CardContent>
                   </ScrollArea>
                 </Card>
               </div>
             </div>
-          )}
-
+          )}{" "}
           {/* Questions - Full width on mobile, expanded when passage is hidden */}
           <div className={`lg:transition-all lg:duration-300 flex-1`}>
             {/* Toggle passage button - moved from passage section to questions section */}
@@ -196,39 +157,24 @@ export default function BaseTestContainer({
                 isReviewMode={readOnly}
                 answers={progress.answers}
               />
-
-              {
-                <NavigationButtons
-                  readOnly={readOnly}
-                  isSubmitting={isSubmitting}
-                  currentSectionIndex={currentSectionIndex}
-                  totalSections={test.sections.length}
-                  onPreviousSection={onPreviousSection}
-                  onNextSection={onNextSection}
-                  onCompleteTest={onCompleteTest}
-                />
-              }
             </div>
-          </div>
-          {/* Sidebar - hidden on mobile, last column on desktop */}
-          {!readOnly && (
-            <div className="lg:w-[300px] hidden lg:block">
-              <div className="sticky top-20 z-20">
-                <Card className="shadow-sm p-2 flex flex-col h-[calc(100vh-65px-2rem)]">
-                  <TestSidebar
-                    isReviewMode={readOnly}
-                    isSubmitting={isSubmitting}
-                    test={test}
-                    progress={progress}
-                    currentSectionIndex={progress.currentSectionIndex}
-                    onJumpToSection={jumpToSection}
-                    onCompleteTest={onCompleteTest}
-                  />
-                </Card>
-              </div>
-            </div>
-          )}
+          </div>{" "}
         </div>
+
+        {/* Fixed Bottom Navigation Bar */}
+        <TestBottomNavigation
+          test={test}
+          progress={progress}
+          currentSectionIndex={currentSectionIndex}
+          currentSection={currentSection}
+          readOnly={readOnly}
+          isSubmitting={isSubmitting}
+          onPreviousSection={onPreviousSection}
+          onNextSection={onNextSection}
+          onCompleteTest={onCompleteTest}
+          jumpToSection={jumpToSection}
+          answers={progress.answers}
+        />
       </div>
     </DndProvider>
   );

@@ -44,6 +44,7 @@ interface TestState {
   updateTimeRemaining: (time: number) => void;
   setSubmitResultFn: (fn: SubmitResultFn) => void;
   submitTestResults: (testId: number) => Promise<boolean>;
+  updatePassageContent: (sectionId: string, content: string) => void;
   // Getters
   questionById: (id: string, subId?: string) => any;
   // Computed
@@ -129,7 +130,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
         sectionResults,
         answers: progress.answers,
         startedAt: progress.startedAt,
-        completedAt: new Date().toISOString()
+        completedAt: new Date().toISOString(),
       };
 
       set({
@@ -221,12 +222,12 @@ export const useTestStore = create<TestState>()((set, get) => ({
             const normalizedAnswer = answer
               ?.trim()
               .toLowerCase()
-              .replace(/\s+/g, ' ');
+              .replace(/\s+/g, " ");
             isCorrect =
               subQuestion.acceptableAnswers?.some(
                 (acceptableAnswer: string) =>
-                  acceptableAnswer.trim().toLowerCase().replace(/\s+/g, ' ') ===
-                  normalizedAnswer
+                  acceptableAnswer.trim().toLowerCase().replace(/\s+/g, " ") ===
+                  normalizedAnswer,
               ) || false;
 
             score = isCorrect ? subQuestion.points : 0;
@@ -283,18 +284,20 @@ export const useTestStore = create<TestState>()((set, get) => ({
       case "pick-from-a-list":
         if (scoringStrategy === "partial") {
           // if answer is already choosen, skip because it is already checked
-          if (question.subQuestions?.some((sq: { subId: string | number; item: any; }) => 
-            answer[sq.subId] === sq.item
-          )) {
+          if (
+            question.subQuestions?.some(
+              (sq: { subId: string | number; item: any }) =>
+                answer[sq.subId] === sq.item,
+            )
+          ) {
             isCorrect = false;
             score = 0;
             break;
           }
 
           isCorrect = question.subQuestions?.some(
-            (sq: SubQuestionMeta) =>
-              sq.item === answer,
-          )
+            (sq: SubQuestionMeta) => sq.item === answer,
+          );
 
           score = isCorrect ? question.points : 0;
         } else {
@@ -303,14 +306,15 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
           const totalAnswers = Object.entries(answer)?.length || 0;
 
-          if(totalAnswers !== totalSubQuestions) {
+          if (totalAnswers !== totalSubQuestions) {
             isCorrect = false;
             score = 0;
             break;
-          }          const correctCount = Object.entries(answer).filter(([key, value]) =>
+          }
+          const correctCount = Object.entries(answer).filter(([key, value]) =>
             // Check if the answer value is ANY of the correct items in subQuestions
             question.subQuestions?.some(
-              (sq: SubQuestionMeta) => sq.item === value
+              (sq: SubQuestionMeta) => sq.item === value,
             ),
           ).length;
 
@@ -465,6 +469,30 @@ export const useTestStore = create<TestState>()((set, get) => ({
       progress: {
         ...progress,
         timeRemaining: time,
+      },
+    });
+  },
+  updatePassageContent: (sectionId: string, content: string) => {
+    const { currentTest } = get();
+    if (!currentTest) return;
+
+    const updatedSections = currentTest.sections.map((section) => {
+      if (section.id === sectionId && section.readingPassage) {
+        return {
+          ...section,
+          readingPassage: {
+            ...section.readingPassage,
+            content: content,
+          },
+        };
+      }
+      return section;
+    });
+
+    set({
+      currentTest: {
+        ...currentTest,
+        sections: updatedSections,
       },
     });
   },
