@@ -26,7 +26,7 @@ export default function MatchingHeadingsQuestionRenderer({
   showCorrectAnswer = false,
 }: MatchingHeadingsQuestionProps) {
   const [matches, setMatches] = useState<Record<string, string>>({});
-
+  console.log("==> question", question)
   useEffect(() => {
     if (value) {
       setMatches(value);
@@ -57,12 +57,13 @@ export default function MatchingHeadingsQuestionRenderer({
           <p className="text-base font-semibold text-gray-700">Headings</p>
           <div className="space-y-2">
             {question.items.map((option, optionIndex) => (
+
               <DraggableItem
                 key={option.id}
                 text={option.text}
                 index={option.id}
                 itemType={ITEM_TYPE}
-                prefix={String.fromCharCode(65 + optionIndex) + "."}
+                // prefix={String.fromCharCode(65 + optionIndex) + "."}
                 disabled={readOnly}
                 className="hover:shadow-md transition-shadow duration-200"
               />
@@ -124,16 +125,16 @@ export default function MatchingHeadingsQuestionRenderer({
                         subQuestionId={subQuestion.subId}
                         matchedId={matches[subQuestion.subId]}
                         matchedText={matchedHeading?.text}
-                        prefix={
-                          matchedHeading
-                            ? String.fromCharCode(
-                                65 +
-                                  question.items.findIndex(
-                                    (h) => h.id === matchedHeading.id,
-                                  ),
-                              ) + "."
-                            : ""
-                        }
+                        // prefix={
+                        //   matchedHeading
+                        //     ? String.fromCharCode(
+                        //         65 +
+                        //           question.items.findIndex(
+                        //             (h) => h.id === matchedHeading.id,
+                        //           ),
+                        //       ) + "."
+                        //     : ""
+                        // }
                         onDrop={handleDrop}
                         itemType={ITEM_TYPE}
                         placeholder={

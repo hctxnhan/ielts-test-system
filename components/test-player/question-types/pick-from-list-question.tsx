@@ -36,6 +36,8 @@ export default function PickFromListQuestionRenderer({
     }
   }, [value]);
 
+ 
+
   const handleItemSelection = (itemId: string, subQuestionId: string) => {
     if (readOnly) return;
 
