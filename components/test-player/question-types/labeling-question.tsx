@@ -68,7 +68,7 @@ export default function LabelingQuestionRenderer({
                 text={option.text}
                 index={option.id}
                 itemType={ITEM_TYPE}
-                prefix={String.fromCharCode(65 + optionIndex) + "."}
+                // prefix={String.fromCharCode(65 + optionIndex) + "."}
                 disabled={readOnly}
                 className="hover:shadow-md transition-shadow duration-200"
               />
@@ -121,16 +121,16 @@ export default function LabelingQuestionRenderer({
                         subQuestionId={subQuestion.subId}
                         matchedId={matches[subQuestion.subId]}
                         matchedText={matchedOption?.text}
-                        prefix={
-                          matchedOption
-                            ? String.fromCharCode(
-                                65 +
-                                  question.options.findIndex(
-                                    (o) => o.id === matchedOption.id,
-                                  ),
-                              ) + "."
-                            : ""
-                        }
+                        // prefix={
+                        //   matchedOption
+                        //     ? String.fromCharCode(
+                        //         65 +
+                        //           question.options.findIndex(
+                        //             (o) => o.id === matchedOption.id,
+                        //           ),
+                        //       ) + "."
+                        //     : ""
+                        // }
                         onDrop={handleDrop}
                         itemType={ITEM_TYPE}
                         placeholder={
