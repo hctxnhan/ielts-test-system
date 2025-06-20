@@ -124,7 +124,7 @@ export function DroppableZone({
         </span>
       ) : (
         <span className="text-gray-500 text-sm flex items-center justify-center h-full">
-          <svg
+          {/* <svg
             className="w-4 h-4 mr-1"
             fill="none"
             stroke="currentColor"
@@ -137,7 +137,7 @@ export function DroppableZone({
               strokeWidth={2}
               d="M19 9l-7 7-7-7"
             />
-          </svg>
+          </svg> */}
           {placeholder}
         </span>
       )}
