@@ -62,7 +62,7 @@ export default function MatchingHeadingsQuestionRenderer({
                 text={option.text}
                 index={option.id}
                 itemType={ITEM_TYPE}
-                prefix={String.fromCharCode(65 + optionIndex) + "."}
+                // prefix={String.fromCharCode(65 + optionIndex) + "."}
                 disabled={readOnly}
                 className="hover:shadow-md transition-shadow duration-200"
               />
@@ -124,16 +124,16 @@ export default function MatchingHeadingsQuestionRenderer({
                         subQuestionId={subQuestion.subId}
                         matchedId={matches[subQuestion.subId]}
                         matchedText={matchedHeading?.text}
-                        prefix={
-                          matchedHeading
-                            ? String.fromCharCode(
-                                65 +
-                                  question.items.findIndex(
-                                    (h) => h.id === matchedHeading.id,
-                                  ),
-                              ) + "."
-                            : ""
-                        }
+                        // prefix={
+                        //   matchedHeading
+                        //     ? String.fromCharCode(
+                        //         65 +
+                        //           question.items.findIndex(
+                        //             (h) => h.id === matchedHeading.id,
+                        //           ),
+                        //       ) + "."
+                        //     : ""
+                        // }
                         onDrop={handleDrop}
                         itemType={ITEM_TYPE}
                         placeholder={

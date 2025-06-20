@@ -47,7 +47,7 @@ export default function MultipleChoiceQuestion({
               <div
                 key={option.id}
                 className={cn(
-                  "relative flex items-center space-x-2 px-2 py-1.5 rounded border text-sm",
+                  "relative flex items-center space-x-2 px-2 py-1.5 rounded  text-sm",
                   isSelected && "border-primary",
                   !isSelected && "border-input",
                   isCorrect &&
