@@ -42,6 +42,8 @@ interface TestState {
   completeTest: () => void;
   resetTest: () => void;
   updateTimeRemaining: (time: number) => void;
+  // Add method to handle time ending
+  handleTimeEnd: () => void;
   setSubmitResultFn: (fn: SubmitResultFn) => void;
   submitTestResults: (testId: number) => Promise<boolean>;
   updatePassageContent: (sectionId: string, content: string) => void;
@@ -71,7 +73,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
     set({
       progress: {
-        testId: currentTest.id,
+        testId: currentTest.id?.toString() || "",
         currentSectionIndex: 0,
         currentQuestionIndex: 0,
         timeRemaining: currentTest.totalDuration,
@@ -450,6 +452,21 @@ export const useTestStore = create<TestState>()((set, get) => ({
         completed: true,
         completedAt: new Date().toISOString(),
         score: totalScore,
+      },
+    });
+  },
+
+  handleTimeEnd: () => {
+    const { progress } = get();
+    if (!progress || progress.completed) return;
+
+    // Update time to 0 and complete the test
+    set({
+      progress: {
+        ...progress,
+        timeRemaining: 0,
+        completed: true,
+        completedAt: new Date().toISOString(),
       },
     });
   },

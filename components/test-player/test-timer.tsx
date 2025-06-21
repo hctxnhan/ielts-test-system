@@ -1,97 +1,90 @@
 "use client";
-import React from "react";
-import { useState, useEffect, useRef } from "react";
-import { useTestStore } from "@testComponents/store/test-store";
-import { Button } from "@testComponents/components/ui/button";
+import { cn } from "@testComponents/lib/utils";
 import { Clock } from "lucide-react";
+import { memo, useEffect, useRef, useState } from "react";
 
 interface TestTimerProps {
   initialTime: number; // in seconds
   onTimeEnd: () => void;
+  className?: string;
 }
 
-export default function TestTimer({ initialTime, onTimeEnd }: TestTimerProps) {
+function TestTimerComponent({ initialTime, onTimeEnd, className }: TestTimerProps) {
   const [timeRemaining, setTimeRemaining] = useState(initialTime);
-  const [isWarning, setIsWarning] = useState(false);
-  const { updateTimeRemaining } = useTestStore();
+  const deadlineRef = useRef<number>(Date.now() + initialTime * 1000);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastUpdateRef = useRef<number>(Date.now());
 
   useEffect(() => {
-    // Only update time remaining in store when component mounts or initialTime changes
-    // NOT during every render
-    if (initialTime !== timeRemaining) {
-      setTimeRemaining(initialTime);
-    }
+    // Set deadline only on mount
+    deadlineRef.current = Date.now() + initialTime * 1000;
+    setTimeRemaining(initialTime);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
 
-    // Clean up any existing timer
+  useEffect(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
-
-    // Set up timer
     timerRef.current = setInterval(() => {
-      // Throttle updates to prevent too many state changes
       const now = Date.now();
-      if (now - lastUpdateRef.current < 500) {
-        return;
+      const secondsLeft = Math.max(0, Math.round((deadlineRef.current - now) / 1000));
+      setTimeRemaining(secondsLeft);
+      if (secondsLeft <= 0) {
+        if (timerRef.current) clearInterval(timerRef.current);
+        onTimeEnd();
       }
-      lastUpdateRef.current = now;
-
-      setTimeRemaining((prevTime) => {
-        const newTime = prevTime - 1;
-
-        // Update time in store (throttled)
-        if (newTime % 5 === 0) {
-          updateTimeRemaining(newTime);
-        }
-
-        // Check if time is running low (less than 5 minutes)
-        if (newTime <= 300 && !isWarning) {
-          setIsWarning(true);
-        }
-
-        // Check if time is up
-        if (newTime <= 0) {
-          if (timerRef.current) {
-            clearInterval(timerRef.current);
-          }
-          onTimeEnd();
-          return 0;
-        }
-
-        return newTime;
-      });
     }, 1000);
-
-    // Clean up timer on unmount
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
+      if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [initialTime, updateTimeRemaining, onTimeEnd, isWarning]);
+  }, [onTimeEnd]);
 
-  // Format time as MM:SS
+  // Format time as HH:MM:SS for longer durations, MM:SS for shorter
   const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
-      .toString()
-      .padStart(2, "0")}`;
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
+  const isLowTime = timeRemaining <= 300;
+  const isCriticalTime = timeRemaining <= 60; 
+
   return (
-    <Button
-      size="default"
-      variant="outline"
-      className={`font-mono h-auto ${
-        isWarning ? "text-red-500 border-red-500 animate-pulse" : ""
-      }`}
-      disabled
+    <div
+      className={cn(
+        "fixed top-4 right-4 z-[60] bg-white dark:bg-gray-800 rounded-lg shadow-lg border px-4 py-2 flex items-center space-x-2 transition-all duration-300",
+        {
+          "bg-yellow-50 border-yellow-300 text-yellow-800": isLowTime && !isCriticalTime,
+          "bg-red-50 border-red-300 text-red-800 animate-pulse": isCriticalTime,
+        },
+        className
+      )}
     >
-      <Clock className="mr-0.5 h-2.5 w-2.5" />
-      {formatTime(timeRemaining)}
-    </Button>
+      <Clock className={cn(
+        "w-4 h-4",
+        {
+          "text-yellow-600": isLowTime && !isCriticalTime,
+          "text-red-600": isCriticalTime,
+        }
+      )} />
+      <span className={cn(
+        "font-medium text-sm",
+        {
+          "text-yellow-800": isLowTime && !isCriticalTime,
+          "text-red-800": isCriticalTime,
+        }
+      )}>
+        {formatTime(Math.max(0, timeRemaining))}
+      </span>
+    </div>
   );
 }
+
+ const TestTimer = memo(TestTimerComponent)
+
+export default TestTimer;

@@ -207,8 +207,8 @@ export default function ReadingPassageViewer({
       {/* Content with rich text styling */}
       <RichTextEditor
         value={passage.content}
-        onChange={onContentChange || (() => {})} // Use onContentChange if provided, otherwise no-op for readonly mode
-        readonly={!onContentChange} // Make readonly if no onChange handler provided
+        onChange={onContentChange || (() => {})}
+        readonly={true}
         className={cn(
           "leading-relaxed w-full h-full",
           fontSize === "large" && "text-lg",
