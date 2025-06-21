@@ -478,7 +478,7 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none",
+          // Removed: "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto"
           "min-h-[150px] p-3",
           readonly && "cursor-default select-text",
         ),
