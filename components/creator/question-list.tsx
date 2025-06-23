@@ -4,7 +4,7 @@ import { Button } from "@testComponents/components/ui/button";
 import { Badge } from "@testComponents/components/ui/badge";
 import type { Question } from "@testComponents/lib/types";
 import QuestionEditorInline from "./question-editor-inline";
-import { X, ChevronDown, ChevronUp } from "lucide-react";
+import { X, ChevronDown, ChevronUp, ArrowUp, ArrowDown } from "lucide-react";
 
 interface QuestionListProps {
   questions: Question[];
@@ -15,6 +15,7 @@ interface QuestionListProps {
     updates: Record<string, unknown>,
   ) => void;
   onRemoveQuestion: (sectionId: string, questionId: string) => void;
+  onReorderQuestion: (sectionId: string, questionId: string, direction: 'up' | 'down') => void;
 }
 
 export default function QuestionList({
@@ -22,6 +23,7 @@ export default function QuestionList({
   sectionId,
   onUpdateQuestion,
   onRemoveQuestion,
+  onReorderQuestion,
 }: QuestionListProps) {
   const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(
     null,
@@ -70,6 +72,32 @@ export default function QuestionList({
               </span> */}
             </div>
             <div className="flex items-center gap-1 shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReorderQuestion(sectionId, question.id, 'up');
+                }}
+                disabled={qIndex === 0}
+                title="Move up"
+              >
+                <ArrowUp size={12} className="text-muted-foreground" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReorderQuestion(sectionId, question.id, 'down');
+                }}
+                disabled={qIndex === questions.length - 1}
+                title="Move down"
+              >
+                <ArrowDown size={12} className="text-muted-foreground" />
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"

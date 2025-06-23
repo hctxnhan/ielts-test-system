@@ -49,6 +49,7 @@ interface SectionEditorProps {
     updates: any,
   ) => void;
   onRemoveQuestion: (sectionId: string, questionId: string) => void;
+  onReorderQuestion: (sectionId: string, questionId: string, direction: 'up' | 'down') => void;
 }
 
 export default function SectionEditor({
@@ -60,6 +61,7 @@ export default function SectionEditor({
   onAddQuestion,
   onUpdateQuestion,
   onRemoveQuestion,
+  onReorderQuestion,
 }: SectionEditorProps) {
   const [showQuestionTypeDialog, setShowQuestionTypeDialog] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -443,6 +445,7 @@ export default function SectionEditor({
                 sectionId={section.id}
                 onUpdateQuestion={onUpdateQuestion}
                 onRemoveQuestion={onRemoveQuestion}
+                onReorderQuestion={onReorderQuestion}
               />
             </div>
           </CardContent>

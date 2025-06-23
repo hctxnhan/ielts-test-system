@@ -105,6 +105,7 @@ export function TestCreator({
     addQuestion,
     removeQuestion,
     updateQuestion,
+    reorderQuestion,
   } = useCreatorStore();
 
   // Set default test if provided
@@ -404,6 +405,7 @@ export function TestCreator({
                   onAddQuestion={addQuestion}
                   onUpdateQuestion={updateQuestion}
                   onRemoveQuestion={removeQuestion}
+                  onReorderQuestion={reorderQuestion}
                 />
               ))}
             </div>
