@@ -224,8 +224,8 @@ const FloatingHighlightToolbar = ({ editor }: { editor: Editor | null }) => {
     const { selection } = editor.state;
     const { from, to } = selection;
 
-    // Only show if there's a text selection (not just cursor)
-    if (from === to) {
+    // Only show if there's a text selection of more than 1 character
+    if (from === to || to - from <= 1) {
       setIsVisible(false);
       return;
     }
@@ -239,10 +239,38 @@ const FloatingHighlightToolbar = ({ editor }: { editor: Editor | null }) => {
       const editorElement = view.dom;
       const editorRect = editorElement.getBoundingClientRect();
 
-      // Position the toolbar above the selection
+      // Calculate initial position
       const centerX = (start.left + end.left) / 2;
-      const top = start.top - editorRect.top - 50; // 50px above the selection
-      const left = centerX - editorRect.left - 100; // Center the toolbar (approximate)
+      let top = start.top - editorRect.top - 50; // 50px above the selection
+      let left = centerX - editorRect.left - 100; // Center the toolbar (approximate)
+
+      // Get viewport dimensions
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      // Toolbar approximate dimensions (adjust based on actual toolbar size)
+      const toolbarWidth = 200; // Approximate width of the toolbar
+      const toolbarHeight = 40; // Approximate height of the toolbar
+
+      // Adjust horizontal position to stay within viewport
+      const absoluteLeft = editorRect.left + left;
+      if (absoluteLeft < 10) {
+        // Too far left, move right
+        left = 10 - editorRect.left;
+      } else if (absoluteLeft + toolbarWidth > viewportWidth - 10) {
+        // Too far right, move left
+        left = viewportWidth - toolbarWidth - 10 - editorRect.left;
+      }
+
+      // Adjust vertical position to stay within viewport
+      const absoluteTop = editorRect.top + top;
+      if (absoluteTop < 10) {
+        // Too far up, position below the selection instead
+        top = end.top - editorRect.top + 20;
+      } else if (absoluteTop + toolbarHeight > viewportHeight - 10) {
+        // Too far down, position above but closer to selection
+        top = start.top - editorRect.top - toolbarHeight - 10;
+      }
 
       setPosition({ top, left });
       setIsVisible(true);
@@ -252,17 +280,17 @@ const FloatingHighlightToolbar = ({ editor }: { editor: Editor | null }) => {
   useEffect(() => {
     if (!editor) return;
 
-    const handleSelectionUpdate = () => {
+    const handleMouseUp = () => {
       // Small delay to ensure DOM is updated
       setTimeout(updatePosition, 10);
     };
 
-    editor.on("selectionUpdate", handleSelectionUpdate);
-    editor.on("update", handleSelectionUpdate);
+    // Add mouseup event listener to the editor's DOM element
+    const editorElement = editor.view.dom;
+    editorElement.addEventListener('mouseup', handleMouseUp);
 
     return () => {
-      editor.off("selectionUpdate", handleSelectionUpdate);
-      editor.off("update", handleSelectionUpdate);
+      editorElement.removeEventListener('mouseup', handleMouseUp);
     };
   }, [editor, updatePosition]);
 
@@ -273,8 +301,8 @@ const FloatingHighlightToolbar = ({ editor }: { editor: Editor | null }) => {
   const { selection } = editor.state;
   const { from, to } = selection;
 
-  // Don't show if no text is selected
-  if (from === to) {
+  // Don't show if no text is selected or selection is 1 character or less
+  if (from === to || to - from <= 1) {
     return null;
   }
 
@@ -612,8 +640,8 @@ export function RichTextEditor({
         }
         .rich-text-editor .ProseMirror mark {
           border-radius: 0.125rem;
-          padding: 0.125rem 0.25rem;
-          margin: 0 0.125rem;
+          padding: 0;
+          margin: 0;
           box-decoration-break: clone;
         }
         .rich-text-editor .ProseMirror mark[data-color="#fef08a"] {

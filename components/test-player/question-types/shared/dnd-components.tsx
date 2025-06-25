@@ -57,7 +57,7 @@ export function DraggableItem({
     <div
       ref={dragRef as unknown as RefCallback<HTMLDivElement>}
       className={cn(
-        "border px-3 py-2 rounded text-sm transition-all duration-200 shadow-sm",
+        "border px-2 py-1 rounded text-xs transition-all duration-200 shadow-sm",
         {
           "opacity-50 scale-95 border-dashed": isDragging,
           "opacity-100": !isDragging,
@@ -69,7 +69,7 @@ export function DraggableItem({
       )}
       title={disabled ? undefined : "Drag this item"}
     >
-      {prefix && <span className="font-bold mr-1">{prefix}</span>}
+      {prefix && <span className="font-semibold mr-1 text-xs">{prefix}</span>}
       {text}
     </div>
   );
@@ -105,7 +105,7 @@ export function DroppableZone({
     <div
       ref={dropRef as unknown as RefCallback<HTMLDivElement>}
       className={cn(
-        "border-2 rounded px-3 py-2 min-h-[2.5rem] min-w-[150px] transition-all duration-200 shadow-sm",
+        "border-2 rounded px-2 py-1 min-h-[2rem] min-w-[120px] transition-all duration-200 shadow-sm",
         {
           "bg-blue-100 border-blue-500 shadow-md": isOver,
           "bg-gray-200": matchedText && !isOver,
@@ -118,12 +118,12 @@ export function DroppableZone({
       title={disabled ? "This drop zone is disabled" : "Drop item here"}
     >
       {matchedText ? (
-        <span className="text-sm font-medium">
-          {prefix && <span className="font-bold mr-1">{prefix}</span>}
+        <span className="text-xs font-medium">
+          {prefix && <span className="font-semibold mr-1 text-xs">{prefix}</span>}
           {matchedText}
         </span>
       ) : (
-        <span className="text-gray-500 text-sm flex items-center justify-center h-full">
+        <span className="text-gray-500 text-xs flex items-center justify-center h-full">
           {/* <svg
             className="w-4 h-4 mr-1"
             fill="none"

@@ -149,17 +149,6 @@ export default function ReadingPassageViewer({
                 .filter(Boolean).length
             }
           </span>
-          <span>·</span>
-          <span>
-            Est. reading time:{" "}
-            {Math.ceil(
-              passage.content
-                .replace(/<[^>]*>/g, "")
-                .split(/\s+/)
-                .filter(Boolean).length / 200,
-            )}{" "}
-            min
-          </span>
         </div>
       </div>
       {/* Images section with improved styling and click to zoom */}
