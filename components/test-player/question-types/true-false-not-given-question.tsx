@@ -36,7 +36,7 @@ export default function TrueFalseNotGivenQuestion({
         className={cn(
           "leading-relaxed w-full h-full",
         )}
-        minHeight={100}
+        minHeight={20}
       />
       <div className="space-y-2">
         {question.statements.map((statement, index) => {

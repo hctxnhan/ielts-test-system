@@ -190,7 +190,7 @@ const FloatingTableToolbar = ({ editor }: { editor: Editor | null }) => {
 };
 
 // Floating Highlight Toolbar Component
-const FloatingHighlightToolbar = ({ editor }: { editor: Editor | null }) => {
+const FloatingHighlightToolbar = ({ editor, readonly = false }: { editor: Editor | null; readonly?: boolean }) => {
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [isVisible, setIsVisible] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -205,17 +205,45 @@ const FloatingHighlightToolbar = ({ editor }: { editor: Editor | null }) => {
   ];
 
   const toggleHighlight = (color: string) => {
-    // If the same color is already applied, remove the highlight
-    const currentHighlight = editor?.getAttributes("highlight");
-    if (currentHighlight?.color === color) {
-      editor?.chain().focus().unsetHighlight().run();
+    if (!editor) return;
+    
+    // In readonly mode, we need to temporarily enable editing for highlighting
+    if (readonly) {
+      const wasEditable = editor.isEditable;
+      editor.setEditable(true);
+      
+      // If the same color is already applied, remove the highlight
+      const currentHighlight = editor.getAttributes("highlight");
+      if (currentHighlight?.color === color) {
+        editor.chain().focus().unsetHighlight().run();
+      } else {
+        editor.chain().focus().toggleHighlight({ color }).run();
+      }
+      
+      // Restore readonly state
+      editor.setEditable(wasEditable);
     } else {
-      editor?.chain().focus().toggleHighlight({ color }).run();
+      // Normal mode
+      const currentHighlight = editor.getAttributes("highlight");
+      if (currentHighlight?.color === color) {
+        editor.chain().focus().unsetHighlight().run();
+      } else {
+        editor.chain().focus().toggleHighlight({ color }).run();
+      }
     }
   };
 
   const removeHighlight = () => {
-    editor?.chain().focus().unsetHighlight().run();
+    if (!editor) return;
+    
+    if (readonly) {
+      const wasEditable = editor.isEditable;
+      editor.setEditable(true);
+      editor.chain().focus().unsetHighlight().run();
+      editor.setEditable(wasEditable);
+    } else {
+      editor.chain().focus().unsetHighlight().run();
+    }
   };
 
   const updatePosition = useCallback(() => {
@@ -498,9 +526,8 @@ export function RichTextEditor({
     ],
     content: value,
     onUpdate: ({ editor }) => {
-      if (!readonly) {
-        onChange(editor.getHTML());
-      }
+      // Always invoke onChange, even in readonly mode (for highlights)
+      onChange(editor.getHTML());
     },
     editable: !readonly,
     editorProps: {
@@ -691,7 +718,7 @@ export function RichTextEditor({
       />
       {!readonly && <Toolbar editor={editor} />}
       {!readonly && <FloatingTableToolbar editor={editor} />}
-      <FloatingHighlightToolbar editor={editor} />
+      <FloatingHighlightToolbar editor={editor} readonly={readonly} />
       <EditorContent editor={editor} placeholder={placeholder} id={id} />
     </div>
   );

@@ -60,7 +60,7 @@ export default function LabelingQuestionRenderer({
         className={cn(
           "leading-relaxed w-full h-full",
         )}
-        minHeight={100}
+        minHeight={20}
       />
       <div className="relative border rounded-lg overflow-hidden bg-gray-50 flex justify-center">
         <img

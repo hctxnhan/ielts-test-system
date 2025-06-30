@@ -37,7 +37,7 @@ export default function MultipleChoiceQuestion({
         className={cn(
           "leading-relaxed w-full h-full",
         )}
-        minHeight={100}
+        minHeight={20}
       />
       <RadioGroup
         value={value}

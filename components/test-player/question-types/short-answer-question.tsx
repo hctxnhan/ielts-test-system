@@ -47,7 +47,7 @@ export default function ShortAnswerQuestionRenderer({
           className={cn(
             "leading-relaxed w-full h-full",
           )}
-          minHeight={100}
+          minHeight={20}
         />
         {question.wordLimit && (
           <p className="text-xs text-muted-foreground">

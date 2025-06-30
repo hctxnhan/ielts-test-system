@@ -61,7 +61,7 @@ export default function MatchingHeadingsQuestionRenderer({
         className={cn(
           "leading-relaxed w-full h-full",
         )}
-        minHeight={100}
+        minHeight={20}
       />{" "}
       <div className="grid grid-cols-1 md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)] gap-6">
         <div className="space-y-3">
