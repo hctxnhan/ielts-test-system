@@ -4,11 +4,13 @@ import { AutoResizeTextarea } from "@testComponents/components/ui/auto-resize-te
 import { Button } from "@testComponents/components/ui/button";
 import { Card } from "@testComponents/components/ui/card";
 import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
+import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 import type {
   WritingTask1Question,
   WritingTask2Question,
   WritingTaskAnswer,
 } from "@testComponents/lib/types";
+import { cn } from "@testComponents/lib/utils";
 import { Award, Eye, EyeOff } from "lucide-react";
 import React from "react";
 import { useEffect, useState } from "react";
@@ -23,6 +25,7 @@ interface WritingTask1QuestionProps {
   onChange: (value: WritingTaskAnswer) => void;
   readOnly?: boolean;
   showCorrectAnswer?: boolean;
+  onQuestionHighlighted?: (questionId: string, content: string) => void;
 }
 
 interface ScoringResult {
@@ -38,6 +41,7 @@ export default function WritingTask1QuestionRenderer({
   onChange,
   readOnly = false,
   showCorrectAnswer = false,
+  onQuestionHighlighted = () => {},
 }: WritingTask1QuestionProps) {
   const [currentEssay, setCurrentEssay] = useState<string | null>(
     value?.text ?? null,
@@ -90,7 +94,15 @@ export default function WritingTask1QuestionRenderer({
         <h3 className="text-lg font-medium">Writing Task 1</h3>
       </div>{" "}
       <Card className="p-4">
-        <RichTextContent content={question.text || ""} className="text-sm" />{" "}
+        <RichTextEditor
+          value={question.text || ""}
+          onChange={(content) => onQuestionHighlighted(question.id, content)}
+          readonly={true}
+          className={cn(
+            "leading-relaxed w-full h-full",
+          )}
+          minHeight={100}
+        />{" "}
         {question.imageUrl && (
           <div className="my-4 flex justify-center">
             <img

@@ -507,7 +507,7 @@ export function RichTextEditor({
       attributes: {
         class: cn(
           // Removed: "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto"
-          "min-h-[150px] p-3",
+          "min-h-[150px]",
           readonly && "cursor-default select-text",
         ),
         style: `min-height: ${minHeight - (readonly ? 20 : 60)}px; overflow-y: auto;`,

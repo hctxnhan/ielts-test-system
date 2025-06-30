@@ -4,6 +4,7 @@ import type { MatchingQuestion } from "@testComponents/lib/types";
 import { DraggableItem, DroppableZone } from "./shared/dnd-components";
 import { Label } from "@testComponents/components/ui/label";
 import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
+import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 import { cn } from "@testComponents/lib/utils";
 
 interface MatchingQuestionProps {
@@ -12,6 +13,7 @@ interface MatchingQuestionProps {
   onChange: (value: Record<string, string>, subId?: string) => void;
   readOnly?: boolean;
   showCorrectAnswer?: boolean;
+  onQuestionHighlighted?: (questionId: string, content: string) => void;
 }
 
 const ITEM_TYPE = "OPTION";
@@ -22,6 +24,7 @@ export default function MatchingQuestionRenderer({
   onChange,
   readOnly = false,
   showCorrectAnswer = false,
+  onQuestionHighlighted = () => {},
 }: MatchingQuestionProps) {
   const [matches, setMatches] = useState<Record<string, string>>({});
 
@@ -49,7 +52,15 @@ export default function MatchingQuestionRenderer({
   };
   return (
     <div className="mx-auto space-y-6">
-      <RichTextContent content={question.text || ""} className="text-sm" />
+      <RichTextEditor
+        value={question.text || ""}
+        onChange={(content) => onQuestionHighlighted(question.id, content)}
+        readonly={true}
+        className={cn(
+          "leading-relaxed w-full h-full",
+        )}
+        minHeight={100}
+      />
       <div className="grid grid-cols-1 md:grid-cols-[minmax(250px,1fr)_minmax(250px,1fr)] gap-6">
         <div className="space-y-3">
           <p className="text-base font-semibold text-gray-700">Options</p>

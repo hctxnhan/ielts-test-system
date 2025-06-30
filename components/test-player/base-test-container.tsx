@@ -46,7 +46,11 @@ export default function BaseTestContainer({
   const [audioPlayed, setAudioPlayed] = useState(false);
   const passageContainerRef = useRef<HTMLDivElement>(null);
   const contentContainerRef = useRef<HTMLDivElement>(null);
-  const { updatePassageContent } = useTestStore();
+  const { updatePassageContent, updateQuestionContent, currentSection: getCurrentSection } = useTestStore();
+
+  // Get the current section from the store to ensure we have the updated content
+  const storeCurrentSection = getCurrentSection();
+  const actualCurrentSection = storeCurrentSection || currentSection;
 
   const togglePassage = () => {
     setShowPassage((prev) => !prev);
@@ -56,7 +60,7 @@ export default function BaseTestContainer({
     setAudioPlayed(true);
   };
 
-  if (!progress || !currentSection) {
+  if (!progress || !actualCurrentSection) {
     return (
       <div className="flex justify-center items-center h-96">
         <p>Error loading test content.</p>
@@ -85,11 +89,11 @@ export default function BaseTestContainer({
           <h1 className="text-2xl font-bold">{test.title}</h1>
         </div>
 
-        {isListeningTest && currentSection.audioUrl && (
+        {isListeningTest && actualCurrentSection.audioUrl && (
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-2">Listening Section</h2>
             <AudioPlayer
-              src={currentSection.audioUrl}
+              src={actualCurrentSection.audioUrl}
               onEnded={handleAudioEnded}
             />
             {!audioPlayed && !readOnly && (
@@ -108,7 +112,7 @@ export default function BaseTestContainer({
           className="flex flex-col lg:flex-row gap-6 relative"
         >
           {/* Reading Passage - Full width on mobile, conditionally shown column on desktop with sticky top */}
-          {isReadingTest && currentSection.readingPassage && (
+          {isReadingTest && actualCurrentSection.readingPassage && (
             <div
               ref={passageContainerRef}
               className={`lg:transition-all lg:duration-300 ${
@@ -123,13 +127,13 @@ export default function BaseTestContainer({
                     {" "}
                     <CardContent className="p-4">
                       <ReadingPassageViewer
-                        passage={currentSection.readingPassage}
+                        passage={actualCurrentSection.readingPassage}
                         containerRef={passageContainerRef}
                         onContentChange={
                           readOnly
                             ? undefined
                             : (content) =>
-                                updatePassageContent(currentSection.id, content)
+                                updatePassageContent(actualCurrentSection.id, content)
                         }
                       />
                     </CardContent>
@@ -141,7 +145,7 @@ export default function BaseTestContainer({
           {/* Questions - Full width on mobile, expanded when passage is hidden */}
           <div className={`lg:transition-all lg:duration-300 flex-1`}>
             {/* Toggle passage button - moved from passage section to questions section */}
-            {isReadingTest && currentSection.readingPassage && (
+            {isReadingTest && actualCurrentSection.readingPassage && (
               <div className="justify-start mb-4  lg:flex hidden">
                 <Button variant="outline" size="sm" onClick={togglePassage}>
                   {showPassage ? "Hide Passage" : "Show Passage"}
@@ -150,12 +154,15 @@ export default function BaseTestContainer({
               </div>
             )}
 
-            <div className="space-y-4">
+            <div className="space-y-4 max-w-[900px] mx-auto">
               <SectionQuestionsRenderer
-                questions={currentSection.questions}
-                sectionId={currentSection.id}
+                questions={actualCurrentSection.questions}
+                sectionId={actualCurrentSection.id}
                 isReviewMode={readOnly}
                 answers={progress.answers}
+                onQuestionContentChange={
+                  readOnly ? undefined : updateQuestionContent
+                }
               />
             </div>
           </div>{" "}
@@ -166,7 +173,7 @@ export default function BaseTestContainer({
           test={test}
           progress={progress}
           currentSectionIndex={currentSectionIndex}
-          currentSection={currentSection}
+          currentSection={actualCurrentSection}
           readOnly={readOnly}
           isSubmitting={isSubmitting}
           onPreviousSection={onPreviousSection}

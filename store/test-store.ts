@@ -47,6 +47,7 @@ interface TestState {
   setSubmitResultFn: (fn: SubmitResultFn) => void;
   submitTestResults: (testId: number) => Promise<boolean>;
   updatePassageContent: (sectionId: string, content: string) => void;
+  updateQuestionContent: (questionId: string, content: string) => void;
   // Getters
   questionById: (id: string, subId?: string) => any;
   // Computed
@@ -505,6 +506,31 @@ export const useTestStore = create<TestState>()((set, get) => ({
       }
       return section;
     });
+
+    set({
+      currentTest: {
+        ...currentTest,
+        sections: updatedSections,
+      },
+    });
+  },
+
+  updateQuestionContent: (questionId: string, content: string) => {
+    const { currentTest } = get();
+    if (!currentTest) return;
+
+    const updatedSections = currentTest.sections.map((section) => ({
+      ...section,
+      questions: section.questions.map((question) => {
+        if (question.id === questionId) {
+          return {
+            ...question,
+            text: content,
+          };
+        }
+        return question;
+      }),
+    }));
 
     set({
       currentTest: {

@@ -9,6 +9,7 @@ import {
 } from "@testComponents/components/ui/select";
 import { Label } from "@testComponents/components/ui/label";
 import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
+import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 import type { PickFromAListQuestion } from "@testComponents/lib/types";
 import { cn } from "@testComponents/lib/utils";
 
@@ -18,6 +19,7 @@ interface PickFromListQuestionProps {
   onChange: (value: Record<string, string>, subQuestionId?: string) => void;
   readOnly?: boolean;
   showCorrectAnswer?: boolean;
+  onQuestionHighlighted?: (questionId: string, content: string) => void;
 }
 
 export default function PickFromListQuestionRenderer({
@@ -26,6 +28,7 @@ export default function PickFromListQuestionRenderer({
   onChange,
   readOnly = false,
   showCorrectAnswer = false,
+  onQuestionHighlighted = () => {},
 }: PickFromListQuestionProps) {
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<string, string>
@@ -61,7 +64,15 @@ export default function PickFromListQuestionRenderer({
   const subQuestions = question.subQuestions || [];
   return (
     <div className="mx-auto space-y-6">
-      <RichTextContent content={question.text || ""} className="text-sm" />
+      <RichTextEditor
+        value={question.text || ""}
+        onChange={(content) => onQuestionHighlighted(question.id, content)}
+        readonly={true}
+        className={cn(
+          "leading-relaxed w-full h-full",
+        )}
+        minHeight={100}
+      />
       <div className="grid grid-cols-1 md:grid-cols-[minmax(250px,1fr)_minmax(250px,1fr)] gap-6">
         <div className="space-y-3">
           <p className="text-base font-semibold text-gray-700">List of Items</p>
