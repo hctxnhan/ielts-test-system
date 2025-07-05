@@ -62,22 +62,7 @@ export default function MatchingQuestionRenderer({
         minHeight={20}
       />
       <div className="grid grid-cols-1 md:grid-cols-[minmax(250px,1fr)_minmax(250px,1fr)] gap-6">
-        <div className="space-y-3">
-          <p className="text-base font-semibold text-gray-700">Options</p>
-          <div className="space-y-2">
-            {question.options.map((option, optionIndex) => (
-              <DraggableItem
-                key={option.id}
-                text={option.text}
-                index={option.id}
-                itemType={ITEM_TYPE}
-                prefix={String.fromCharCode(65 + optionIndex) + "."}
-                disabled={readOnly}
-                className="hover:shadow-md transition-shadow duration-200"
-              />
-            ))}
-          </div>
-        </div>
+        
 
         <div className="space-y-3">
           <p className="text-base font-semibold text-gray-700">Items</p>
@@ -174,6 +159,23 @@ export default function MatchingQuestionRenderer({
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-base font-semibold text-gray-700">Options</p>
+          <div className="space-y-2">
+            {question.options.map((option, optionIndex) => (
+              <DraggableItem
+                key={option.id}
+                text={option.text}
+                index={option.id}
+                itemType={ITEM_TYPE}
+                prefix={String.fromCharCode(65 + optionIndex) + "."}
+                disabled={readOnly}
+                className="hover:shadow-md transition-shadow duration-200"
+              />
+            ))}
           </div>
         </div>
       </div>

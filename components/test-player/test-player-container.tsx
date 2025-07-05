@@ -17,14 +17,21 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
   const [showInstructions, setShowInstructions] = useState(true);
 
   const {
+    currentTest,
     loadTest,
     startTest,
     progress,
-    currentSection,
     completeTest,
-    resetTest,
     sectionResults,
+    realTestMode,
   } = useTestStore();
+
+  // Load the test when component mounts (for instructions display)
+  useEffect(() => {
+    if (test && !currentTest) {
+      loadTest(test);
+    }
+  }, [test, currentTest, loadTest]);
 
   const showResults = progress?.completed && !!sectionResults;
 
@@ -118,21 +125,46 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
     }
   };
 
-  // Load the test when component mounts
-  useEffect(() => {
-    loadTest(test);
 
-    return () => {
-      // Clean up when component unmounts
-      resetTest();
-    };
-  }, [test, loadTest, resetTest]);
+  const handleStartTest = (
+    customMode?: boolean,
+    selectedSections?: string[],
+    selectedTypes?: string[],
+    realTestMode?: boolean
+  ) => {
 
-  const updatedTest = useMemo(() => {
-    return updateQuestionIndexes(test);
-  }, [test]);
+    let processedTest = test;
 
-  const handleStartTest = () => {
+    // Apply filtering if custom mode is enabled
+    if (customMode) {
+      // Filter sections
+      processedTest = {
+        ...processedTest,
+        sections: processedTest.sections
+          .filter(
+            (section) =>
+              !selectedSections?.length || selectedSections.includes(section.id),
+          )
+          .map((section) => ({
+            ...section,
+            questions: section.questions.filter((q) =>
+              !selectedTypes?.length || selectedTypes.includes(q.type),
+            ),
+          }))
+          .filter((section) => section.questions.length > 0), // Remove sections with no questions
+      };
+    }
+
+    // Process question indexes after filtering
+    processedTest = updateQuestionIndexes(processedTest);
+
+    loadTest(processedTest, {
+      customMode: customMode,
+      selectedSections: selectedSections || [],
+      selectedTypes: selectedTypes || [],
+      realTestMode: realTestMode,
+    });
+
     window.scrollTo({ top: 0, behavior: "smooth" });
     setShowInstructions(false);
     startTest();
@@ -212,12 +244,21 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
     }
   }, [progress, test]);
 
+  // Show loading only if we don't have the current test loaded
+  if (!currentTest) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <p>Loading test...</p>
+      </div>
+    );
+  }
+
   // If showing instructions
   if (showInstructions) {
     return (
       <TestInstructions
         onBack={onBack}
-        test={updatedTest}
+        test={currentTest}
         onStart={handleStartTest}
       />
     );
@@ -227,14 +268,23 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
   if (showResults && progress?.completed && sectionResults) {
     return (
       <div className="mx-auto p-4">
-        <TestResults currentTest={updatedTest} testResults={sectionResults} />
+        <TestResults currentTest={currentTest} testResults={sectionResults} />
+      </div>
+    );
+  }
+
+  // For the actual test running, we need both currentTest and progress
+  if (!progress) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <p>Starting test...</p>
       </div>
     );
   }
 
   return (
     <BaseTestContainer
-      test={test}
+      test={currentTest}
       progress={progress}
       onBack={onBack}
       isSubmitting={isSubmitting}
@@ -242,8 +292,8 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
       onPreviousSection={handlePreviousSection}
       onNextSection={handleNextSection}
       currentSectionIndex={progress?.currentSectionIndex || 0}
-      currentSection={currentSection()}
       jumpToSection={jumpToSection}
+      realTestMode={realTestMode}
     />
   );
 }

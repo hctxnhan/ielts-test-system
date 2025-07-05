@@ -99,7 +99,7 @@ export default function CompletionQuestionRenderer({
                     />
                   </div>
                   {isIncorrect && showCorrectAnswer && (
-                    <span className="text-green-600 text-sm whitespace-nowrap">
+                    <span className="text-green-600 text-sm whitespace-nowrap mr-2">
                       ✓ {currentSubQuestion.acceptableAnswers?.[0] || ""}
                       {currentSubQuestion.acceptableAnswers &&
                         currentSubQuestion.acceptableAnswers.length > 1 && (

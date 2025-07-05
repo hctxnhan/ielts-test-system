@@ -34,6 +34,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import FilePicker from "@testComponents/components/file-picker";
+import type { FileObject } from "@testComponents/lib/supabase-storage";
 
 // Define Zod schema for test validation
 const QuestionSchema = z
@@ -297,7 +299,7 @@ export function TestCreator({
                       <Select
                         value={currentTest.skillLevel || ""}
                         onValueChange={(value) =>
-                          updateTestDetails({ skillLevel: value })
+                          updateTestDetails({ skillLevel: value as Test["skillLevel"] })
                         }
                       >
                         <SelectTrigger id="skill-level" className="h-8 text-xs">
@@ -316,6 +318,20 @@ export function TestCreator({
                       </Select>
                     </div>
                   </div>
+
+                  {/* Listening test: Audio file input at test level */}
+                  {currentTest.type === "listening" && (
+                    <div className="space-y-1.5 col-span-full">
+                      <Label htmlFor="test-audio-file" className="text-xs font-medium">
+                        Audio File
+                      </Label>
+                      <FilePicker
+                        fileType="audio"
+                        onFileSelect={(file: FileObject) => updateTestDetails({ audioUrl: file.url })}
+                        currentFileUrl={currentTest.audioUrl || ""}
+                      />
+                    </div>
+                  )}
 
                   <div className="space-y-1.5">
                     <Label
@@ -402,7 +418,7 @@ export function TestCreator({
                   testType={currentTest.type}
                   onUpdateSection={updateSection}
                   onRemoveSection={removeSection}
-                  onAddQuestion={addQuestion}
+                  onAddQuestion={addQuestion as (sectionId: string, type: string) => void}
                   onUpdateQuestion={updateQuestion}
                   onRemoveQuestion={removeQuestion}
                   onReorderQuestion={reorderQuestion}

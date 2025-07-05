@@ -63,23 +63,30 @@ export default function MatchingHeadingsQuestionRenderer({
         )}
         minHeight={20}
       />{" "}
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)] gap-6">
-        <div className="space-y-3">
-          <p className="text-base font-semibold text-gray-700">Headings</p>
-          <div className="space-y-2">
-            {question.items.map((option, optionIndex) => (
-              <DraggableItem
-                key={option.id}
-                text={option.text}
-                index={option.id}
-                itemType={ITEM_TYPE}
-                // prefix={String.fromCharCode(65 + optionIndex) + "."}
-                disabled={readOnly}
-                className="hover:shadow-md transition-shadow duration-200"
-              />
-            ))}
+      <div className={cn(
+        "grid gap-6",
+        showCorrectAnswer 
+          ? "grid-cols-1" 
+          : "grid-cols-1 md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)]"
+      )}>
+        {!showCorrectAnswer && (
+          <div className="space-y-3">
+            <p className="text-base font-semibold text-gray-700">Headings</p>
+            <div className="space-y-2">
+              {question.items.map((option, optionIndex) => (
+                <DraggableItem
+                  key={option.id}
+                  text={option.text}
+                  index={option.id}
+                  itemType={ITEM_TYPE}
+                  // prefix={String.fromCharCode(65 + optionIndex) + "."}
+                  disabled={readOnly}
+                  className="hover:shadow-md transition-shadow duration-200"
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="space-y-3">
           <p className="text-base font-semibold text-gray-700">Paragraphs</p>
@@ -122,7 +129,7 @@ export default function MatchingHeadingsQuestionRenderer({
                       : `${index + 1}.`}{" "}
                     {item.text}
                   </Label>
-                  <div className="flex-1 flex gap-4 items-center">
+                  <div className="flex-1 flex flex-col gap-4">
                     <div
                       className={cn(
                         "flex-1 rounded-lg transition-colors duration-200",
@@ -159,8 +166,8 @@ export default function MatchingHeadingsQuestionRenderer({
                       />
                     </div>
                     {isIncorrect && showCorrectAnswer && correctHeading && (
-                      <div className="text-sm flex items-center space-x-2">
-                        <span className="text-green-600 whitespace-nowrap">
+                      <div className="text-sm flex items-start space-x-2">
+                        <span className="text-green-600 break-words">
                           ✓{" "}
                           {String.fromCharCode(
                             65 +

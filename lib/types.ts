@@ -189,6 +189,7 @@ export interface Test {
   totalQuestions: number;
   instructions: string;
   skillLevel?: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+  audioUrl?: string; // Added for listening tests
 }
 
 export interface UserAnswer {

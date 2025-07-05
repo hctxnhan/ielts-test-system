@@ -57,7 +57,7 @@ function TestTimerComponent({ initialTime, onTimeEnd, className }: TestTimerProp
   return (
     <div
       className={cn(
-        "fixed top-4 right-4 z-[60] bg-white dark:bg-gray-800 rounded-lg shadow-lg border px-4 py-2 flex items-center space-x-2 transition-all duration-300",
+        "fixed top-4 left-4 z-[60] bg-white dark:bg-gray-800 rounded-lg shadow-lg border px-4 py-2 flex items-center space-x-2 transition-all duration-300",
         {
           "bg-yellow-50 border-yellow-300 text-yellow-800": isLowTime && !isCriticalTime,
           "bg-red-50 border-red-300 text-red-800 animate-pulse": isCriticalTime,
