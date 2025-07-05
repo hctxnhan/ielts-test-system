@@ -134,10 +134,8 @@ export default function BaseTestContainer({
                         passage={currentSection.readingPassage}
                         containerRef={passageContainerRef}
                         onContentChange={(content) => {
-                          console.log("Updating passage content:", content);
-                          updatePassageContent(currentSection.id, content)
-                        }
-                        }
+                          updatePassageContent(currentSection.id, content);
+                        }}
                       />
                     </CardContent>
                   </ScrollArea>

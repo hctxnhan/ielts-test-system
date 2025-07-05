@@ -2,9 +2,7 @@
 
 import { Button } from "@testComponents/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardFooter,
+  Card
 } from "@testComponents/components/ui/card";
 import { countSectionQuestion } from "@testComponents/lib/test-utils";
 import type { Test } from "@testComponents/lib/types";
@@ -21,8 +19,8 @@ import {
   PlayCircle,
   Target,
 } from "lucide-react";
-import { Badge } from "../ui/badge";
 import { useState } from "react";
+import { Badge } from "../ui/badge";
 
 // IELTS band score chart component
 const BandScore = ({ score }: { score: number }) => {
@@ -287,7 +285,6 @@ export default function TestInstructions({
                   {test.description}
                 </p>
               )}
-              Instructions
               <div className="bg-muted/10 rounded-lg border overflow-hidden shadow-sm">
                 <div className="bg-muted/30 py-2 px-3 sm:py-2.5 sm:px-4 border-b flex items-center justify-between">
                   <h3 className="font-medium flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
@@ -430,10 +427,40 @@ export default function TestInstructions({
                       <div>
                         <div className="flex items-center justify-between mb-3">
                           <h4 className="font-medium text-sm">Sections</h4>
-                          <span className="text-xs text-muted-foreground">
-                            {selectedSections.length} of {test.sections.length}{" "}
-                            selected
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">
+                              {selectedSections.length} of{" "}
+                              {test.sections.length} selected
+                            </span>
+                            <div className="flex gap-1">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSelectedSections(
+                                    test.sections.map((s) => s.id)
+                                  )
+                                }
+                                className="text-xs text-primary hover:underline"
+                              >
+                                All
+                              </button>
+                              <span className="text-xs text-muted-foreground">
+                                |
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (selectedSections.length > 1) {
+                                    setSelectedSections([selectedSections[0]]);
+                                  }
+                                }}
+                                disabled={selectedSections.length <= 1}
+                                className="text-xs text-primary hover:underline disabled:text-muted-foreground disabled:cursor-not-allowed disabled:no-underline"
+                              >
+                                None
+                              </button>
+                            </div>
+                          </div>
                         </div>
                         <div className="space-y-2">
                           {test.sections.map((section) => (
@@ -461,7 +488,8 @@ export default function TestInstructions({
                                 {section.title || section.id}
                               </span>
                               <span className="text-xs text-muted-foreground">
-                                {countSectionQuestion(section.questions)} questions
+                                {countSectionQuestion(section.questions)}{" "}
+                                questions
                               </span>
                             </label>
                           ))}
@@ -478,10 +506,38 @@ export default function TestInstructions({
                           <h4 className="font-medium text-sm">
                             Question Types
                           </h4>
-                          <span className="text-xs text-muted-foreground">
-                            {selectedTypes.length} of {allQuestionTypes.length}{" "}
-                            selected
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">
+                              {selectedTypes.length} of{" "}
+                              {allQuestionTypes.length} selected
+                            </span>
+                            <div className="flex gap-1">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSelectedTypes([...allQuestionTypes])
+                                }
+                                className="text-xs text-primary hover:underline"
+                              >
+                                All
+                              </button>
+                              <span className="text-xs text-muted-foreground">
+                                |
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (selectedTypes.length > 1) {
+                                    setSelectedTypes([selectedTypes[0]]);
+                                  }
+                                }}
+                                disabled={selectedTypes.length <= 1}
+                                className="text-xs text-primary hover:underline disabled:text-muted-foreground disabled:cursor-not-allowed disabled:no-underline"
+                              >
+                                None
+                              </button>
+                            </div>
+                          </div>
                         </div>
                         <div className="space-y-2">
                           {allQuestionTypes.map((type) => (

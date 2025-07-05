@@ -4,7 +4,6 @@ import { Label } from "@testComponents/components/ui/label";
 import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 import type { PickFromAListQuestion } from "@testComponents/lib/types";
 import { cn } from "@testComponents/lib/utils";
-import { useEffect, useState } from "react";
 
 interface PickFromListQuestionProps {
   question: PickFromAListQuestion;
@@ -23,36 +22,44 @@ export default function PickFromListQuestionRenderer({
   showCorrectAnswer = false,
   onQuestionHighlighted = () => {},
 }: PickFromListQuestionProps) {
-  const [selectedAnswers, setSelectedAnswers] = useState<
-    Record<string, string>
-  >({});
-  useEffect(() => {
-    if (value) {
-      setSelectedAnswers(value);
-    }
-  }, [value]);
-
   const handleItemSelection = (itemId: string, checked: boolean) => {
     if (readOnly) return;
 
-    setSelectedAnswers((prev) => {
-      const updated = { ...prev };
-      if (checked) {
-        updated[itemId] = itemId;
-      } else {
-        delete updated[itemId];
+    const currentValues = value || {};
+    let selectedItems = Object.values(currentValues);
+    
+    if (checked) {
+      // Add the item if not already selected
+      if (!selectedItems.includes(itemId)) {
+        selectedItems.push(itemId);
       }
-      
-      if (question.scoringStrategy === "partial") {
-        onChange(updated, itemId);
-      } else {
-        onChange(updated);
+    } else {
+      // Remove the item
+      selectedItems = selectedItems.filter(item => item !== itemId);
+    }
+    
+    // Map selected items to subquestion IDs in order
+    const updated: Record<string, string> = {};
+
+    selectedItems.forEach((item, index) => {
+      if (index < question.subQuestions.length) {
+        const subQuestionId = question.subQuestions[index].subId;
+        updated[subQuestionId] = item;
       }
-      return updated;
     });
+    
+    if (question.scoringStrategy === "partial") {
+      // Find which subquestionId this change affects
+      const affectedSubQuestionIndex = selectedItems.indexOf(itemId);
+      const affectedSubQuestionId = affectedSubQuestionIndex >= 0 && affectedSubQuestionIndex < question.subQuestions.length
+        ? question.subQuestions[affectedSubQuestionIndex].subId
+        : undefined;
+      onChange(updated, affectedSubQuestionId);
+    } else {
+      onChange(updated);
+    }
   };
 
-  const subQuestions = question.subQuestions || [];
   return (
     <div className="mx-auto space-y-6">
       <RichTextEditor
@@ -72,7 +79,7 @@ export default function PickFromListQuestionRenderer({
         
         <div className="space-y-3">
           {question.items.map((item, index) => {
-            const isSelected = !!selectedAnswers[item.id];
+            const isSelected = value ? Object.values(value).includes(item.id) : false;
             const letter = String.fromCharCode(65 + index);
             
             // Check if this item is correct
@@ -117,9 +124,7 @@ export default function PickFromListQuestionRenderer({
                 >
                   <span className="font-medium mr-2">{letter}.</span>
                   {item.text}
-                  {shouldShowAsCorrect && (
-                    <span className="ml-2 text-green-600 font-medium">✓ Correct answer</span>
-                  )}
+                  
                 </Label>
               </div>
             );

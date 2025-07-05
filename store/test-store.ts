@@ -361,18 +361,8 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
       case "pick-from-a-list":
         if (scoringStrategy === "partial") {
-          // if answer is already choosen, skip because it is already checked
-          if (
-            question.subQuestions?.some(
-              (sq: { subId: string | number; item: any }) =>
-                answer[sq.subId] === sq.item
-            )
-          ) {
-            isCorrect = false;
-            score = 0;
-            break;
-          }
-
+          // For partial scoring, check if the current answer (item) is correct
+          // The answer parameter here is the item ID being selected
           isCorrect = question.subQuestions?.some(
             (sq: SubQuestionMeta) => sq.item === answer
           );
@@ -381,7 +371,6 @@ export const useTestStore = create<TestState>()((set, get) => ({
         } else {
           // For all-or-nothing scoring
           const totalSubQuestions = question.subQuestions?.length || 0;
-
           const totalAnswers = Object.entries(answer)?.length || 0;
 
           if (totalAnswers !== totalSubQuestions) {
@@ -389,14 +378,20 @@ export const useTestStore = create<TestState>()((set, get) => ({
             score = 0;
             break;
           }
-          const correctCount = Object.entries(answer).filter(([key, value]) =>
-            // Check if the answer value is ANY of the correct items in subQuestions
-            question.subQuestions?.some(
-              (sq: SubQuestionMeta) => sq.item === value
-            )
-          ).length;
 
-          isCorrect = correctCount === totalSubQuestions;
+          // Get all selected items (values from the answer object)
+          const selectedItems = Object.values(answer);
+          
+          // Get all correct items from subQuestions
+          const correctItems = question.subQuestions?.map((sq: SubQuestionMeta) => sq.item) || [];
+          
+          // Check if all selected items are correct (regardless of order)
+          const allItemsCorrect = selectedItems.every(item => correctItems.includes(item));
+          
+          // Check if we have the right number of correct items
+          const correctCount = selectedItems.filter(item => correctItems.includes(item)).length;
+          
+          isCorrect = allItemsCorrect && correctCount === totalSubQuestions;
           score = isCorrect ? question.points : 0;
         }
         break;
