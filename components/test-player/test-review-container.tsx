@@ -16,11 +16,9 @@ export default function TestReview({
 }: TestReviewProps) {
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
 
-  const currentSection = test.sections[currentSectionIndex];
-
   // Create a simulated progress object for review mode
   const progress: TestProgress = {
-    testId: test.id,
+    testId: test.id?.toString() || '',
     currentSectionIndex,
     currentQuestionIndex: 0,
     timeRemaining: 0,
@@ -60,7 +58,6 @@ export default function TestReview({
       onPreviousSection={handlePreviousSection}
       onNextSection={handleNextSection}
       currentSectionIndex={currentSectionIndex}
-      currentSection={currentSection}
       readOnly={true}
       jumpToSection={jumpToSection}
     />

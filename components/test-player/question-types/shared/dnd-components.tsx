@@ -57,7 +57,7 @@ export function DraggableItem({
     <div
       ref={dragRef as unknown as RefCallback<HTMLDivElement>}
       className={cn(
-        "border px-2 py-1 rounded text-xs transition-all duration-200 shadow-sm",
+        "border px-2 py-2 rounded text-xs transition-all duration-200 shadow-sm",
         {
           "opacity-50 scale-95 border-dashed": isDragging,
           "opacity-100": !isDragging,

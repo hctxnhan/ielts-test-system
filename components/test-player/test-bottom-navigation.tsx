@@ -50,20 +50,24 @@ export default function TestBottomNavigation({
     onCompleteTest();
   };
 
-  if (readOnly || !progress) {
+  if (!progress) {
     return null;
   }
 
   return (
     <>
-      {/* Floating Timer */}
-      <TestTimer initialTime={test.totalDuration} onTimeEnd={handleTimeEnd} />
+      {/* Floating Timer - Only show in non-readonly mode */}
+      {!readOnly && (
+        <TestTimer initialTime={test.totalDuration} onTimeEnd={handleTimeEnd} />
+      )}
 
-      {/* Time Up Dialog */}
-      <TimeUpDialog
-        isOpen={isTimeUpDialogOpen}
-        onSubmitTest={handleSubmitTest}
-      />
+      {/* Time Up Dialog - Only show in non-readonly mode */}
+      {!readOnly && (
+        <TimeUpDialog
+          isOpen={isTimeUpDialogOpen}
+          onSubmitTest={handleSubmitTest}
+        />
+      )}
 
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t shadow-lg">

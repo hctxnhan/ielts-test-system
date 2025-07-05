@@ -7,6 +7,7 @@ interface SectionQuestionsRendererProps {
   sectionId: string;
   isReviewMode?: boolean;
   answers: any;
+  onQuestionContentChange?: (questionId: string, content: string) => void;
 }
 
 const SectionQuestionsRenderer: React.FC<SectionQuestionsRendererProps> = ({
@@ -14,6 +15,7 @@ const SectionQuestionsRenderer: React.FC<SectionQuestionsRendererProps> = ({
   sectionId,
   isReviewMode = false,
   answers,
+  onQuestionContentChange,
 }) => {
   return (
     <div className="space-y-8">
@@ -39,6 +41,7 @@ const SectionQuestionsRenderer: React.FC<SectionQuestionsRendererProps> = ({
             isReviewMode={isReviewMode}
             question={question}
             sectionId={sectionId}
+            onQuestionContentChange={onQuestionContentChange}
           />
         </div>
       ))}

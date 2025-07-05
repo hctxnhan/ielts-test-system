@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { DraggableItem, DroppableZone } from "./shared/dnd-components";
 import { Label } from "@testComponents/components/ui/label";
 import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
+import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 import { cn } from "@testComponents/lib/utils";
 import type { StandardMatchingHeadingsQuestion } from "@testComponents/lib/standardized-types";
 
@@ -14,6 +15,7 @@ interface MatchingHeadingsQuestionProps {
   onChange: (value: Record<string, string>, subQuestionId?: string) => void;
   readOnly?: boolean;
   showCorrectAnswer?: boolean;
+  onQuestionHighlighted?: (questionId: string, content: string) => void;
 }
 
 const ITEM_TYPE = "HEADING";
@@ -24,6 +26,7 @@ export default function MatchingHeadingsQuestionRenderer({
   onChange,
   readOnly = false,
   showCorrectAnswer = false,
+  onQuestionHighlighted = () => {},
 }: MatchingHeadingsQuestionProps) {
   const [matches, setMatches] = useState<Record<string, string>>({});
 
@@ -51,24 +54,39 @@ export default function MatchingHeadingsQuestionRenderer({
   };
   return (
     <div className="mx-auto space-y-6">
-      <RichTextContent content={question.text || ""} className="text-sm" />{" "}
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)] gap-6">
-        <div className="space-y-3">
-          <p className="text-base font-semibold text-gray-700">Headings</p>
-          <div className="space-y-2">
-            {question.items.map((option, optionIndex) => (
-              <DraggableItem
-                key={option.id}
-                text={option.text}
-                index={option.id}
-                itemType={ITEM_TYPE}
-                // prefix={String.fromCharCode(65 + optionIndex) + "."}
-                disabled={readOnly}
-                className="hover:shadow-md transition-shadow duration-200"
-              />
-            ))}
+      <RichTextEditor
+        value={question.text || ""}
+        onChange={(content) => onQuestionHighlighted(question.id, content)}
+        readonly={true}
+        className={cn(
+          "leading-relaxed w-full h-full",
+        )}
+        minHeight={20}
+      />{" "}
+      <div className={cn(
+        "grid gap-6",
+        showCorrectAnswer 
+          ? "grid-cols-1" 
+          : "grid-cols-1 md:grid-cols-[minmax(200px,1fr)_minmax(200px,1fr)]"
+      )}>
+        {!showCorrectAnswer && (
+          <div className="space-y-3">
+            <p className="text-base font-semibold text-gray-700">Headings</p>
+            <div className="space-y-2">
+              {question.items.map((option, optionIndex) => (
+                <DraggableItem
+                  key={option.id}
+                  text={option.text}
+                  index={option.id}
+                  itemType={ITEM_TYPE}
+                  // prefix={String.fromCharCode(65 + optionIndex) + "."}
+                  disabled={readOnly}
+                  className="hover:shadow-md transition-shadow duration-200"
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="space-y-3">
           <p className="text-base font-semibold text-gray-700">Paragraphs</p>
@@ -111,7 +129,7 @@ export default function MatchingHeadingsQuestionRenderer({
                       : `${index + 1}.`}{" "}
                     {item.text}
                   </Label>
-                  <div className="flex-1 flex gap-4 items-center">
+                  <div className="flex-1 flex flex-col gap-4">
                     <div
                       className={cn(
                         "flex-1 rounded-lg transition-colors duration-200",
@@ -148,8 +166,8 @@ export default function MatchingHeadingsQuestionRenderer({
                       />
                     </div>
                     {isIncorrect && showCorrectAnswer && correctHeading && (
-                      <div className="text-sm flex items-center space-x-2">
-                        <span className="text-green-600 whitespace-nowrap">
+                      <div className="text-sm flex items-start space-x-2">
+                        <span className="text-green-600 break-words">
                           ✓{" "}
                           {String.fromCharCode(
                             65 +
