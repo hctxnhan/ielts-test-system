@@ -1,4 +1,5 @@
 "use client";
+
 import React from "react";
 import { cn } from "@testComponents/lib/utils";
 import Color from "@tiptap/extension-color";
@@ -11,7 +12,12 @@ import TextStyle from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
 import { Editor, EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { Extension } from "@tiptap/core";
 import {
+  AlignCenter,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
   Bold,
   Code,
   Heading1,
@@ -43,6 +49,33 @@ interface RichTextEditorProps {
   maxHeight?: number;
   readonly?: boolean;
 }
+
+// Custom extension to allow style attributes on all nodes
+const CustomTextAlign = Extension.create({
+  name: 'customTextAlign',
+
+  addGlobalAttributes() {
+    return [
+      {
+        types: ['heading', 'paragraph'],
+        attributes: {
+          style: {
+            default: null,
+            parseHTML: element => element.getAttribute('style'),
+            renderHTML: attributes => {
+              if (!attributes.style) {
+                return {}
+              }
+              return {
+                style: attributes.style,
+              }
+            },
+          },
+        },
+      },
+    ]
+  },
+})
 
 // Floating Table Toolbar Component
 const FloatingTableToolbar = ({ editor }: { editor: Editor | null }) => {
@@ -376,7 +409,31 @@ const FloatingHighlightToolbar = ({ editor, readonly = false }: { editor: Editor
 };
 
 const Toolbar = ({ editor }: { editor: Editor | null }) => {
+  const [currentAlignment, setCurrentAlignment] = useState('left');
+
   if (!editor) return null;
+
+  // Update current alignment when selection changes
+  useEffect(() => {
+    if (!editor) return;
+
+    const updateAlignment = () => {
+      const alignment = getCurrentAlignment();
+      setCurrentAlignment(alignment);
+    };
+
+    // Update on selection change
+    editor.on('selectionUpdate', updateAlignment);
+    editor.on('update', updateAlignment);
+
+    // Initial update
+    updateAlignment();
+
+    return () => {
+      editor.off('selectionUpdate', updateAlignment);
+      editor.off('update', updateAlignment);
+    };
+  }, [editor]);
 
   const addTable = () => {
     editor
@@ -384,6 +441,98 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
       .focus()
       .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
       .run();
+  };
+
+  const setTextAlign = (alignment: 'left' | 'center' | 'right' | 'justify') => {
+    console.log('Setting text alignment to:', alignment);
+    
+    // Focus the editor first
+    editor.commands.focus();
+    
+    // Get the current selection
+    const { from, to } = editor.state.selection;
+    console.log('Selection from:', from, 'to:', to);
+    
+    // Use a more direct approach to set node attributes
+    const success = editor.chain()
+      .command(({ tr, state }) => {
+        const { from, to } = state.selection;
+        
+        // Apply text-align style to all block nodes in selection
+        state.doc.nodesBetween(from, to, (node, pos) => {
+          console.log('Processing node:', node.type.name, 'at position:', pos, 'attrs:', node.attrs);
+          
+          if (node.type.name === 'paragraph' || node.type.name.startsWith('heading')) {
+            const currentStyle = node.attrs.style || '';
+            console.log('Current style:', currentStyle);
+            
+            // Remove existing text-align styles
+            const cleanStyle = currentStyle.replace(/text-align:\s*[^;]+;?\s*/g, '').trim();
+            // Add new text-align style
+            const newStyle = cleanStyle 
+              ? `${cleanStyle}; text-align: ${alignment}` 
+              : `text-align: ${alignment}`;
+            
+            console.log('New style will be:', newStyle);
+            
+            // Apply the new style
+            tr.setNodeMarkup(pos, undefined, {
+              ...node.attrs,
+              style: newStyle
+            });
+            
+            console.log('Node updated with style:', newStyle);
+          }
+        });
+        
+        return true;
+      })
+      .run();
+    
+    console.log('Command success:', success);
+    
+    // Force a re-render to update the current alignment state
+    setTimeout(() => {
+      const alignment = getCurrentAlignment();
+      console.log('Current alignment after update:', alignment);
+      setCurrentAlignment(alignment);
+    }, 10);
+  };
+
+  const getCurrentAlignment = () => {
+    const { state } = editor;
+    const { $from } = state.selection;
+    
+    // Try to get the alignment from the current node
+    let currentNode = $from.node($from.depth);
+    
+    // If we're in a text node, get the parent node
+    if (currentNode.type.name === 'text') {
+      currentNode = $from.node($from.depth - 1);
+    }
+    
+    // Check for inline style
+    if (currentNode && currentNode.attrs && currentNode.attrs.style) {
+      const match = currentNode.attrs.style.match(/text-align:\s*([^;]+)/);
+      if (match) {
+        return match[1].trim();
+      }
+    }
+    
+    // Check for class-based alignment
+    if (currentNode && currentNode.attrs && currentNode.attrs.class) {
+      const classes = currentNode.attrs.class.split(' ');
+      for (const cls of classes) {
+        if (cls.startsWith('text-')) {
+          const alignment = cls.replace('text-', '');
+          if (['left', 'center', 'right', 'justify'].includes(alignment)) {
+            return alignment;
+          }
+        }
+      }
+    }
+    
+    return 'left';
   };
 
   return (
@@ -444,6 +593,39 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
       >
         <Heading3 className="w-4 h-4" />
+      </Button>
+      <div className="w-px h-6 bg-gray-300 mx-1" />
+      <Button
+        variant={currentAlignment === "left" ? "default" : "ghost"}
+        size="sm"
+        onClick={() => setTextAlign("left")}
+        title="Align Left"
+      >
+        <AlignLeft className="w-4 h-4" />
+      </Button>
+      <Button
+        variant={currentAlignment === "center" ? "default" : "ghost"}
+        size="sm"
+        onClick={() => setTextAlign("center")}
+        title="Align Center"
+      >
+        <AlignCenter className="w-4 h-4" />
+      </Button>
+      <Button
+        variant={currentAlignment === "right" ? "default" : "ghost"}
+        size="sm"
+        onClick={() => setTextAlign("right")}
+        title="Align Right"
+      >
+        <AlignRight className="w-4 h-4" />
+      </Button>
+      <Button
+        variant={currentAlignment === "justify" ? "default" : "ghost"}
+        size="sm"
+        onClick={() => setTextAlign("justify")}
+        title="Justify"
+      >
+        <AlignJustify className="w-4 h-4" />
       </Button>
       <div className="w-px h-6 bg-gray-300 mx-1" />
       <Button
@@ -511,6 +693,7 @@ export function RichTextEditor({
           dropcursor: false,
         }),
       }),
+      CustomTextAlign,
       Table.configure({
         resizable: !readonly,
       }),
@@ -605,6 +788,25 @@ export function RichTextEditor({
         }
         .rich-text-editor .ProseMirror p {
           margin-bottom: 0.75rem;
+        }
+        .rich-text-editor .ProseMirror h1[style*="text-align"],
+        .rich-text-editor .ProseMirror h2[style*="text-align"],
+        .rich-text-editor .ProseMirror h3[style*="text-align"],
+        .rich-text-editor .ProseMirror p[style*="text-align"] {
+          /* Inline text-align styles will be preserved and applied */
+        }
+        /* Fallback text alignment utility classes */
+        .rich-text-editor .ProseMirror .text-left {
+          text-align: left !important;
+        }
+        .rich-text-editor .ProseMirror .text-center {
+          text-align: center !important;
+        }
+        .rich-text-editor .ProseMirror .text-right {
+          text-align: right !important;
+        }
+        .rich-text-editor .ProseMirror .text-justify {
+          text-align: justify !important;
         }
         .rich-text-editor .ProseMirror ul,
         .rich-text-editor .ProseMirror ol {
