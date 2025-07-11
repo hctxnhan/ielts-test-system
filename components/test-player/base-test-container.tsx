@@ -85,7 +85,7 @@ export default function BaseTestContainer({
     test.type === "listening" || test.skill === "listening";
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="pb-20">
+      <div className="pb-10">
         {/* Add bottom padding for fixed navigation */}
 
         <div className="mb-6">

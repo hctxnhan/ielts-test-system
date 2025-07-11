@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import type { Test, TestProgress, TestResult } from "@testComponents/lib/types";
 import BaseTestContainer from "./base-test-container";
 
@@ -15,6 +15,7 @@ export default function TestReview({
   onBack
 }: TestReviewProps) {
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Create a simulated progress object for review mode
   const progress: TestProgress = {
@@ -28,38 +29,46 @@ export default function TestReview({
     completedAt: testResults.completedAt
   };
 
+  const scrollToTop = () => {
+    if (containerRef.current) {
+      containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   const handleNextSection = () => {
     if (currentSectionIndex < test.sections.length - 1) {
       setCurrentSectionIndex(currentSectionIndex + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTop();
     }
   };
 
   const handlePreviousSection = () => {
     if (currentSectionIndex > 0) {
       setCurrentSectionIndex(currentSectionIndex - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTop();
     }
   };
 
   const jumpToSection = (index: number) => {
     if (index >= 0 && index < test.sections.length) {
       setCurrentSectionIndex(index);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTop();
     }
   };
 
   return (
-    <BaseTestContainer
-      test={test}
-      progress={progress}
-      onBack={onBack}
-      onCompleteTest={() => {}}
-      onPreviousSection={handlePreviousSection}
-      onNextSection={handleNextSection}
-      currentSectionIndex={currentSectionIndex}
-      readOnly={true}
-      jumpToSection={jumpToSection}
-    />
+    <div ref={containerRef}>
+      <BaseTestContainer
+        test={test}
+        progress={progress}
+        onBack={onBack}
+        onCompleteTest={() => {}}
+        onPreviousSection={handlePreviousSection}
+        onNextSection={handleNextSection}
+        currentSectionIndex={currentSectionIndex}
+        readOnly={true}
+        jumpToSection={jumpToSection}
+      />
+    </div>
   );
 }

@@ -1,5 +1,5 @@
 "use client";
-import { updateQuestionIndexes } from "@testComponents/lib/test";
+import { processTestWithFilters, type TestFilterConfig } from "@testComponents/lib/test";
 import type { Test } from "@testComponents/lib/types";
 import { useTestStore } from "@testComponents/store/test-store";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -132,31 +132,12 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
     selectedTypes?: string[],
     realTestMode?: boolean
   ) => {
-
-    let processedTest = test;
-
-    // Apply filtering if custom mode is enabled
-    if (customMode) {
-      // Filter sections
-      processedTest = {
-        ...processedTest,
-        sections: processedTest.sections
-          .filter(
-            (section) =>
-              !selectedSections?.length || selectedSections.includes(section.id),
-          )
-          .map((section) => ({
-            ...section,
-            questions: section.questions.filter((q) =>
-              !selectedTypes?.length || selectedTypes.includes(q.type),
-            ),
-          }))
-          .filter((section) => section.questions.length > 0), // Remove sections with no questions
-      };
-    }
-
-    // Process question indexes after filtering
-    processedTest = updateQuestionIndexes(processedTest);
+    // Process the test with filters using the utility function
+    const processedTest = processTestWithFilters(test, {
+      customMode,
+      selectedSections,
+      selectedTypes,
+    });
 
     loadTest(processedTest, {
       customMode: customMode,

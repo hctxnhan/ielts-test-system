@@ -93,13 +93,13 @@ export default function WritingTask1QuestionRenderer({
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Writing Task 1</h3>
       </div>{" "}
-      <div className="flex gap-4">
-        <Card className="p-4 flex-1">
+      <div className="flex flex-col lg:flex-row gap-4">
+        <div className="p-4 flex-1 max-h-[500px] overflow-auto bg-white border-gray-100 rounded-md border">
           <RichTextEditor
             value={question.text || ""}
             onChange={(content) => onQuestionHighlighted(question.id, content)}
             readonly={true}
-            className={cn("leading-relaxed w-full h-full")}
+            className={cn("leading-relaxed")}
             minHeight={100}
           />{" "}
           {question.imageUrl && (
@@ -114,7 +114,7 @@ export default function WritingTask1QuestionRenderer({
           <p className="text-sm text-muted-foreground mb-4">
             Write at least {question.wordLimit || 150} words.
           </p>
-        </Card>
+        </div>
         <div className="flex-1">
           <AutoResizeTextarea
             value={currentEssay || ""}

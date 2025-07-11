@@ -10,15 +10,17 @@ import type {
 } from "@testComponents/lib/types";
 import { create } from "zustand";
 
+export type TestConfig = {
+  customMode?: boolean;
+  selectedSections?: string[];
+  selectedTypes?: string[];
+}
+
 // Type for the submission function
 export type SubmitResultFn = (
   testId: number,
   results: TestResult,
-  config?: {
-    customMode?: boolean;
-    selectedSections?: string[];
-    selectedTypes?: string[];
-  }
+  config?: TestConfig
 ) => Promise<any>;
 
 type ScoreEssayFn = (param: {
