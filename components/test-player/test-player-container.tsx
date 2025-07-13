@@ -24,6 +24,7 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
     completeTest,
     sectionResults,
     realTestMode,
+    resetTest,
   } = useTestStore();
 
   // Load the test when component mounts (for instructions display)
@@ -32,6 +33,13 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
       loadTest(test);
     }
   }, [test, currentTest, loadTest]);
+
+  // Reset the store when component unmounts
+  useEffect(() => {
+    return () => {
+      resetTest();
+    };
+  }, [resetTest]);
 
   const showResults = progress?.completed && !!sectionResults;
 

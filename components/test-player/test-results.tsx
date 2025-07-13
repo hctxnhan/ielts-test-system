@@ -34,14 +34,14 @@ const ScoreCircle = ({ percentage }: { percentage: number }) => {
   const colorClass = getScoreColorClass(percentage);
 
   return (
-    <div className="relative w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32">
+    <div className="relative w-32 h-32 sm:w-36 sm:h-36 lg:w-40 lg:h-40">
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl sm:text-3xl font-bold">{percentage}%</span>{' '}
+        <span className="text-3xl sm:text-4xl lg:text-5xl font-bold">{percentage}%</span>{' '}
       </div>
       <svg className="w-full h-full" viewBox="0 0 100 100">
         <circle
           className="text-muted stroke-current"
-          strokeWidth="8"
+          strokeWidth="6"
           fill="transparent"
           r="46"
           cx="50"
@@ -49,7 +49,7 @@ const ScoreCircle = ({ percentage }: { percentage: number }) => {
         />
         <circle
           className={`${colorClass} stroke-current transition-all duration-1000 ease-out`}
-          strokeWidth="8"
+          strokeWidth="6"
           strokeLinecap="round"
           fill="transparent"
           r="46"
@@ -76,11 +76,11 @@ const MetricCard = ({
   value: React.ReactNode;
   iconColor?: string;
 }) => (
-  <div className="flex items-center gap-1.5 sm:gap-2 bg-muted p-1.5 sm:p-2 rounded-md">
-    <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${iconColor} shrink-0`} />
-    <div className="text-xs sm:text-sm">
-      <div className="font-bold">{title}</div>
-      <div className="text-muted-foreground">{value}</div>
+  <div className="flex flex-col items-center gap-3 bg-muted/50 border border-muted p-4 sm:p-5 lg:p-6 rounded-lg hover:bg-muted/70 transition-colors">
+    <Icon className={`h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 ${iconColor} shrink-0`} />
+    <div className="text-center">
+      <div className="font-bold text-sm sm:text-base lg:text-lg mb-1">{title}</div>
+      <div className="text-muted-foreground font-semibold text-base sm:text-lg lg:text-xl">{value}</div>
     </div>
   </div>
 );
@@ -168,23 +168,25 @@ export default function TestResults({ currentTest, testResults }: TestResultsPro
   return (
     <>
       <Card className="overflow-hidden border-2 shadow-md">
-        <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 pb-2 px-3 sm:px-6 py-3 sm:py-4">
-          <CardTitle className="text-base sm:text-xl flex items-center justify-center">
-            <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center mr-2">
-              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
+        <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 pb-4 px-4 sm:px-8 py-6 sm:py-8">
+          <CardTitle className="text-xl sm:text-2xl lg:text-3xl flex items-center justify-center font-bold">
+            <span className="bg-primary text-primary-foreground rounded-full w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 flex items-center justify-center mr-3 sm:mr-4">
+              <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
             </span>
             {currentTest.title} -{' '}
             {(currentTest.skill ?? currentTest.type ?? '').toUpperCase()}
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="space-y-4 sm:space-y-5 pt-4 sm:pt-5 px-3 sm:px-6">
+        <CardContent className="space-y-6 sm:space-y-8 pt-6 sm:pt-8 px-4 sm:px-8">
           {/* Stats Summary */}
 
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-6">
-            <ScoreCircle percentage={scorePercentage} />
+          <div className="flex flex-col lg:flex-row justify-between items-center gap-6 sm:gap-8 lg:gap-10">
+            <div className="flex-shrink-0">
+              <ScoreCircle percentage={scorePercentage} />
+            </div>
 
-            <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 w-full lg:flex-1">
               <MetricCard
                 icon={Clock}
                 title="Thời gian làm bài"
@@ -192,43 +194,15 @@ export default function TestResults({ currentTest, testResults }: TestResultsPro
               />
               <MetricCard
                 icon={CheckCircle2}
-                title="Mức độ chính xác"
-                value={`${correctAnswers}/${answeredQuestions}`}
+                title="Số câu đúng"
+                value={`${correctAnswers}/${totalQuestions}`}
                 iconColor="text-green-500"
               />
               <MetricCard
                 icon={BarChart3}
-                title="Mức độ hoàn thành"
-                value={`${answeredQuestions}/${totalQuestions}`}
+                title="Band Ước Tính"
+                value={`${estimatedBandScore}/${9}`}
               />
-            </div>
-          </div>
-
-          {/* Score Summary */}
-          <div className="bg-muted/40 rounded-lg p-2 sm:p-3 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
-            <div className="text-sm w-full sm:w-auto">
-              <h3 className="font-medium text-center sm:text-left">
-                Tổng Điểm
-              </h3>
-              <div className="text-lg font-semibold mt-1 text-center sm:text-left">
-                {totalScore.toFixed(1)} / {maxPossibleScore}
-                <span className="text-xs text-muted-foreground ml-2">điểm</span>
-              </div>
-            </div>
-
-            <div className="space-y-1 flex-1 w-full sm:max-w-xs sm:mx-auto px-2">
-              <div className="flex text-sm text-muted-foreground gap-4">
-                <span>Ước Tính Band Điểm</span>
-                <span className="font-bold">{estimatedBandScore}/9</span>
-              </div>
-              <div className="bg-muted h-1.5 sm:h-2 rounded-full overflow-hidden bg-neutral-100">
-                <div
-                  className={`h-full transition-all duration-1000 ease-out ${getScoreBgClass(
-                    scorePercentage
-                  )}`}
-                  style={{ width: `${scorePercentage}%` }}
-                ></div>
-              </div>
             </div>
           </div>
 

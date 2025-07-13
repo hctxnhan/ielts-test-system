@@ -548,6 +548,13 @@ export const useTestStore = create<TestState>()((set, get) => ({
     set({
       currentTest: null,
       progress: null,
+      sectionResults: null,
+      realTestMode: false,
+      customMode: {
+        enabled: false,
+        includedSections: [],
+        includedQuestionTypes: [],
+      },
     });
   },
 
