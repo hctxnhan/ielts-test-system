@@ -1,9 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useState } from "react";
 import { Button } from "@testComponents/components/ui/button";
 import type { Test, TestProgress, UserAnswer } from "@testComponents/lib/types";
 import NavigationButtons from "./navigation-buttons";
+import TestTimer from "./test-timer";
+import TimeUpDialog from "./time-up-dialog";
 import { getSectionStats } from "@testComponents/lib/test-utils";
 
 interface TestBottomNavigationProps {
@@ -37,82 +39,200 @@ export default function TestBottomNavigation({
   jumpToSection,
   answers = {},
 }: TestBottomNavigationProps) {
-  if (readOnly || !progress) {
+  const [isTimeUpDialogOpen, setIsTimeUpDialogOpen] = useState(false);
+
+  const handleTimeEnd = useCallback(() => {
+    setIsTimeUpDialogOpen(true);
+  }, []);
+
+  const handleSubmitTest = () => {
+    setIsTimeUpDialogOpen(false);
+    onCompleteTest();
+  };
+
+  if (!progress) {
     return null;
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t shadow-lg">
-      <div className="flex items-center justify-between p-4">
-        {/* Section Navigation */}
-        <div className="flex items-center space-x-4 flex-1">
-          <div className="flex items-center space-x-2">
-            <span className="font-medium text-sm">{currentSection.title}</span>
-            <span className="text-xs text-muted-foreground">
-              {progress.answers
-                ? Object.keys(progress.answers).filter((key) =>
-                    currentSection.questions.some(
-                      (q: { id: string }) => q.id === key,
-                    ),
-                  ).length
-                : 0}{" "}
-              / {currentSection.questions.length}
-            </span>
+    <>
+      {/* Floating Timer - Only show in non-readonly mode */}
+      {!readOnly && (
+        <TestTimer initialTime={test.totalDuration} onTimeEnd={handleTimeEnd} />
+      )}
+
+      {/* Time Up Dialog - Only show in non-readonly mode */}
+      {!readOnly && (
+        <TimeUpDialog
+          isOpen={isTimeUpDialogOpen}
+          onSubmitTest={handleSubmitTest}
+        />
+      )}
+
+      {/* Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t shadow-lg">
+        {/* Mobile Layout */}
+        <div className="block md:hidden">
+          <div className="p-3 space-y-2">
+            {/* Current Section Info */}
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-sm truncate">
+                {currentSection.title}
+              </span>
+              <span className="text-xs text-muted-foreground shrink-0">
+                {(() => {
+                  const fullSection = test.sections[currentSectionIndex];
+                  const sectionStatus = getSectionStats(fullSection, answers);
+                  return sectionStatus.sectionAnswers.length;
+                })()} / {currentSection.questions.length}
+              </span>
+            </div>
+
+            {/* Section Pills - Compact */}
+            <div className="flex items-center justify-center space-x-1 overflow-x-auto pb-1">
+              {/* Previous Button - Icon Only */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onPreviousSection}
+                disabled={currentSectionIndex === 0 || readOnly}
+                className="px-2 py-1 shrink-0"
+              >
+                ←
+              </Button>
+
+              {test.sections.map((section, index) => {
+                const firstQuestion = section.questions[0];
+                const lastQuestion = section.questions.at(-1);
+                const startIndex = firstQuestion.index || 0;
+                const endIndex =
+                  lastQuestion?.partialEndingIndex || lastQuestion?.index || 0;
+                const questionCount = endIndex - startIndex + 1;
+                const sectionStatus = getSectionStats(section, answers);
+                const answeredQuestionsCount = sectionStatus.sectionAnswers.length;
+                const isComplete = answeredQuestionsCount === questionCount;
+                const isCurrent = index === currentSectionIndex;
+
+                return (
+                  <Button
+                    key={section.id}
+                    variant={isCurrent ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => jumpToSection(index)}
+                    className={`px-2 py-1 text-xs shrink-0 min-w-[50px] ${
+                      isComplete
+                        ? "bg-green-100 border-green-300 text-green-800"
+                        : ""
+                    }`}
+                  >
+                    P{index + 1}
+                    <span className="ml-1 text-xs">
+                      {answeredQuestionsCount}/{questionCount}
+                    </span>
+                  </Button>
+                );
+              })}
+
+              {/* Next/Complete Button - Icon Only */}
+              {currentSectionIndex === test.sections.length - 1 ? (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={onCompleteTest}
+                  disabled={isSubmitting || readOnly}
+                  className="px-2 py-1 shrink-0 bg-green-600 hover:bg-green-700"
+                >
+                  ✓
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onNextSection}
+                  disabled={readOnly}
+                  className="px-2 py-1 shrink-0"
+                >
+                  →
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Section Pills */}
-        <div className="flex items-center space-x-2 flex-1 justify-center">
-          {test.sections.map((section, index) => {
-            // Calculate question count and completion status
-            const firstQuestion = section.questions[0];
-            const lastQuestion = section.questions.at(-1);
-            const startIndex = firstQuestion.index || 0;
-            const endIndex =
-              lastQuestion?.partialEndingIndex || lastQuestion?.index || 0;
-
-            const questionCount = endIndex - startIndex + 1;
-            const sectionStatus = getSectionStats(section, answers);
-
-            // Count answered questions
-            const answeredQuestionsCount = sectionStatus.sectionAnswers.length;
-            const isComplete = answeredQuestionsCount === questionCount;
-            const isCurrent = index === currentSectionIndex;
-
-            return (
-              <Button
-                key={section.id}
-                variant={isCurrent ? "default" : "outline"}
-                size="sm"
-                onClick={() => jumpToSection(index)}
-                className={`px-3 py-1 text-xs ${
-                  isComplete
-                    ? "bg-green-100 border-green-300 text-green-800"
-                    : ""
-                }`}
-              >
-                Part {index + 1}
-                <span className="ml-1 text-xs">
-                  {answeredQuestionsCount} / {questionCount}
+        {/* Desktop Layout */}
+        <div className="hidden md:block">
+          <div className="flex items-center justify-between p-4">
+            {/* Section Navigation */}
+            <div className="flex items-center space-x-4 flex-1">
+              <div className="flex items-center space-x-2">
+                <span className="font-medium text-sm">
+                  {currentSection.title}
                 </span>
-              </Button>
-            );
-          })}
-        </div>
+                <span className="text-xs text-muted-foreground">
+                  {(() => {
+                    const fullSection = test.sections[currentSectionIndex];
+                    const sectionStatus = getSectionStats(fullSection, answers);
+                    return sectionStatus.sectionAnswers.length;
+                  })()} / {currentSection.questions.length}
+                </span>
+              </div>
+            </div>
 
-        {/* Navigation Buttons */}
-        <div className="flex items-center space-x-2 flex-1 justify-end">
-          <NavigationButtons
-            readOnly={readOnly}
-            isSubmitting={isSubmitting}
-            currentSectionIndex={currentSectionIndex}
-            totalSections={test.sections.length}
-            onPreviousSection={onPreviousSection}
-            onNextSection={onNextSection}
-            onCompleteTest={onCompleteTest}
-          />
+            {/* Section Pills */}
+            <div className="flex items-center space-x-2 flex-1 justify-center">
+              {test.sections.map((section, index) => {
+                // Calculate question count and completion status
+                const firstQuestion = section.questions[0];
+                const lastQuestion = section.questions.at(-1);
+                const startIndex = firstQuestion.index || 0;
+                const endIndex =
+                  lastQuestion?.partialEndingIndex || lastQuestion?.index || 0;
+
+                const questionCount = endIndex - startIndex + 1;
+                const sectionStatus = getSectionStats(section, answers);
+
+                // Count answered questions
+                const answeredQuestionsCount =
+                  sectionStatus.sectionAnswers.length;
+                const isComplete = answeredQuestionsCount === questionCount;
+                const isCurrent = index === currentSectionIndex;
+
+                return (
+                  <Button
+                    key={section.id}
+                    variant={isCurrent ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => jumpToSection(index)}
+                    className={`px-3 py-1 text-xs ${
+                      isComplete
+                        ? "bg-green-100 border-green-300 text-green-800"
+                        : ""
+                    }`}
+                  >
+                    Part {index + 1}
+                    <span className="ml-1 text-xs">
+                      {answeredQuestionsCount} / {questionCount}
+                    </span>
+                  </Button>
+                );
+              })}
+            </div>
+
+            {/* Navigation Buttons */}
+            <div className="flex items-center space-x-2 flex-1 justify-end">
+              <NavigationButtons
+                readOnly={readOnly}
+                isSubmitting={isSubmitting}
+                currentSectionIndex={currentSectionIndex}
+                totalSections={test.sections.length}
+                onPreviousSection={onPreviousSection}
+                onNextSection={onNextSection}
+                onCompleteTest={onCompleteTest}
+              />
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

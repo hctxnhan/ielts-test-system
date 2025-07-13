@@ -26,6 +26,7 @@ interface QuestionRendererProps {
   sectionId: string;
   isReviewMode?: boolean;
   answers: any;
+  onQuestionContentChange?: (questionId: string, content: string) => void;
 }
 
 // Type guard for questions with subQuestions
@@ -141,14 +142,31 @@ export default function QuestionRenderer({
   question,
   sectionId,
   answers,
-  isReviewMode = false
+  isReviewMode = false,
+  onQuestionContentChange
 }: QuestionRendererProps) {
-  const { submitAnswer } = useTestStore();
+  const { submitAnswer, currentTest } = useTestStore();
   const [localAnswer, setLocalAnswer] = useState<
     AnswerType | WritingTaskAnswer
   >(null);
   const questionIdRef = useRef(question.id);
   const hasInitializedRef = useRef(false);
+
+  // Get updated question text from store
+  const getUpdatedQuestion = () => {
+    if (!currentTest) return question;
+    
+    // Find the question in the current test data (which contains updates)
+    for (const section of currentTest.sections) {
+      const foundQuestion = section.questions.find(q => q.id === question.id);
+      if (foundQuestion) {
+        return foundQuestion;
+      }
+    }
+    return question; // fallback to original if not found
+  };
+
+  const updatedQuestion = getUpdatedQuestion();
 
   // Initialize local answer from store if available
   useEffect(() => {
@@ -158,11 +176,11 @@ export default function QuestionRenderer({
     }
 
     if (!hasInitializedRef.current) {
-      setLocalAnswer(getLocalAnswerFromProgress(question, answers));
+      setLocalAnswer(getLocalAnswerFromProgress(updatedQuestion, answers));
 
       hasInitializedRef.current = true;
     }
-  }, [question.id, answers]);
+  }, [question.id, answers, updatedQuestion]);
 
   // Handle answer changes with debouncing
   const handleChange = (
@@ -171,112 +189,148 @@ export default function QuestionRenderer({
   ) => {
     setLocalAnswer(newAnswer);
     setTimeout(() => {
-      submitQuestionAnswer(question, newAnswer, submitAnswer, subId);
+      submitQuestionAnswer(updatedQuestion, newAnswer, submitAnswer, subId);
     }, 100);
   };
 
   // Render question based on type
-  switch (question.type) {
-    case 'multiple-choice':
+  const isWritingTask =
+    updatedQuestion.type === "writing-task1" ||
+    updatedQuestion.type === "writing-task2";
+
+  const containerStyle = isWritingTask
+    ? { maxWidth: "none" }
+    : { maxWidth: 900, margin: "0 auto" };
+
+  switch (updatedQuestion.type) {
+    case "multiple-choice":
       return (
-        <MultipleChoiceQuestionComponent
-          question={question}
-          // Adjust cast: if null, pass undefined
-          value={(localAnswer as string | null) ?? undefined}
-          onChange={handleChange}
-          readOnly={isReviewMode}
-          showCorrectAnswer={isReviewMode}
-        />
+        <div style={containerStyle}>
+          <MultipleChoiceQuestionComponent
+            question={updatedQuestion}
+            value={(localAnswer as string | null) ?? undefined}
+            onChange={handleChange}
+            readOnly={isReviewMode}
+            showCorrectAnswer={isReviewMode}
+            onQuestionHighlighted={onQuestionContentChange}
+          />
+        </div>
       );
 
-    case 'completion':
+    case "completion":
       return (
-        <CompletionQuestionComponent
-          question={question}
-          value={localAnswer as Record<string, string> | null}
-          onChange={handleChange}
-          readOnly={isReviewMode}
-          showCorrectAnswer={isReviewMode}
-        />
+        <div style={containerStyle}>
+          <CompletionQuestionComponent
+            question={updatedQuestion}
+            value={localAnswer as Record<string, string> | null}
+            onChange={handleChange}
+            readOnly={isReviewMode}
+            showCorrectAnswer={isReviewMode}
+            onQuestionHighlighted={onQuestionContentChange}
+          />
+        </div>
       );
 
-    case 'matching':
+    case "matching":
       return (
-        <MatchingQuestionComponent
-          question={question}
-          value={localAnswer as Record<string, string> | null}
-          onChange={handleChange}
-          readOnly={isReviewMode}
-          showCorrectAnswer={isReviewMode}
-        />
+        <div style={containerStyle}>
+          <MatchingQuestionComponent
+            question={updatedQuestion}
+            value={localAnswer as Record<string, string> | null}
+            onChange={handleChange}
+            readOnly={isReviewMode}
+            showCorrectAnswer={isReviewMode}
+            onQuestionHighlighted={onQuestionContentChange}
+          />
+        </div>
       );
 
-    case 'labeling':
+    case "labeling":
       return (
-        <LabelingQuestionComponent
-          question={question}
-          value={localAnswer as Record<string, string> | null}
-          onChange={handleChange}
-          readOnly={isReviewMode}
-          showCorrectAnswer={isReviewMode}
-        />
+        <div style={containerStyle}>
+          <LabelingQuestionComponent
+            question={updatedQuestion}
+            value={localAnswer as Record<string, string> | null}
+            onChange={handleChange}
+            readOnly={isReviewMode}
+            showCorrectAnswer={isReviewMode}
+            onQuestionHighlighted={onQuestionContentChange}
+          />
+        </div>
       );
 
-    case 'pick-from-a-list':
+    case "pick-from-a-list":
       return (
-        <PickFromListQuestionComponent
-          question={question}
-          value={localAnswer as Record<string, string> | null}
-          onChange={handleChange}
-          readOnly={isReviewMode}
-          showCorrectAnswer={isReviewMode}
-        />
+        <div style={containerStyle}>
+          <PickFromListQuestionComponent
+            question={updatedQuestion}
+            value={localAnswer as Record<string, string> | null}
+            onChange={handleChange}
+            readOnly={isReviewMode}
+            showCorrectAnswer={isReviewMode}
+            onQuestionHighlighted={onQuestionContentChange}
+          />
+        </div>
       );
 
-    case 'true-false-not-given':
+    case "true-false-not-given":
       return (
-        <TrueFalseNotGivenQuestionComponent
-          question={question}
-          value={localAnswer as Record<string, string> | null}
-          onChange={handleChange}
-          readOnly={isReviewMode}
-          showCorrectAnswer={isReviewMode}
-        />
+        <div style={containerStyle}>
+          <TrueFalseNotGivenQuestionComponent
+            question={updatedQuestion}
+            value={localAnswer as Record<string, string> | null}
+            onChange={handleChange}
+            readOnly={isReviewMode}
+            showCorrectAnswer={isReviewMode}
+            onQuestionHighlighted={onQuestionContentChange}
+          />
+        </div>
       );
 
-    case 'matching-headings':
+    case "matching-headings":
       return (
-        <MatchingHeadingsQuestionComponent
-          question={question}
-          value={localAnswer as Record<string, string> | null}
-          onChange={handleChange}
-          readOnly={isReviewMode}
-          showCorrectAnswer={isReviewMode}
-        />
+        <div style={containerStyle}>
+          <MatchingHeadingsQuestionComponent
+            question={updatedQuestion}
+            value={localAnswer as Record<string, string> | null}
+            onChange={handleChange}
+            readOnly={isReviewMode}
+            showCorrectAnswer={isReviewMode}
+            onQuestionHighlighted={onQuestionContentChange}
+          />
+        </div>
       );
 
-    case 'short-answer':
+    case "short-answer":
       return (
-        <ShortAnswerQuestionComponent
-          question={question}
-          value={localAnswer as Record<string, string> | null}
-          onChange={handleChange}
-          readOnly={isReviewMode}
-          showCorrectAnswer={isReviewMode}
-        />
+        <div style={containerStyle}>
+          <ShortAnswerQuestionComponent
+            question={updatedQuestion}
+            value={localAnswer as Record<string, string> | null}
+            onChange={handleChange}
+            readOnly={isReviewMode}
+            showCorrectAnswer={isReviewMode}
+            onQuestionHighlighted={onQuestionContentChange}
+          />
+        </div>
       );
 
-    case 'writing-task1':
-    case 'writing-task2':
+    case "writing-task1":
+    case "writing-task2":
       return (
-        // Use the correct component name
-        <WritingTask1QuestionRenderer
-          question={question}
-          value={localAnswer as WritingTaskAnswer | null}
-          onChange={handleChange}
-          readOnly={isReviewMode}
-          showCorrectAnswer={isReviewMode}
-        />
+        <div style={containerStyle}>
+          <WritingTask1QuestionRenderer
+            question={updatedQuestion}
+            value={localAnswer as WritingTaskAnswer | null}
+            onChange={handleChange}
+            readOnly={isReviewMode}
+            showCorrectAnswer={isReviewMode}
+            onQuestionHighlighted={onQuestionContentChange}
+          />
+        </div>
       );
+
+    default:
+      return null;
   }
 }

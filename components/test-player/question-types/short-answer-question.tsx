@@ -3,6 +3,7 @@ import React from "react";
 import { Textarea } from "@testComponents/components/ui/textarea";
 import { Label } from "@testComponents/components/ui/label";
 import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
+import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 import type { ShortAnswerQuestion } from "@testComponents/lib/types";
 import { cn } from "@testComponents/lib/utils";
 
@@ -12,6 +13,7 @@ interface ShortAnswerQuestionProps {
   onChange: (value: Record<string, string>, subQuestionId?: string) => void;
   readOnly?: boolean;
   showCorrectAnswer?: boolean;
+  onQuestionHighlighted?: (questionId: string, content: string) => void;
 }
 
 export default function ShortAnswerQuestionRenderer({
@@ -20,6 +22,7 @@ export default function ShortAnswerQuestionRenderer({
   onChange,
   readOnly = false,
   showCorrectAnswer = false,
+  onQuestionHighlighted = () => {},
 }: ShortAnswerQuestionProps) {
   const handleChange = (subId: string, newValue: string) => {
     if (readOnly) return;
@@ -37,7 +40,15 @@ export default function ShortAnswerQuestionRenderer({
   return (
     <div className="space-y-2">
       <div className="space-y-1 py-4">
-        <RichTextContent content={question.text || ""} className="text-sm" />
+        <RichTextEditor
+          value={question.text || ""}
+          onChange={(content) => onQuestionHighlighted(question.id, content)}
+          readonly={true}
+          className={cn(
+            "leading-relaxed w-full h-full",
+          )}
+          minHeight={20}
+        />
         {question.wordLimit && (
           <p className="text-xs text-muted-foreground">
             Word limit: {question.wordLimit} words per answer

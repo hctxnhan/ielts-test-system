@@ -23,8 +23,7 @@ export default function TestsPage() {
 
   useEffect(() => {
     // Set the function to handle test submission
-    setSubmitResultFn((result) => {
-      console.log("Test submitted with result:", result);
+    setSubmitResultFn(() => {
       alert("Test submitted successfully!");
     });
 

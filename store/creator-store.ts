@@ -31,6 +31,7 @@ interface CreatorState {
     updates: Partial<Question>,
   ) => void;
   removeQuestion: (sectionId: string, questionId: string) => void;
+  reorderQuestion: (sectionId: string, questionId: string, direction: 'up' | 'down') => void;
   // saveTest: () => void;
   loadTest: (test: Test) => void;
   deleteTest: (testId: string) => void;
@@ -461,6 +462,45 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
         ...currentTest,
         sections: updatedSections,
         totalQuestions: get().calculateTotalQuestions(),
+      },
+    });
+  },
+
+  reorderQuestion: (sectionId: string, questionId: string, direction: 'up' | 'down') => {
+    const { currentTest } = get();
+    if (!currentTest) return;
+
+    const updatedSections = currentTest.sections.map((section) => {
+      if (section.id !== sectionId) return section;
+
+      const questions = [...section.questions];
+      const currentIndex = questions.findIndex((q) => q.id === questionId);
+      
+      if (currentIndex === -1) return section;
+      
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      
+      // Check bounds
+      if (newIndex < 0 || newIndex >= questions.length) return section;
+      
+      // Swap questions
+      [questions[currentIndex], questions[newIndex]] = [questions[newIndex], questions[currentIndex]];
+      
+      // Update the index property of questions to reflect their new positions
+      questions.forEach((question, index) => {
+        question.index = index + 1;
+      });
+
+      return {
+        ...section,
+        questions,
+      };
+    });
+
+    set({
+      currentTest: {
+        ...currentTest,
+        sections: updatedSections,
       },
     });
   },

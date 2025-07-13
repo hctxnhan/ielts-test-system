@@ -14,15 +14,17 @@ import {
 interface AudioPlayerProps {
   src: string;
   onEnded?: () => void;
+  realTestMode?: boolean;
 }
 
-export default function AudioPlayer({ src, onEnded }: AudioPlayerProps) {
+export default function AudioPlayer({ src, onEnded, realTestMode = false }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const [hasAutoPlayed, setHasAutoPlayed] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
@@ -40,6 +42,18 @@ export default function AudioPlayer({ src, onEnded }: AudioPlayerProps) {
         setError("Audio error");
         setIsPlaying(false);
       },
+      loadeddata: () => {
+        // Auto-play in real test mode
+        if (realTestMode && !hasAutoPlayed) {
+          setHasAutoPlayed(true);
+          audio.play().then(() => {
+            setIsPlaying(true);
+          }).catch((e) => {
+            console.error("Auto-play failed:", e);
+            setError("Audio error");
+          });
+        }
+      },
     };
 
     Object.entries(handlers).forEach(([event, handler]) => {
@@ -51,7 +65,7 @@ export default function AudioPlayer({ src, onEnded }: AudioPlayerProps) {
         audio.removeEventListener(event, handler);
       });
     };
-  }, [onEnded]);
+  }, [onEnded, realTestMode, hasAutoPlayed]);
 
   // Simulation mode
   useEffect(() => {
@@ -76,6 +90,9 @@ export default function AudioPlayer({ src, onEnded }: AudioPlayerProps) {
   }, [isPlaying, error, duration, onEnded]);
 
   const togglePlay = () => {
+    // In real test mode, don't allow manual control
+    if (realTestMode) return;
+    
     if (error) {
       setIsPlaying(!isPlaying);
       return;
@@ -99,6 +116,9 @@ export default function AudioPlayer({ src, onEnded }: AudioPlayerProps) {
   };
 
   const handleSeek = (value: number[]) => {
+    // In real test mode, don't allow seeking
+    if (realTestMode) return;
+    
     const newTime = value[0];
     if (error) {
       setCurrentTime(newTime);
@@ -111,6 +131,9 @@ export default function AudioPlayer({ src, onEnded }: AudioPlayerProps) {
   };
 
   const toggleMute = () => {
+    // In real test mode, don't allow muting
+    if (realTestMode) return;
+    
     if (error) {
       setIsMuted(!isMuted);
       return;
@@ -122,6 +145,9 @@ export default function AudioPlayer({ src, onEnded }: AudioPlayerProps) {
   };
 
   const handleVolumeChange = (value: number[]) => {
+    // In real test mode, don't allow volume control
+    if (realTestMode) return;
+    
     const newVolume = value[0];
     if (error) {
       setVolume(newVolume);
@@ -150,6 +176,9 @@ export default function AudioPlayer({ src, onEnded }: AudioPlayerProps) {
   };
 
   const skip = (seconds: number) => {
+    // In real test mode, don't allow skipping
+    if (realTestMode) return;
+    
     const audio = audioRef.current;
     if (error) {
       setCurrentTime(Math.max(0, Math.min(duration, currentTime + seconds)));
@@ -164,21 +193,25 @@ export default function AudioPlayer({ src, onEnded }: AudioPlayerProps) {
   };
 
   return (
-    <div className="flex items-center gap-1 p-1 border rounded-md bg-background text-xs">
+    <div className={`flex items-center gap-1 p-1 border rounded-md bg-background text-xs ${
+      realTestMode ? 'opacity-60' : ''
+    }`}>
       <audio ref={audioRef} src={src} preload="metadata" />
 
       <button
         onClick={() => skip(-10)}
-        className="p-1 hover:bg-muted rounded-sm"
+        className={`p-1 hover:bg-muted rounded-sm ${realTestMode ? 'cursor-not-allowed' : ''}`}
         aria-label="Skip backward"
+        disabled={realTestMode}
       >
         <SkipBack className="h-3 w-3" />
       </button>
 
       <button
         onClick={togglePlay}
-        className="p-1 hover:bg-muted rounded-sm"
+        className={`p-1 hover:bg-muted rounded-sm ${realTestMode ? 'cursor-not-allowed' : ''}`}
         aria-label={isPlaying ? "Pause" : "Play"}
+        disabled={realTestMode}
       >
         {isPlaying ? (
           <Pause className="h-3 w-3" />
@@ -189,8 +222,9 @@ export default function AudioPlayer({ src, onEnded }: AudioPlayerProps) {
 
       <button
         onClick={() => skip(10)}
-        className="p-1 hover:bg-muted rounded-sm"
+        className={`p-1 hover:bg-muted rounded-sm ${realTestMode ? 'cursor-not-allowed' : ''}`}
         aria-label="Skip forward"
+        disabled={realTestMode}
       >
         <SkipForward className="h-3 w-3" />
       </button>
@@ -201,7 +235,8 @@ export default function AudioPlayer({ src, onEnded }: AudioPlayerProps) {
           max={duration || 100}
           step={0.1}
           onValueChange={handleSeek}
-          className="h-2"
+          className={`h-2 ${realTestMode ? 'pointer-events-none' : ''}`}
+          disabled={realTestMode}
         />
       </div>
 
@@ -211,8 +246,9 @@ export default function AudioPlayer({ src, onEnded }: AudioPlayerProps) {
 
       <button
         onClick={toggleMute}
-        className="p-1 hover:bg-muted rounded-sm"
+        className={`p-1 hover:bg-muted rounded-sm ${realTestMode ? 'cursor-not-allowed' : ''}`}
         aria-label={isMuted ? "Unmute" : "Mute"}
+        disabled={realTestMode}
       >
         {isMuted ? (
           <VolumeX className="h-3 w-3" />
@@ -227,7 +263,8 @@ export default function AudioPlayer({ src, onEnded }: AudioPlayerProps) {
           max={1}
           step={0.01}
           onValueChange={handleVolumeChange}
-          className="h-2"
+          className={`h-2 ${realTestMode ? 'pointer-events-none' : ''}`}
+          disabled={realTestMode}
         />
       </div>
     </div>

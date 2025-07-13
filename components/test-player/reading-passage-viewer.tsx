@@ -149,17 +149,6 @@ export default function ReadingPassageViewer({
                 .filter(Boolean).length
             }
           </span>
-          <span>·</span>
-          <span>
-            Est. reading time:{" "}
-            {Math.ceil(
-              passage.content
-                .replace(/<[^>]*>/g, "")
-                .split(/\s+/)
-                .filter(Boolean).length / 200,
-            )}{" "}
-            min
-          </span>
         </div>
       </div>
       {/* Images section with improved styling and click to zoom */}
@@ -207,8 +196,8 @@ export default function ReadingPassageViewer({
       {/* Content with rich text styling */}
       <RichTextEditor
         value={passage.content}
-        onChange={onContentChange || (() => {})} // Use onContentChange if provided, otherwise no-op for readonly mode
-        readonly={!onContentChange} // Make readonly if no onChange handler provided
+        onChange={onContentChange || (() => {})}
+        readonly={true}
         className={cn(
           "leading-relaxed w-full h-full",
           fontSize === "large" && "text-lg",

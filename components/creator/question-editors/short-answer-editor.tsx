@@ -193,15 +193,17 @@ export default function ShortAnswerEditor({
           size="sm"
           onClick={() => {
             const newIndex = question.questions?.length || 0;
+            const questionId = uuidv4();
             const newQuestions = [
               ...(question.questions || []),
-              { id: `${question.id}_q${newIndex + 1}`, text: "" },
+              { id: questionId, text: "" },
             ];
             const newSubQuestions = [
               ...(question.subQuestions || []),
               {
                 subIndex: newIndex + 1,
-                subId: `${question.id}_sub${newIndex + 1}`,
+                subId: uuidv4(),
+                item: questionId, 
                 points: 1,
                 acceptableAnswers: [""],
               },
