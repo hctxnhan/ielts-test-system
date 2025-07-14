@@ -62,6 +62,57 @@ export default function Home() {
           </CardFooter>
         </Card>
       </div>
+
+      {/* Additional test pages */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto mt-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Highlight Demo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm">Test text highlighting features</p>
+          </CardContent>
+          <CardFooter>
+            <Link href="/highlight-demo" className="w-full">
+              <Button variant="outline" size="sm" className="w-full">
+                View Demo
+              </Button>
+            </Link>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Readonly Demo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm">Test readonly editor features</p>
+          </CardContent>
+          <CardFooter>
+            <Link href="/readonly-demo" className="w-full">
+              <Button variant="outline" size="sm" className="w-full">
+                View Demo
+              </Button>
+            </Link>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Text Alignment</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm">Test text alignment features</p>
+          </CardContent>
+          <CardFooter>
+            <Link href="/text-alignment-test" className="w-full">
+              <Button variant="outline" size="sm" className="w-full">
+                Test Alignment
+              </Button>
+            </Link>
+          </CardFooter>
+        </Card>
+      </div>
     </main>
   );
 }

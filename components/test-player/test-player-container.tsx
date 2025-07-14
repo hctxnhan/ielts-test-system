@@ -1,5 +1,5 @@
 "use client";
-import { updateQuestionIndexes } from "@testComponents/lib/test";
+import { processTestWithFilters, type TestFilterConfig } from "@testComponents/lib/test";
 import type { Test } from "@testComponents/lib/types";
 import { useTestStore } from "@testComponents/store/test-store";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -17,14 +17,29 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
   const [showInstructions, setShowInstructions] = useState(true);
 
   const {
+    currentTest,
     loadTest,
     startTest,
     progress,
-    currentSection,
     completeTest,
-    resetTest,
     sectionResults,
+    realTestMode,
+    resetTest,
   } = useTestStore();
+
+  // Load the test when component mounts (for instructions display)
+  useEffect(() => {
+    if (test && !currentTest) {
+      loadTest(test);
+    }
+  }, [test, currentTest, loadTest]);
+
+  // Reset the store when component unmounts
+  useEffect(() => {
+    return () => {
+      resetTest();
+    };
+  }, [resetTest]);
 
   const showResults = progress?.completed && !!sectionResults;
 
@@ -118,21 +133,27 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
     }
   };
 
-  // Load the test when component mounts
-  useEffect(() => {
-    loadTest(test);
 
-    return () => {
-      // Clean up when component unmounts
-      resetTest();
-    };
-  }, [test, loadTest, resetTest]);
+  const handleStartTest = (
+    customMode?: boolean,
+    selectedSections?: string[],
+    selectedTypes?: string[],
+    realTestMode?: boolean
+  ) => {
+    // Process the test with filters using the utility function
+    const processedTest = processTestWithFilters(test, {
+      customMode,
+      selectedSections,
+      selectedTypes,
+    });
 
-  const updatedTest = useMemo(() => {
-    return updateQuestionIndexes(test);
-  }, [test]);
+    loadTest(processedTest, {
+      customMode: customMode,
+      selectedSections: selectedSections || [],
+      selectedTypes: selectedTypes || [],
+      realTestMode: realTestMode,
+    });
 
-  const handleStartTest = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setShowInstructions(false);
     startTest();
@@ -212,12 +233,21 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
     }
   }, [progress, test]);
 
+  // Show loading only if we don't have the current test loaded
+  if (!currentTest) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <p>Loading test...</p>
+      </div>
+    );
+  }
+
   // If showing instructions
   if (showInstructions) {
     return (
       <TestInstructions
         onBack={onBack}
-        test={updatedTest}
+        test={currentTest}
         onStart={handleStartTest}
       />
     );
@@ -227,14 +257,23 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
   if (showResults && progress?.completed && sectionResults) {
     return (
       <div className="mx-auto p-4">
-        <TestResults currentTest={updatedTest} testResults={sectionResults} />
+        <TestResults currentTest={currentTest} testResults={sectionResults} />
+      </div>
+    );
+  }
+
+  // For the actual test running, we need both currentTest and progress
+  if (!progress) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <p>Starting test...</p>
       </div>
     );
   }
 
   return (
     <BaseTestContainer
-      test={test}
+      test={currentTest}
       progress={progress}
       onBack={onBack}
       isSubmitting={isSubmitting}
@@ -242,8 +281,8 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
       onPreviousSection={handlePreviousSection}
       onNextSection={handleNextSection}
       currentSectionIndex={progress?.currentSectionIndex || 0}
-      currentSection={currentSection()}
       jumpToSection={jumpToSection}
+      realTestMode={realTestMode}
     />
   );
 }

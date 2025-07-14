@@ -64,8 +64,22 @@ export default function ReadingPassageViewer({
     setSelectedImage(null);
   };
 
+  const getFontSizeMultiplier = () => {
+    switch (fontSize) {
+      case "large": return 1.125;
+      case "larger": return 1.25;
+      default: return 1;
+    }
+  };
+
   return (
-    <div className="relative">
+    <div 
+      className="relative" 
+      style={{
+        '--font-scale': getFontSizeMultiplier(),
+        fontSize: `calc(1rem * var(--font-scale))`,
+      } as React.CSSProperties & { '--font-scale': number }}
+    >
       {/* Image Zoom Modal */}
       <Dialog
         open={!!selectedImage}
@@ -149,17 +163,6 @@ export default function ReadingPassageViewer({
                 .filter(Boolean).length
             }
           </span>
-          <span>·</span>
-          <span>
-            Est. reading time:{" "}
-            {Math.ceil(
-              passage.content
-                .replace(/<[^>]*>/g, "")
-                .split(/\s+/)
-                .filter(Boolean).length / 200,
-            )}{" "}
-            min
-          </span>
         </div>
       </div>
       {/* Images section with improved styling and click to zoom */}
@@ -205,17 +208,34 @@ export default function ReadingPassageViewer({
           </div>
         )}{" "}
       {/* Content with rich text styling */}
-      <RichTextEditor
-        value={passage.content}
-        onChange={onContentChange || (() => {})} // Use onContentChange if provided, otherwise no-op for readonly mode
-        readonly={!onContentChange} // Make readonly if no onChange handler provided
-        className={cn(
-          "leading-relaxed w-full h-full",
-          fontSize === "large" && "text-lg",
-          fontSize === "larger" && "text-xl",
-        )}
-        minHeight={100}
-      />
+      <div className="leading-relaxed w-full h-full">
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            .font-scale-container h1 { font-size: calc(2rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container h2 { font-size: calc(1.5rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container h3 { font-size: calc(1.25rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container h4 { font-size: calc(1.125rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container h5 { font-size: calc(1rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container h6 { font-size: calc(1rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container p { font-size: calc(1rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container li { font-size: calc(1rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container span { font-size: calc(1rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container div { font-size: calc(1rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container strong { font-size: calc(1rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container em { font-size: calc(1rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container * { transition: font-size 0.2s ease !important; }
+          `
+        }} />
+        <div className="font-scale-container">
+          <RichTextEditor
+            value={passage.content}
+            onChange={onContentChange || (() => {})}
+            readonly={true}
+            className="leading-relaxed w-full h-full"
+            minHeight={100}
+          />
+        </div>
+      </div>
       {/* Footer with source information */}
       {passage.source && (
         <div className="mt-6 pt-4 border-t">

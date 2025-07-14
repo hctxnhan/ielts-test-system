@@ -8,6 +8,7 @@ import { Label } from "@testComponents/components/ui/label";
 import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
 import type { MultipleChoiceQuestion } from "@testComponents/lib/types";
 import { cn } from "@testComponents/lib/utils";
+import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 
 interface MultipleChoiceQuestionProps {
   question: MultipleChoiceQuestion;
@@ -15,6 +16,7 @@ interface MultipleChoiceQuestionProps {
   onChange: (value: string, subId: string) => void;
   readOnly?: boolean;
   showCorrectAnswer?: boolean;
+  onQuestionHighlighted?: (questionId: string, content: string) => void;
 }
 
 export default function MultipleChoiceQuestion({
@@ -23,10 +25,20 @@ export default function MultipleChoiceQuestion({
   onChange,
   readOnly = false,
   showCorrectAnswer = false,
+  onQuestionHighlighted = () => {},
 }: MultipleChoiceQuestionProps) {
   return (
     <div className="space-y-2">
-      <RichTextContent content={question.text || ""} className="text-sm" />
+      {/* <RichTextContent content={question.text || ""} className="text-sm" /> */}
+      <RichTextEditor
+        value={question.text || ""}
+        onChange={(content) => onQuestionHighlighted(question.id, content)}
+        readonly={true}
+        className={cn(
+          "leading-relaxed w-full h-full",
+        )}
+        minHeight={20}
+      />
       <RadioGroup
         value={value}
         unselectable="on"
