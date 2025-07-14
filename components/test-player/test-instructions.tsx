@@ -667,22 +667,19 @@ export default function TestInstructions({
               </div>
             </div>
 
-           {/* Start Button */}
+            {/* Start Button */}
             <Button
               className="w-full gap-2 py-2.5 text-sm font-medium relative overflow-hidden shadow-lg"
               onClick={handleStart}
-              disabled={customMode && !filteredTestInfo?.isValid}
+              disabled={customMode && !filteredTestInfo.isValid}
               size="lg"
             >
-              {customMode && !filteredTestInfo?.isValid ? (
+              <PlayCircle className="w-4 h-4" />
+              Start Test
+              {customMode && !filteredTestInfo.isValid && (
                 <span className="absolute inset-0 flex items-center justify-center bg-muted/90 text-xs">
-                Choose at least one part or question type in Custom Practice mode
+                  No valid questions available
                 </span>
-              ) : (
-                <>
-                  <PlayCircle className="w-4 h-4" />
-                  Start Test
-                </>
               )}
             </Button>
           </div>
