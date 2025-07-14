@@ -49,6 +49,7 @@ interface SectionEditorProps {
     updates: any,
   ) => void;
   onRemoveQuestion: (sectionId: string, questionId: string) => void;
+  onReorderQuestion: (sectionId: string, questionId: string, direction: 'up' | 'down') => void;
 }
 
 export default function SectionEditor({
@@ -60,14 +61,12 @@ export default function SectionEditor({
   onAddQuestion,
   onUpdateQuestion,
   onRemoveQuestion,
+  onReorderQuestion,
 }: SectionEditorProps) {
   const [showQuestionTypeDialog, setShowQuestionTypeDialog] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  const handleAudioSelect = (file: FileObject) => {
-    onUpdateSection(section.id, { audioUrl: file.url });
-  };
   const handleImageSelect = (file: FileObject) => {
     if (section.readingPassage) {
       const updatedPassage: ReadingPassage = {
@@ -393,22 +392,6 @@ export default function SectionEditor({
               </div>
             )}
 
-            {testType === "listening" && (
-              <div className="space-y-1.5">
-                <Label
-                  htmlFor={`section-audio-${index}`}
-                  className="text-xs font-medium"
-                >
-                  Audio File
-                </Label>
-                <FilePicker
-                  fileType="audio"
-                  onFileSelect={handleAudioSelect}
-                  currentFileUrl={section.audioUrl || ""}
-                />
-              </div>
-            )}
-
             <div className="pt-2">
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-sm font-medium flex items-center gap-1.5">
@@ -443,6 +426,7 @@ export default function SectionEditor({
                 sectionId={section.id}
                 onUpdateQuestion={onUpdateQuestion}
                 onRemoveQuestion={onRemoveQuestion}
+                onReorderQuestion={onReorderQuestion}
               />
             </div>
           </CardContent>

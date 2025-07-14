@@ -64,6 +64,25 @@ export function RichTextContent({
         .rich-text-content p {
           margin-bottom: 0.75rem;
         }
+        .rich-text-content h1[style*="text-align"],
+        .rich-text-content h2[style*="text-align"],
+        .rich-text-content h3[style*="text-align"],
+        .rich-text-content p[style*="text-align"] {
+          /* Inline text-align styles will be preserved */
+        }
+        /* Fallback text alignment utility classes */
+        .rich-text-content .text-left {
+          text-align: left !important;
+        }
+        .rich-text-content .text-center {
+          text-align: center !important;
+        }
+        .rich-text-content .text-right {
+          text-align: right !important;
+        }
+        .rich-text-content .text-justify {
+          text-align: justify !important;
+        }
         .rich-text-content ul,
         .rich-text-content ol {
           margin-bottom: 0.75rem;

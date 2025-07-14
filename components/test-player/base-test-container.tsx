@@ -25,28 +25,35 @@ export interface BaseTestContainerProps {
   onPreviousSection: () => void;
   onNextSection: () => void;
   currentSectionIndex: number; // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  currentSection: any;
   readOnly?: boolean;
   jumpToSection: (index: number) => void;
+  realTestMode?: boolean;
 }
 
 export default function BaseTestContainer({
   test,
   progress,
+  onBack,
   isSubmitting = false,
   onCompleteTest,
   onPreviousSection,
   onNextSection,
   currentSectionIndex,
-  currentSection,
   readOnly = false,
   jumpToSection,
+  realTestMode = false,
 }: BaseTestContainerProps) {
   const [showPassage, setShowPassage] = useState(true);
   const [audioPlayed, setAudioPlayed] = useState(false);
   const passageContainerRef = useRef<HTMLDivElement>(null);
   const contentContainerRef = useRef<HTMLDivElement>(null);
-  const { updatePassageContent } = useTestStore();
+  const {
+    updatePassageContent,
+    updateQuestionContent,
+    currentSection: getCurrentSection,
+  } = useTestStore();
+
+  const currentSection = test.sections[currentSectionIndex];
 
   const togglePassage = () => {
     setShowPassage((prev) => !prev);
@@ -78,19 +85,20 @@ export default function BaseTestContainer({
     test.type === "listening" || test.skill === "listening";
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="pb-20">
+      <div className="pb-10">
         {/* Add bottom padding for fixed navigation */}
 
         <div className="mb-6">
           <h1 className="text-2xl font-bold">{test.title}</h1>
         </div>
 
-        {isListeningTest && currentSection.audioUrl && (
+        {isListeningTest && test.audioUrl && (
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-2">Listening Section</h2>
             <AudioPlayer
-              src={currentSection.audioUrl}
+              src={test.audioUrl}
               onEnded={handleAudioEnded}
+              realTestMode={realTestMode}
             />
             {!audioPlayed && !readOnly && (
               <Alert className="mt-2">
@@ -125,12 +133,9 @@ export default function BaseTestContainer({
                       <ReadingPassageViewer
                         passage={currentSection.readingPassage}
                         containerRef={passageContainerRef}
-                        onContentChange={
-                          readOnly
-                            ? undefined
-                            : (content) =>
-                                updatePassageContent(currentSection.id, content)
-                        }
+                        onContentChange={(content) => {
+                          updatePassageContent(currentSection.id, content);
+                        }}
                       />
                     </CardContent>
                   </ScrollArea>
@@ -150,12 +155,15 @@ export default function BaseTestContainer({
               </div>
             )}
 
-            <div className="space-y-4">
+            <div className="space-y-4 mx-auto">
               <SectionQuestionsRenderer
                 questions={currentSection.questions}
                 sectionId={currentSection.id}
                 isReviewMode={readOnly}
                 answers={progress.answers}
+                onQuestionContentChange={
+                  readOnly ? undefined : updateQuestionContent
+                }
               />
             </div>
           </div>{" "}

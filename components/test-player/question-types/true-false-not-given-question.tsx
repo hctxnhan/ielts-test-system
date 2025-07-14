@@ -6,6 +6,7 @@ import {
 } from "@testComponents/components/ui/radio-group";
 import { Label } from "@testComponents/components/ui/label";
 import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
+import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 import type { TrueFalseNotGivenQuestion } from "@testComponents/lib/types";
 import { cn } from "@testComponents/lib/utils";
 
@@ -15,6 +16,7 @@ interface TrueFalseNotGivenQuestionProps {
   onChange: (value: Record<string, string>, subId?: string) => void;
   readOnly?: boolean;
   showCorrectAnswer?: boolean;
+  onQuestionHighlighted?: (questionId: string, content: string) => void;
 }
 
 export default function TrueFalseNotGivenQuestion({
@@ -23,10 +25,19 @@ export default function TrueFalseNotGivenQuestion({
   onChange,
   readOnly = false,
   showCorrectAnswer = false,
+  onQuestionHighlighted = () => {},
 }: TrueFalseNotGivenQuestionProps) {
   return (
     <div className="space-y-2">
-      <RichTextContent content={question.text || ""} className="text-sm" />
+      <RichTextEditor
+        value={question.text || ""}
+        onChange={(content) => onQuestionHighlighted(question.id, content)}
+        readonly={true}
+        className={cn(
+          "leading-relaxed w-full h-full",
+        )}
+        minHeight={20}
+      />
       <div className="space-y-2">
         {question.statements.map((statement, index) => {
           const subQuestion = question.subQuestions?.find(

@@ -6,8 +6,27 @@ import { Question, UserAnswer } from "./types";
 export function getQuestionStatus(
   questionId: string,
   answers: Record<string, UserAnswer>,
+  question: Question,
 ): "completed" | "partial" | "untouched" {
   const answer = answers[questionId];
+
+
+  // if it's pick from a list, no matter if it's a sub-question or not, we check how many items are selected, if it's at least = to number of sub-questions, we consider it completed, else untouched
+  if (question?.type === "pick-from-a-list" && question.subQuestions) {
+    // Count how many sub-questions are answered
+    // Check how many subquestion IDs have answers in the answers object
+    const subQuestionIds = question.subQuestions.map((sq) => sq.subId);
+    const selectedCount = subQuestionIds.filter(
+      (id) => Boolean(answers[id]?.answer),
+    ).length;
+
+    if (selectedCount >= question.subQuestions.length) {
+      return "completed";
+    } else if (selectedCount > 0) {
+      return "partial";
+    }
+    return "untouched";
+  }
 
   if (!answer) return "untouched";
 
@@ -159,7 +178,7 @@ export function getSectionStats(
     ) {
       question.subQuestions.forEach((sq) => {
         const answer = answers[sq.subId];
-        const questionStatus = getQuestionStatus(sq.subId, answers);
+        const questionStatus = getQuestionStatus(sq.subId, answers, question);
         if (questionStatus === "completed") {
           sectionAnswers.push(answer);
           if (answer.isCorrect) {
@@ -170,7 +189,7 @@ export function getSectionStats(
         }
       });
     } else {
-      const questionStatus = getQuestionStatus(question.id, answers);
+      const questionStatus = getQuestionStatus(question.id, answers, question);
 
       const answer = answers[question.id];
       if (questionStatus === "completed") {

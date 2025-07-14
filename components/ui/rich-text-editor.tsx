@@ -1,4 +1,5 @@
 "use client";
+
 import React from "react";
 import { cn } from "@testComponents/lib/utils";
 import Color from "@tiptap/extension-color";
@@ -11,7 +12,12 @@ import TextStyle from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
 import { Editor, EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { Extension } from "@tiptap/core";
 import {
+  AlignCenter,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
   Bold,
   Code,
   Heading1,
@@ -43,6 +49,33 @@ interface RichTextEditorProps {
   maxHeight?: number;
   readonly?: boolean;
 }
+
+// Custom extension to allow style attributes on all nodes
+const CustomTextAlign = Extension.create({
+  name: 'customTextAlign',
+
+  addGlobalAttributes() {
+    return [
+      {
+        types: ['heading', 'paragraph'],
+        attributes: {
+          style: {
+            default: null,
+            parseHTML: element => element.getAttribute('style'),
+            renderHTML: attributes => {
+              if (!attributes.style) {
+                return {}
+              }
+              return {
+                style: attributes.style,
+              }
+            },
+          },
+        },
+      },
+    ]
+  },
+})
 
 // Floating Table Toolbar Component
 const FloatingTableToolbar = ({ editor }: { editor: Editor | null }) => {
@@ -190,7 +223,7 @@ const FloatingTableToolbar = ({ editor }: { editor: Editor | null }) => {
 };
 
 // Floating Highlight Toolbar Component
-const FloatingHighlightToolbar = ({ editor }: { editor: Editor | null }) => {
+const FloatingHighlightToolbar = ({ editor, readonly = false }: { editor: Editor | null; readonly?: boolean }) => {
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [isVisible, setIsVisible] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -205,17 +238,45 @@ const FloatingHighlightToolbar = ({ editor }: { editor: Editor | null }) => {
   ];
 
   const toggleHighlight = (color: string) => {
-    // If the same color is already applied, remove the highlight
-    const currentHighlight = editor?.getAttributes("highlight");
-    if (currentHighlight?.color === color) {
-      editor?.chain().focus().unsetHighlight().run();
+    if (!editor) return;
+    
+    // In readonly mode, we need to temporarily enable editing for highlighting
+    if (readonly) {
+      const wasEditable = editor.isEditable;
+      editor.setEditable(true);
+      
+      // If the same color is already applied, remove the highlight
+      const currentHighlight = editor.getAttributes("highlight");
+      if (currentHighlight?.color === color) {
+        editor.chain().focus().unsetHighlight().run();
+      } else {
+        editor.chain().focus().toggleHighlight({ color }).run();
+      }
+      
+      // Restore readonly state
+      editor.setEditable(wasEditable);
     } else {
-      editor?.chain().focus().toggleHighlight({ color }).run();
+      // Normal mode
+      const currentHighlight = editor.getAttributes("highlight");
+      if (currentHighlight?.color === color) {
+        editor.chain().focus().unsetHighlight().run();
+      } else {
+        editor.chain().focus().toggleHighlight({ color }).run();
+      }
     }
   };
 
   const removeHighlight = () => {
-    editor?.chain().focus().unsetHighlight().run();
+    if (!editor) return;
+    
+    if (readonly) {
+      const wasEditable = editor.isEditable;
+      editor.setEditable(true);
+      editor.chain().focus().unsetHighlight().run();
+      editor.setEditable(wasEditable);
+    } else {
+      editor.chain().focus().unsetHighlight().run();
+    }
   };
 
   const updatePosition = useCallback(() => {
@@ -224,8 +285,8 @@ const FloatingHighlightToolbar = ({ editor }: { editor: Editor | null }) => {
     const { selection } = editor.state;
     const { from, to } = selection;
 
-    // Only show if there's a text selection (not just cursor)
-    if (from === to) {
+    // Only show if there's a text selection of more than 1 character
+    if (from === to || to - from <= 1) {
       setIsVisible(false);
       return;
     }
@@ -239,10 +300,38 @@ const FloatingHighlightToolbar = ({ editor }: { editor: Editor | null }) => {
       const editorElement = view.dom;
       const editorRect = editorElement.getBoundingClientRect();
 
-      // Position the toolbar above the selection
+      // Calculate initial position
       const centerX = (start.left + end.left) / 2;
-      const top = start.top - editorRect.top - 50; // 50px above the selection
-      const left = centerX - editorRect.left - 100; // Center the toolbar (approximate)
+      let top = start.top - editorRect.top - 50; // 50px above the selection
+      let left = centerX - editorRect.left - 100; // Center the toolbar (approximate)
+
+      // Get viewport dimensions
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      // Toolbar approximate dimensions (adjust based on actual toolbar size)
+      const toolbarWidth = 200; // Approximate width of the toolbar
+      const toolbarHeight = 40; // Approximate height of the toolbar
+
+      // Adjust horizontal position to stay within viewport
+      const absoluteLeft = editorRect.left + left;
+      if (absoluteLeft < 10) {
+        // Too far left, move right
+        left = 10 - editorRect.left;
+      } else if (absoluteLeft + toolbarWidth > viewportWidth - 10) {
+        // Too far right, move left
+        left = viewportWidth - toolbarWidth - 10 - editorRect.left;
+      }
+
+      // Adjust vertical position to stay within viewport
+      const absoluteTop = editorRect.top + top;
+      if (absoluteTop < 10) {
+        // Too far up, position below the selection instead
+        top = end.top - editorRect.top + 20;
+      } else if (absoluteTop + toolbarHeight > viewportHeight - 10) {
+        // Too far down, position above but closer to selection
+        top = start.top - editorRect.top - toolbarHeight - 10;
+      }
 
       setPosition({ top, left });
       setIsVisible(true);
@@ -252,17 +341,17 @@ const FloatingHighlightToolbar = ({ editor }: { editor: Editor | null }) => {
   useEffect(() => {
     if (!editor) return;
 
-    const handleSelectionUpdate = () => {
+    const handleMouseUp = () => {
       // Small delay to ensure DOM is updated
       setTimeout(updatePosition, 10);
     };
 
-    editor.on("selectionUpdate", handleSelectionUpdate);
-    editor.on("update", handleSelectionUpdate);
+    // Add mouseup event listener to the editor's DOM element
+    const editorElement = editor.view.dom;
+    editorElement.addEventListener('mouseup', handleMouseUp);
 
     return () => {
-      editor.off("selectionUpdate", handleSelectionUpdate);
-      editor.off("update", handleSelectionUpdate);
+      editorElement.removeEventListener('mouseup', handleMouseUp);
     };
   }, [editor, updatePosition]);
 
@@ -273,8 +362,8 @@ const FloatingHighlightToolbar = ({ editor }: { editor: Editor | null }) => {
   const { selection } = editor.state;
   const { from, to } = selection;
 
-  // Don't show if no text is selected
-  if (from === to) {
+  // Don't show if no text is selected or selection is 1 character or less
+  if (from === to || to - from <= 1) {
     return null;
   }
 
@@ -320,7 +409,31 @@ const FloatingHighlightToolbar = ({ editor }: { editor: Editor | null }) => {
 };
 
 const Toolbar = ({ editor }: { editor: Editor | null }) => {
+  const [currentAlignment, setCurrentAlignment] = useState('left');
+
   if (!editor) return null;
+
+  // Update current alignment when selection changes
+  useEffect(() => {
+    if (!editor) return;
+
+    const updateAlignment = () => {
+      const alignment = getCurrentAlignment();
+      setCurrentAlignment(alignment);
+    };
+
+    // Update on selection change
+    editor.on('selectionUpdate', updateAlignment);
+    editor.on('update', updateAlignment);
+
+    // Initial update
+    updateAlignment();
+
+    return () => {
+      editor.off('selectionUpdate', updateAlignment);
+      editor.off('update', updateAlignment);
+    };
+  }, [editor]);
 
   const addTable = () => {
     editor
@@ -328,6 +441,98 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
       .focus()
       .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
       .run();
+  };
+
+  const setTextAlign = (alignment: 'left' | 'center' | 'right' | 'justify') => {
+    console.log('Setting text alignment to:', alignment);
+    
+    // Focus the editor first
+    editor.commands.focus();
+    
+    // Get the current selection
+    const { from, to } = editor.state.selection;
+    console.log('Selection from:', from, 'to:', to);
+    
+    // Use a more direct approach to set node attributes
+    const success = editor.chain()
+      .command(({ tr, state }) => {
+        const { from, to } = state.selection;
+        
+        // Apply text-align style to all block nodes in selection
+        state.doc.nodesBetween(from, to, (node, pos) => {
+          console.log('Processing node:', node.type.name, 'at position:', pos, 'attrs:', node.attrs);
+          
+          if (node.type.name === 'paragraph' || node.type.name.startsWith('heading')) {
+            const currentStyle = node.attrs.style || '';
+            console.log('Current style:', currentStyle);
+            
+            // Remove existing text-align styles
+            const cleanStyle = currentStyle.replace(/text-align:\s*[^;]+;?\s*/g, '').trim();
+            // Add new text-align style
+            const newStyle = cleanStyle 
+              ? `${cleanStyle}; text-align: ${alignment}` 
+              : `text-align: ${alignment}`;
+            
+            console.log('New style will be:', newStyle);
+            
+            // Apply the new style
+            tr.setNodeMarkup(pos, undefined, {
+              ...node.attrs,
+              style: newStyle
+            });
+            
+            console.log('Node updated with style:', newStyle);
+          }
+        });
+        
+        return true;
+      })
+      .run();
+    
+    console.log('Command success:', success);
+    
+    // Force a re-render to update the current alignment state
+    setTimeout(() => {
+      const alignment = getCurrentAlignment();
+      console.log('Current alignment after update:', alignment);
+      setCurrentAlignment(alignment);
+    }, 10);
+  };
+
+  const getCurrentAlignment = () => {
+    const { state } = editor;
+    const { $from } = state.selection;
+    
+    // Try to get the alignment from the current node
+    let currentNode = $from.node($from.depth);
+    
+    // If we're in a text node, get the parent node
+    if (currentNode.type.name === 'text') {
+      currentNode = $from.node($from.depth - 1);
+    }
+    
+    // Check for inline style
+    if (currentNode && currentNode.attrs && currentNode.attrs.style) {
+      const match = currentNode.attrs.style.match(/text-align:\s*([^;]+)/);
+      if (match) {
+        return match[1].trim();
+      }
+    }
+    
+    // Check for class-based alignment
+    if (currentNode && currentNode.attrs && currentNode.attrs.class) {
+      const classes = currentNode.attrs.class.split(' ');
+      for (const cls of classes) {
+        if (cls.startsWith('text-')) {
+          const alignment = cls.replace('text-', '');
+          if (['left', 'center', 'right', 'justify'].includes(alignment)) {
+            return alignment;
+          }
+        }
+      }
+    }
+    
+    return 'left';
   };
 
   return (
@@ -388,6 +593,39 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
       >
         <Heading3 className="w-4 h-4" />
+      </Button>
+      <div className="w-px h-6 bg-gray-300 mx-1" />
+      <Button
+        variant={currentAlignment === "left" ? "default" : "ghost"}
+        size="sm"
+        onClick={() => setTextAlign("left")}
+        title="Align Left"
+      >
+        <AlignLeft className="w-4 h-4" />
+      </Button>
+      <Button
+        variant={currentAlignment === "center" ? "default" : "ghost"}
+        size="sm"
+        onClick={() => setTextAlign("center")}
+        title="Align Center"
+      >
+        <AlignCenter className="w-4 h-4" />
+      </Button>
+      <Button
+        variant={currentAlignment === "right" ? "default" : "ghost"}
+        size="sm"
+        onClick={() => setTextAlign("right")}
+        title="Align Right"
+      >
+        <AlignRight className="w-4 h-4" />
+      </Button>
+      <Button
+        variant={currentAlignment === "justify" ? "default" : "ghost"}
+        size="sm"
+        onClick={() => setTextAlign("justify")}
+        title="Justify"
+      >
+        <AlignJustify className="w-4 h-4" />
       </Button>
       <div className="w-px h-6 bg-gray-300 mx-1" />
       <Button
@@ -455,6 +693,7 @@ export function RichTextEditor({
           dropcursor: false,
         }),
       }),
+      CustomTextAlign,
       Table.configure({
         resizable: !readonly,
       }),
@@ -470,16 +709,15 @@ export function RichTextEditor({
     ],
     content: value,
     onUpdate: ({ editor }) => {
-      if (!readonly) {
-        onChange(editor.getHTML());
-      }
+      // Always invoke onChange, even in readonly mode (for highlights)
+      onChange(editor.getHTML());
     },
     editable: !readonly,
     editorProps: {
       attributes: {
         class: cn(
-          "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none",
-          "min-h-[150px] p-3",
+          // Removed: "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto"
+          "min-h-[150px]",
           readonly && "cursor-default select-text",
         ),
         style: `min-height: ${minHeight - (readonly ? 20 : 60)}px; overflow-y: auto;`,
@@ -551,6 +789,25 @@ export function RichTextEditor({
         .rich-text-editor .ProseMirror p {
           margin-bottom: 0.75rem;
         }
+        .rich-text-editor .ProseMirror h1[style*="text-align"],
+        .rich-text-editor .ProseMirror h2[style*="text-align"],
+        .rich-text-editor .ProseMirror h3[style*="text-align"],
+        .rich-text-editor .ProseMirror p[style*="text-align"] {
+          /* Inline text-align styles will be preserved and applied */
+        }
+        /* Fallback text alignment utility classes */
+        .rich-text-editor .ProseMirror .text-left {
+          text-align: left !important;
+        }
+        .rich-text-editor .ProseMirror .text-center {
+          text-align: center !important;
+        }
+        .rich-text-editor .ProseMirror .text-right {
+          text-align: right !important;
+        }
+        .rich-text-editor .ProseMirror .text-justify {
+          text-align: justify !important;
+        }
         .rich-text-editor .ProseMirror ul,
         .rich-text-editor .ProseMirror ol {
           margin-bottom: 0.75rem;
@@ -612,8 +869,8 @@ export function RichTextEditor({
         }
         .rich-text-editor .ProseMirror mark {
           border-radius: 0.125rem;
-          padding: 0.125rem 0.25rem;
-          margin: 0 0.125rem;
+          padding: 0;
+          margin: 0;
           box-decoration-break: clone;
         }
         .rich-text-editor .ProseMirror mark[data-color="#fef08a"] {
@@ -663,7 +920,7 @@ export function RichTextEditor({
       />
       {!readonly && <Toolbar editor={editor} />}
       {!readonly && <FloatingTableToolbar editor={editor} />}
-      <FloatingHighlightToolbar editor={editor} />
+      <FloatingHighlightToolbar editor={editor} readonly={readonly} />
       <EditorContent editor={editor} placeholder={placeholder} id={id} />
     </div>
   );

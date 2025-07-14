@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { DraggableItem, DroppableZone } from "./shared/dnd-components";
 import { Label } from "@testComponents/components/ui/label";
 import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
+import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 import { cn } from "@testComponents/lib/utils";
 
 interface LabelingQuestionProps {
@@ -13,6 +14,7 @@ interface LabelingQuestionProps {
   onChange: (value: Record<string, string>, subId?: string) => void;
   readOnly?: boolean;
   showCorrectAnswer?: boolean;
+  onQuestionHighlighted?: (questionId: string, content: string) => void;
 }
 
 const ITEM_TYPE = "OPTION";
@@ -23,6 +25,7 @@ export default function LabelingQuestionRenderer({
   onChange,
   readOnly = false,
   showCorrectAnswer = false,
+  onQuestionHighlighted = () => {},
 }: LabelingQuestionProps) {
   const [matches, setMatches] = useState<Record<string, string>>({});
 
@@ -50,7 +53,15 @@ export default function LabelingQuestionRenderer({
   };
   return (
     <div className="space-y-6">
-      <RichTextContent content={question.text || ""} className="text-sm" />
+      <RichTextEditor
+        value={question.text || ""}
+        onChange={(content) => onQuestionHighlighted(question.id, content)}
+        readonly={true}
+        className={cn(
+          "leading-relaxed w-full h-full",
+        )}
+        minHeight={20}
+      />
       <div className="relative border rounded-lg overflow-hidden bg-gray-50 flex justify-center">
         <img
           src={question.imageUrl || "/placeholder.svg"}
