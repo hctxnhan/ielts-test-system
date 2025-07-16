@@ -64,8 +64,22 @@ export default function ReadingPassageViewer({
     setSelectedImage(null);
   };
 
+  const getFontSizeMultiplier = () => {
+    switch (fontSize) {
+      case "large": return 1.125;
+      case "larger": return 1.25;
+      default: return 1;
+    }
+  };
+
   return (
-    <div className="relative">
+    <div 
+      className="relative" 
+      style={{
+        '--font-scale': getFontSizeMultiplier(),
+        fontSize: `calc(1rem * var(--font-scale))`,
+      } as React.CSSProperties & { '--font-scale': number }}
+    >
       {/* Image Zoom Modal */}
       <Dialog
         open={!!selectedImage}
@@ -194,6 +208,7 @@ export default function ReadingPassageViewer({
           </div>
         )}{" "}
       {/* Content with rich text styling */}
+<<<<<<< HEAD
       <RichTextEditor
         value={passage.content}
         onChange={onContentChange || (() => {})}
@@ -205,6 +220,36 @@ export default function ReadingPassageViewer({
         )}
         minHeight={100}
       />
+=======
+      <div className="leading-relaxed w-full h-full">
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            .font-scale-container h1 { font-size: calc(2rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container h2 { font-size: calc(1.5rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container h3 { font-size: calc(1.25rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container h4 { font-size: calc(1.125rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container h5 { font-size: calc(1rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container h6 { font-size: calc(1rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container p { font-size: calc(1rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container li { font-size: calc(1rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container span { font-size: calc(1rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container div { font-size: calc(1rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container strong { font-size: calc(1rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container em { font-size: calc(1rem * ${getFontSizeMultiplier()}) !important; }
+            .font-scale-container * { transition: font-size 0.2s ease !important; }
+          `
+        }} />
+        <div className="font-scale-container">
+          <RichTextEditor
+            value={passage.content}
+            onChange={onContentChange || (() => {})}
+            readonly={true}
+            className="leading-relaxed w-full h-full"
+            minHeight={100}
+          />
+        </div>
+      </div>
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
       {/* Footer with source information */}
       {passage.source && (
         <div className="mt-6 pt-4 border-t">

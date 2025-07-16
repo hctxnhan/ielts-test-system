@@ -1,5 +1,9 @@
 "use client";
+<<<<<<< HEAD
 import React, { useEffect, useRef, useState } from "react";
+=======
+import React from "react";
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
 import parse, { Element, Text, domToReact } from "html-react-parser";
 import styleToObject from "style-to-object";
 import { Input } from "@testComponents/components/ui/input";
@@ -29,6 +33,7 @@ export default function CompletionQuestionRenderer({
   showCorrectAnswer = false,
   // onQuestionHighlighted = () => { },
 }: CompletionQuestionProps) {
+<<<<<<< HEAD
   const contentRef = useRef<HTMLDivElement>(null);
   const { popover, applyHighlight, removeHighlight } = useHighlightHandler(contentRef, getPosition);
   const parseHtmlWithInputs = React.useCallback((htmlContent: string) => {
@@ -57,6 +62,16 @@ export default function CompletionQuestionRenderer({
       if (domNode.type === "text") {
         const text = domNode.data;
 
+=======
+  // Parse HTML and replace underscores with inputs
+  const parseHtmlWithInputs = React.useCallback((htmlContent: string) => {
+    let blankCounter = 0;
+
+    const replaceNode = (domNode: any): any => {
+      if (domNode.type === "text") {
+        const text = domNode.data;
+        
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
         // Find sequences of 3 or more underscores
         const underscoreRegex = /_{3,}/g;
         const parts = text.split(underscoreRegex);
@@ -67,12 +82,20 @@ export default function CompletionQuestionRenderer({
         }
 
         const result: (string | React.ReactElement)[] = [];
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
         for (let i = 0; i < parts.length; i++) {
           if (parts[i]) {
             result.push(parts[i]);
           }
+<<<<<<< HEAD
 
+=======
+          
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
           if (i < matches.length) {
             const currentSubQuestion = question.subQuestions[blankCounter];
             const currentSubQuestionIndex = question.index + blankCounter;
@@ -149,7 +172,11 @@ export default function CompletionQuestionRenderer({
       // Handle elements with style attributes
       if (domNode.type === "tag") {
         const { name, attribs, children } = domNode;
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
         let style: React.CSSProperties | undefined;
         if (attribs?.style) {
           try {
@@ -193,6 +220,7 @@ export default function CompletionQuestionRenderer({
     return parse(htmlContent, { replace: replaceNode });
   }, [question.subQuestions, value, onChange, readOnly, showCorrectAnswer, question.scoringStrategy]);
 
+<<<<<<< HEAD
 
   return (
     <div className="space-y-4">
@@ -207,6 +235,14 @@ export default function CompletionQuestionRenderer({
           />
         )}
       </div>
+=======
+  return (
+    <div className="space-y-4">
+      <div className="prose dark:prose-invert max-w-none text-sm rich-text-content">
+        {parseHtmlWithInputs(question.text || "")}
+      </div>
+
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
       {/* Fallback: Show traditional input fields if no blanks were found in the text
       {question.subQuestions.length > 0 && !question.text?.match(/_{3,}/) && (
         <div className="space-y-2 border-t pt-4">
@@ -284,6 +320,7 @@ export default function CompletionQuestionRenderer({
       {/* Rich text content styles */}
       <style dangerouslySetInnerHTML={{
         __html: `
+<<<<<<< HEAD
          mark.custom-highlight {
         background-color: #FEF08A;
         padding: 0;
@@ -291,6 +328,8 @@ export default function CompletionQuestionRenderer({
         font-weight: inherit;
         border-radius: 2px;
       }
+=======
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
         .rich-text-content {
           font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
           line-height: 1.6;

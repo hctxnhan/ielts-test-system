@@ -5,7 +5,7 @@ import {
   Card
 } from "@testComponents/components/ui/card";
 import { countSectionQuestion } from "@testComponents/lib/test-utils";
-import type { Test } from "@testComponents/lib/types";
+import type { Test, QuestionType } from "@testComponents/lib/types";
 import {
   AlertCircle,
   BookOpen,
@@ -120,11 +120,19 @@ export default function TestInstructions({
 }: TestInstructionsProps) {
   const [realTestMode, setRealTestMode] = useState(false);
   const [customMode, setCustomMode] = useState(false);
+<<<<<<< HEAD
+=======
+  const [filterMode, setFilterMode] = useState<'sections' | 'types'>('sections');
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
   // Initialize with all sections and types selected by default
   const [selectedSections, setSelectedSections] = useState<string[]>(
     test?.sections.map((s) => s.id) || []
   );
+<<<<<<< HEAD
   const [selectedTypes, setSelectedTypes] = useState<string[]>(() => {
+=======
+  const [selectedTypes, setSelectedTypes] = useState<QuestionType[]>(() => {
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
     if (!test) return [];
     return Array.from(
       new Set(test.sections.flatMap((s) => s.questions.map((q) => q.type)))
@@ -133,7 +141,11 @@ export default function TestInstructions({
 
   if (!test) return <ErrorState onBack={onBack} />;
 
+<<<<<<< HEAD
   const allQuestionTypes = Array.from(
+=======
+  const allQuestionTypes: QuestionType[] = Array.from(
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
     new Set(test.sections.flatMap((s) => s.questions.map((q) => q.type)))
   );
 
@@ -142,6 +154,7 @@ export default function TestInstructions({
     0
   );
 
+<<<<<<< HEAD
   const handleStart = () => {
     // Prevent starting with no sections or question types in custom mode
     if (
@@ -157,6 +170,66 @@ export default function TestInstructions({
       selectedTypes.length > 0 ? selectedTypes : undefined,
       realTestMode
     );
+=======
+  // Calculate if the filtered test has valid content
+  const getFilteredTestValidity = () => {
+    if (!customMode) return { isValid: true };
+
+    if (filterMode === 'sections') {
+      const filteredSections = test.sections.filter(section => 
+        selectedSections.includes(section.id)
+      );
+      
+      const filteredQuestions = filteredSections.reduce((acc, section) => {
+        return acc + countSectionQuestion(section.questions);
+      }, 0);
+
+      return {
+        isValid: filteredSections.length > 0 && filteredQuestions > 0
+      };
+    } else {
+      // Filter by question types
+      const filteredQuestions = test.sections.reduce((acc, section) => {
+        const sectionQuestions = section.questions.filter(question => 
+          selectedTypes.includes(question.type)
+        );
+        return acc + sectionQuestions.length;
+      }, 0);
+
+      return {
+        isValid: filteredQuestions > 0
+      };
+    }
+  };
+
+  const filteredTestInfo = getFilteredTestValidity();
+
+  const handleStart = () => {
+    // Only check if the filtered test is valid in custom mode
+    if (customMode && !filteredTestInfo.isValid) {
+      return;
+    }
+
+    if (customMode) {
+      if (filterMode === 'sections') {
+        onStart(
+          customMode,
+          selectedSections.length > 0 ? selectedSections : undefined,
+          undefined, // Don't pass selected types when filtering by sections
+          realTestMode
+        );
+      } else {
+        onStart(
+          customMode,
+          undefined, // Don't pass selected sections when filtering by types
+          selectedTypes.length > 0 ? selectedTypes : undefined,
+          realTestMode
+        );
+      }
+    } else {
+      onStart(false, undefined, undefined, realTestMode);
+    }
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
   };
 
   // Get test icon based on type
@@ -424,6 +497,7 @@ export default function TestInstructions({
                   {/* Custom mode options */}
                   {customMode && (
                     <div className="p-4 bg-muted/10 border rounded-lg space-y-4">
+<<<<<<< HEAD
                       <div>
                         <div className="flex items-center justify-between mb-3">
                           <h4 className="font-medium text-sm">Sections</h4>
@@ -571,12 +645,208 @@ export default function TestInstructions({
                           </p>
                         )}
                       </div>
+=======
+                      {/* Filter Mode Selection */}
+                      <div>
+                        <h4 className="font-medium text-sm mb-3">Filter By</h4>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setFilterMode('sections')}
+                            className={`px-3 py-2 text-xs rounded-md border transition-all ${
+                              filterMode === 'sections'
+                                ? 'border-primary bg-primary text-white'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            Sections
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFilterMode('types')}
+                            className={`px-3 py-2 text-xs rounded-md border transition-all ${
+                              filterMode === 'types'
+                                ? 'border-primary bg-primary text-white'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            Question Types
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Sections Filter */}
+                      {filterMode === 'sections' && (
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-medium text-sm">Sections</h4>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                {selectedSections.length} of{" "}
+                                {test.sections.length} selected
+                              </span>
+                              <div className="flex gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setSelectedSections(
+                                      test.sections.map((s) => s.id)
+                                    )
+                                  }
+                                  className="text-xs text-primary hover:underline"
+                                >
+                                  All
+                                </button>
+                                <span className="text-xs text-muted-foreground">
+                                  |
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedSections([])}
+                                  className="text-xs text-primary hover:underline"
+                                >
+                                  None
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            {test.sections.map((section) => {
+                              const isSelected = selectedSections.includes(section.id);
+                              return (
+                                <div
+                                  key={section.id}
+                                  onClick={() => {
+                                    const newSelection = isSelected
+                                      ? selectedSections.filter((id) => id !== section.id)
+                                      : [...selectedSections, section.id];
+
+                                    setSelectedSections(newSelection);
+                                  }}
+                                  className={`relative p-3 border-2 rounded-lg transition-all cursor-pointer ${
+                                    isSelected
+                                      ? "border-primary bg-primary/5 shadow-sm"
+                                      : "border-gray-200 hover:border-gray-300 hover:bg-muted/10"
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <div
+                                        className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
+                                          isSelected
+                                            ? "border-primary bg-primary"
+                                            : "border-gray-300"
+                                        }`}
+                                      >
+                                        {isSelected && (
+                                          <div className="w-2.5 h-2.5 bg-white rounded-sm" />
+                                        )}
+                                      </div>
+                                      <div>
+                                        <div className="font-medium text-sm">
+                                          {section.title || section.id}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground mt-0.5">
+                                          {countSectionQuestion(section.questions)} questions
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Question Types Filter */}
+                      {filterMode === 'types' && (
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-medium text-sm">
+                              Question Types
+                            </h4>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                {selectedTypes.length} of{" "}
+                                {allQuestionTypes.length} selected
+                              </span>
+                              <div className="flex gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setSelectedTypes([...allQuestionTypes])
+                                  }
+                                  className="text-xs text-primary hover:underline"
+                                >
+                                  All
+                                </button>
+                                <span className="text-xs text-muted-foreground">
+                                  |
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedTypes([])}
+                                  className="text-xs text-primary hover:underline"
+                                >
+                                  None
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            {allQuestionTypes.map((type) => {
+                              const isSelected = selectedTypes.includes(type);
+                              return (
+                                <div
+                                  key={type}
+                                  onClick={() => {
+                                    const newSelection = isSelected
+                                      ? selectedTypes.filter((t) => t !== type)
+                                      : [...selectedTypes, type];
+
+                                    setSelectedTypes(newSelection);
+                                  }}
+                                  className={`relative p-3 border-2 rounded-lg transition-all cursor-pointer ${
+                                    isSelected
+                                      ? "border-primary bg-primary/5 shadow-sm"
+                                      : "border-gray-200 hover:border-gray-300 hover:bg-muted/10"
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <div
+                                        className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
+                                          isSelected
+                                            ? "border-primary bg-primary"
+                                            : "border-gray-300"
+                                        }`}
+                                      >
+                                        {isSelected && (
+                                          <div className="w-2.5 h-2.5 bg-white rounded-sm" />
+                                        )}
+                                      </div>
+                                      <div>
+                                        <div className="font-medium text-sm capitalize">
+                                          {type.replace(/-/g, " ")}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
                     </div>
                   )}
                 </div>
               </div>
             </div>
 
+<<<<<<< HEAD
             {/* Start Button */}
             <Button
               className="w-full gap-2 py-2.5 text-sm font-medium relative overflow-hidden shadow-lg"
@@ -589,6 +859,25 @@ export default function TestInstructions({
             >
               <PlayCircle className="w-4 h-4" />
               Start Test
+=======
+           {/* Start Button */}
+            <Button
+              className="w-full gap-2 py-2.5 text-sm font-medium relative overflow-hidden shadow-lg"
+              onClick={handleStart}
+              disabled={customMode && !filteredTestInfo?.isValid}
+              size="lg"
+            >
+              {customMode && !filteredTestInfo?.isValid ? (
+                <span className="absolute inset-0 flex items-center justify-center bg-muted/90 text-xs">
+                Choose at least one part or question type in Custom Practice mode
+                </span>
+              ) : (
+                <>
+                  <PlayCircle className="w-4 h-4" />
+                  Start Test
+                </>
+              )}
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
             </Button>
           </div>
         </Card>

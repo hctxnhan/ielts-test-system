@@ -1,5 +1,5 @@
 "use client";
-import { updateQuestionIndexes } from "@testComponents/lib/test";
+import { processTestWithFilters, type TestFilterConfig } from "@testComponents/lib/test";
 import type { Test } from "@testComponents/lib/types";
 import { useTestStore } from "@testComponents/store/test-store";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -24,6 +24,10 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
     completeTest,
     sectionResults,
     realTestMode,
+<<<<<<< HEAD
+=======
+    resetTest,
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
   } = useTestStore();
 
   // Load the test when component mounts (for instructions display)
@@ -33,6 +37,16 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
     }
   }, [test, currentTest, loadTest]);
 
+<<<<<<< HEAD
+=======
+  // Reset the store when component unmounts
+  useEffect(() => {
+    return () => {
+      resetTest();
+    };
+  }, [resetTest]);
+
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
   const showResults = progress?.completed && !!sectionResults;
 
   // Function to score all writing questions in the test
@@ -132,6 +146,7 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
     selectedTypes?: string[],
     realTestMode?: boolean
   ) => {
+<<<<<<< HEAD
 
     let processedTest = test;
 
@@ -158,6 +173,15 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
     // Process question indexes after filtering
     processedTest = updateQuestionIndexes(processedTest);
 
+=======
+    // Process the test with filters using the utility function
+    const processedTest = processTestWithFilters(test, {
+      customMode,
+      selectedSections,
+      selectedTypes,
+    });
+
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
     loadTest(processedTest, {
       customMode: customMode,
       selectedSections: selectedSections || [],

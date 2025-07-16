@@ -114,9 +114,12 @@ import { Label } from "@testComponents/components/ui/label";
 import type { MultipleChoiceQuestion } from "@testComponents/lib/types";
 import { cn } from "@testComponents/lib/utils";
 import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
+<<<<<<< HEAD
 import { useHighlightHandler } from "@testComponents/hooks/use-highlight";
 import { getPosition } from "@testComponents/lib/get-position";
 import { HighlightPopup } from "@testComponents/components/ui/highlight-popup";
+=======
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
 
 interface MultipleChoiceQuestionProps {
   question: MultipleChoiceQuestion;
@@ -133,7 +136,11 @@ export default function MultipleChoiceQuestion({
   onChange,
   readOnly = false,
   showCorrectAnswer = false,
+<<<<<<< HEAD
   onQuestionHighlighted = () => { },
+=======
+  onQuestionHighlighted = () => {},
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
 }: MultipleChoiceQuestionProps) {
   const contentRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -148,14 +155,26 @@ export default function MultipleChoiceQuestion({
 
   return (
     <div className="space-y-2">
+<<<<<<< HEAD
+=======
+      {/* <RichTextContent content={question.text || ""} className="text-sm" /> */}
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
       <RichTextEditor
         value={question.text || ""}
         onChange={(content) => onQuestionHighlighted(question.id, content)}
         readonly={true}
+<<<<<<< HEAD
         className={cn("leading-relaxed w-full h-full")}
         minHeight={20}
       />
 
+=======
+        className={cn(
+          "leading-relaxed w-full h-full",
+        )}
+        minHeight={20}
+      />
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
       <RadioGroup
         value={value}
         unselectable="on"

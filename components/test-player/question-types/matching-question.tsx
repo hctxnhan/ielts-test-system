@@ -62,6 +62,11 @@ export default function MatchingQuestionRenderer({
         minHeight={20}
       />
       <div className="grid grid-cols-1 md:grid-cols-[minmax(250px,1fr)_minmax(250px,1fr)] gap-6">
+<<<<<<< HEAD
+=======
+        
+
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
         <div className="space-y-3">
           <p className="text-base font-semibold text-gray-700">Items</p>
           <div className="space-y-4">

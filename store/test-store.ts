@@ -10,15 +10,25 @@ import type {
 } from "@testComponents/lib/types";
 import { create } from "zustand";
 
+export type TestConfig = {
+  customMode?: boolean;
+  selectedSections?: string[];
+  selectedTypes?: string[];
+}
+
 // Type for the submission function
 export type SubmitResultFn = (
   testId: number,
   results: TestResult,
+<<<<<<< HEAD
   config?: {
     customMode?: boolean;
     selectedSections?: string[];
     selectedTypes?: string[];
   }
+=======
+  config?: TestConfig
+>>>>>>> bd24419d182ac0d6c4a1002a1c036f1ff5a59267
 ) => Promise<any>;
 
 type ScoreEssayFn = (param: {
@@ -546,6 +556,13 @@ export const useTestStore = create<TestState>()((set, get) => ({
     set({
       currentTest: null,
       progress: null,
+      sectionResults: null,
+      realTestMode: false,
+      customMode: {
+        enabled: false,
+        includedSections: [],
+        includedQuestionTypes: [],
+      },
     });
   },
 
