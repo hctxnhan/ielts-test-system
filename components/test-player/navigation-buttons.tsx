@@ -30,7 +30,7 @@ export default function NavigationButtons({
   readOnly,
 }: NavigationButtonsProps) {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [hasMounted, setHasMounted] = useState(false); // 👈 ADD THIS
+  const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
     setHasMounted(true);
@@ -86,7 +86,6 @@ export default function NavigationButtons({
         {nextButton}
       </div>
 
-      {/* Confirmation Modal (only shown after client mount) */}
       {hasMounted && (
         <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
           <DialogContent>
