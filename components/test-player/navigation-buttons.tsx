@@ -1,7 +1,14 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@testComponents/components/ui/button";
 import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@testComponents/components/ui/dialog";
 
 interface NavigationButtonsProps {
   currentSectionIndex: number;
@@ -22,11 +29,28 @@ export default function NavigationButtons({
   isSubmitting,
   readOnly,
 }: NavigationButtonsProps) {
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false); // 👈 ADD THIS
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
   const isLastSection = currentSectionIndex === totalSections - 1;
+
+  const handleConfirmFinish = () => {
+    setShowConfirmModal(false);
+    onCompleteTest();
+  };
+
   const nextButton = (() => {
     if (isLastSection && !readOnly) {
       return (
-        <Button size="sm" onClick={onCompleteTest} disabled={isSubmitting}>
+        <Button
+          size="sm"
+          onClick={() => setShowConfirmModal(true)}
+          disabled={isSubmitting}
+        >
           <CheckCircle2 className="h-3 w-3 mr-1" />
           {isSubmitting ? "Submitting..." : "Finish Test"}
         </Button>
@@ -48,17 +72,44 @@ export default function NavigationButtons({
   })();
 
   return (
-    <div className="flex gap-2 justify-between">
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={onPreviousSection}
-        disabled={currentSectionIndex === 0}
-      >
-        <ArrowLeft className="h-3 w-3 mr-1" /> Previous
-      </Button>
+    <>
+      <div className="flex gap-2 justify-between">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onPreviousSection}
+          disabled={currentSectionIndex === 0}
+        >
+          <ArrowLeft className="h-3 w-3 mr-1" /> Previous
+        </Button>
 
-      {nextButton}
-    </div>
+        {nextButton}
+      </div>
+
+      {/* Confirmation Modal (only shown after client mount) */}
+      {hasMounted && (
+        <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Finish Test</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to finish and submit the test?
+            </p>
+            <DialogFooter className="mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowConfirmModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleConfirmFinish} disabled={isSubmitting}>
+                {isSubmitting ? "Submitting..." : "Confirm Finish"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 }
