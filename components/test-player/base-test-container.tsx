@@ -96,7 +96,7 @@ export default function BaseTestContainer({
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-2">Listening Section</h2>
             <AudioPlayer
-              src={test.audioUrl}
+              src={realTestMode ? test.audioUrl : currentSection.audioUrl || ""}
               onEnded={handleAudioEnded}
               realTestMode={realTestMode}
             />
