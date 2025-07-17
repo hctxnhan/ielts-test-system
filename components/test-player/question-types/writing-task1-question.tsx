@@ -189,7 +189,7 @@ export default function WritingTask1QuestionRenderer({
       )}
       {showSampleAnswer && question.sampleAnswer && (
         <Card className="p-4 bg-muted/50">
-          <h4 className="font-medium mb-2">Sample Answer:</h4>
+          <h4 className="font-medium mb-2">Gợi ý:</h4>
           <RichTextContent
             content={question.sampleAnswer}
             className="leading-relaxed"
