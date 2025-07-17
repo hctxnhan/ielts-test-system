@@ -26,6 +26,7 @@ export default function CompletionQuestionRenderer({
  showCorrectAnswer = false,
  onQuestionHighlighted = () => { },
 }: CompletionQuestionProps) {
+console.log("==> question", question)
  const contentRef = useRef<HTMLDivElement>(null);
  const { popover, applyHighlight, removeHighlight } = useHighlightHandler(contentRef, getPosition);
  const parseHtmlWithInputs = React.useCallback((htmlContent: string) => {
@@ -177,8 +178,6 @@ export default function CompletionQuestionRenderer({
 
    return parse(htmlContent, { replace: replaceNode });
  }, [question.subQuestions, value, onChange, readOnly, showCorrectAnswer, question.scoringStrategy]);
-
-
 
 
  return (

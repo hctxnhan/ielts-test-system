@@ -29,8 +29,6 @@ export function useHighlightHandler(
  //     existingBox.style.top = `${y}px`;
  //     return;
  //   }
-
-
  //   const box = document.createElement("div");
  //   box.id = "debug-highlight-box";
  //   box.style.position = "absolute";

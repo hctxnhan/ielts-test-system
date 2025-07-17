@@ -27,7 +27,9 @@ export default function MultipleChoiceQuestion({
   showCorrectAnswer = false,
   onQuestionHighlighted = () => {},
 }: MultipleChoiceQuestionProps) {
+   console.log("==> mul", question)
   return (
+   
     <div className="space-y-2">
       {/* <RichTextContent content={question.text || ""} className="text-sm" /> */}
       <RichTextEditor
