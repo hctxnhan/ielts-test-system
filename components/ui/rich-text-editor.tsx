@@ -767,6 +767,7 @@ export function RichTextEditor({
           font-size: 14px;
           line-height: 1.5;
           color: #374151;
+          padding: 12px 16px;
         }
         .rich-text-editor .ProseMirror h1 {
           font-size: 2em;

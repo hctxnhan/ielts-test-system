@@ -3,6 +3,7 @@
 import { Input } from "@testComponents/components/ui/input";
 import { Label } from "@testComponents/components/ui/label";
 import { Textarea } from "@testComponents/components/ui/textarea";
+import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 import type { WritingTask2Question } from "@testComponents/lib/types";
 
 interface WritingTask2EditorProps {
@@ -101,16 +102,17 @@ export default function WritingTask2Editor({
           Sample Answer{" "}
           <span className="font-normal text-muted-foreground">(Optional)</span>
         </Label>
-        <Textarea
+        <RichTextEditor
           id={`sample-answer-${question.id}`}
           value={question.sampleAnswer || ""}
-          onChange={(e) => {
+          onChange={(content) => {
             onUpdateQuestion(sectionId, question.id, {
-              sampleAnswer: e.target.value,
+              sampleAnswer: content,
             });
           }}
           placeholder="Provide a sample answer..."
-          className="resize-none min-h-[120px] text-sm"
+          minHeight={120}
+          className="text-sm"
         />
       </div>
     </div>
