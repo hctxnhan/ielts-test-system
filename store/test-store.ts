@@ -572,7 +572,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
   updatePassageContent: (sectionId: string, content: string) => {
     const { currentTest } = get();
     if (!currentTest) return;
-
+    
     const updatedSections = currentTest.sections.map((section) => {
       if (section.id === sectionId && section.readingPassage) {
         return {
@@ -596,6 +596,7 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
   updateQuestionContent: (questionId: string, content: string) => {
     const { currentTest } = get();
+    console.log("==> call: updateQuestionContent", content)
     if (!currentTest) return;
 
     const updatedSections = currentTest.sections.map((section) => ({
