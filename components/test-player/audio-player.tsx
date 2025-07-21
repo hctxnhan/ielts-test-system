@@ -27,6 +27,36 @@ export default function AudioPlayer({ src, onEnded, realTestMode = false }: Audi
   const [hasAutoPlayed, setHasAutoPlayed] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  // Reset state when src changes
+  useEffect(() => {
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setError(null);
+    setHasAutoPlayed(false);
+    
+    // In real test mode, auto-play when src changes and audio loads
+    if (realTestMode) {
+      const audio = audioRef.current;
+      if (audio) {
+        const handleCanPlay = () => {
+          if (!hasAutoPlayed) {
+            setHasAutoPlayed(true);
+            audio.play().then(() => {
+              setIsPlaying(true);
+            }).catch((e) => {
+              console.error("Auto-play failed:", e);
+              setError("Audio error");
+            });
+          }
+        };
+        
+        audio.addEventListener('canplay', handleCanPlay);
+        return () => audio.removeEventListener('canplay', handleCanPlay);
+      }
+    }
+  }, [src, realTestMode, hasAutoPlayed]);
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
