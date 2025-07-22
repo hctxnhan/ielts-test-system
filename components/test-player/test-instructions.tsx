@@ -401,7 +401,12 @@ export default function TestInstructions({
                         type="checkbox"
                         checked={realTestMode}
                         onChange={(e) => {
-                          setRealTestMode(e.target.checked);
+                          if (e.target.checked) {
+                            setRealTestMode(true);
+                            setCustomMode(false); // Disable custom mode when real test mode is selected
+                          } else {
+                            setRealTestMode(false);
+                          }
                         }}
                         className="sr-only"
                       />
@@ -439,7 +444,12 @@ export default function TestInstructions({
                         type="checkbox"
                         checked={customMode}
                         onChange={(e) => {
-                          setCustomMode(e.target.checked);
+                          if (e.target.checked) {
+                            setCustomMode(true);
+                            setRealTestMode(false); // Disable real test mode when custom mode is selected
+                          } else {
+                            setCustomMode(false);
+                          }
                         }}
                         className="sr-only"
                       />
