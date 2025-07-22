@@ -30,6 +30,7 @@ export default function CompletionQuestionRenderer({
 
 const contentRef = useRef<HTMLDivElement>(null);
 console.log("==> question", question.text)
+
 useEffect(() => {
   const restoreHighlight = () => {
     const storedHTML = highlightStore.getState().highlights[question.id];
