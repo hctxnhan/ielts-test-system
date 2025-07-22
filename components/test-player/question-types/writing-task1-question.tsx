@@ -1,6 +1,5 @@
 "use client";
 
-import { AutoResizeTextarea } from "@testComponents/components/ui/auto-resize-textarea";
 import { Button } from "@testComponents/components/ui/button";
 import { Card } from "@testComponents/components/ui/card";
 import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
@@ -76,23 +75,17 @@ export default function WritingTask1QuestionRenderer({
   }, [showCorrectAnswer, question.sampleAnswer]);
 
   const wordCount = currentEssay
-    ? (currentEssay.match(/\b\w+\b/g) || []).length
+    ? (currentEssay.replace(/<[^>]*>/g, '').match(/\b\w+\b/g) || []).length
     : 0;
 
-  // Handle changes in the textarea - only update local state, don't save
-  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newText = e.target.value;
-    setCurrentEssay(newText);
-    // No auto-save - only update local state
-    // onChange({ text: newText, score: aiScore?.score, feedback: aiScore?.feedback });
-    onChange({ text: newText });
+  // Handle changes in the rich text editor
+  const handleTextChange = (content: string) => {
+    setCurrentEssay(content);
+    onChange({ text: content });
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Writing Task 1</h3>
-      </div>{" "}
       <div className="flex flex-col lg:flex-row gap-4">
         <div className="p-4 flex-1 max-h-[500px] overflow-auto bg-white border-gray-100 rounded-md border">
           <RichTextEditor
@@ -116,16 +109,15 @@ export default function WritingTask1QuestionRenderer({
           </p>
         </div>
         <div className="flex-1">
-          <AutoResizeTextarea
+          <RichTextEditor
             value={currentEssay || ""}
             onChange={handleTextChange}
             placeholder="Write your answer here..."
             className="min-h-[300px]"
-            disabled={readOnly}
-            minRows={20}
-            maxRows={40}
+            readonly={readOnly}
+            minHeight={300}
           />
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center mt-2">
             <p
               className={`text-sm ${
                 wordCount < (question.wordLimit || 150)
@@ -197,8 +189,11 @@ export default function WritingTask1QuestionRenderer({
       )}
       {showSampleAnswer && question.sampleAnswer && (
         <Card className="p-4 bg-muted/50">
-          <h4 className="font-medium mb-2">Sample Answer:</h4>
-          <p className="whitespace-pre-line">{question.sampleAnswer}</p>
+          <h4 className="font-medium mb-2">Gợi ý:</h4>
+          <RichTextContent
+            content={question.sampleAnswer}
+            className="leading-relaxed"
+          />
         </Card>
       )}
     </div>

@@ -67,6 +67,10 @@ export default function SectionEditor({
   const [collapsed, setCollapsed] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
+  const handleAudioSelect = (file: FileObject) => {
+    onUpdateSection(section.id, { audioUrl: file.url });
+  };
+
   const handleImageSelect = (file: FileObject) => {
     if (section.readingPassage) {
       const updatedPassage: ReadingPassage = {
@@ -389,6 +393,22 @@ export default function SectionEditor({
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {testType === "listening" && (
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor={`section-audio-${index}`}
+                  className="text-xs font-medium"
+                >
+                  Audio File
+                </Label>
+                <FilePicker
+                  fileType="audio"
+                  onFileSelect={handleAudioSelect}
+                  currentFileUrl={section.audioUrl || ""}
+                />
               </div>
             )}
 

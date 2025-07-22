@@ -1,6 +1,6 @@
 "use client";
-import React from "react";
 import SectionEditor from "@testComponents/components/creator/section-editor";
+import FilePicker from "@testComponents/components/file-picker";
 import { Button } from "@testComponents/components/ui/button";
 import {
   Card,
@@ -11,8 +11,9 @@ import {
 } from "@testComponents/components/ui/card";
 import { Input } from "@testComponents/components/ui/input";
 import { Label } from "@testComponents/components/ui/label";
-import { Textarea } from "@testComponents/components/ui/textarea";
+import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 import { useToast } from "@testComponents/components/ui/use-toast";
+import type { FileObject } from "@testComponents/lib/supabase-storage";
 import type { Test, TestType } from "@testComponents/lib/types";
 import { useCreatorStore } from "@testComponents/store/creator-store";
 import {
@@ -34,8 +35,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import FilePicker from "@testComponents/components/file-picker";
-import type { FileObject } from "@testComponents/lib/supabase-storage";
 
 // Define Zod schema for test validation
 const QuestionSchema = z
@@ -340,15 +339,15 @@ export function TestCreator({
                     >
                       Description
                     </Label>
-                    <Textarea
+                    <RichTextEditor
                       id="edit-description"
                       value={currentTest.description}
-                      onChange={(e) =>
-                        updateTestDetails({ description: e.target.value })
+                      onChange={(content) =>
+                        updateTestDetails({ description: content })
                       }
-                      className="resize-none text-sm"
                       placeholder="Brief description of this test"
-                      rows={2}
+                      minHeight={200}
+                      className="text-sm"
                     />
                   </div>
 
@@ -359,15 +358,15 @@ export function TestCreator({
                     >
                       Instructions
                     </Label>
-                    <Textarea
+                    <RichTextEditor
                       id="edit-instructions"
                       value={currentTest.instructions}
-                      onChange={(e) =>
-                        updateTestDetails({ instructions: e.target.value })
+                      onChange={(content) =>
+                        updateTestDetails({ instructions: content })
                       }
-                      className="resize-none text-sm"
                       placeholder="Instructions for test takers"
-                      rows={2}
+                      minHeight={200}
+                      className="text-sm"
                     />
                   </div>
                 </div>

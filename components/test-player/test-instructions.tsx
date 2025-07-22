@@ -4,6 +4,7 @@ import { Button } from "@testComponents/components/ui/button";
 import {
   Card
 } from "@testComponents/components/ui/card";
+import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
 import { countSectionQuestion } from "@testComponents/lib/test-utils";
 import type { Test, QuestionType } from "@testComponents/lib/types";
 import {
@@ -325,9 +326,10 @@ export default function TestInstructions({
             {/* Left side - Instructions and Test Structure */}
             <div className="space-y-4 sm:space-y-6 text-sm">
               {test.description && (
-                <p className="text-sm sm:text-base leading-relaxed">
-                  {test.description}
-                </p>
+                <RichTextContent
+                  content={test.description}
+                  className="text-sm sm:text-base leading-relaxed"
+                />
               )}
               <div className="bg-muted/10 rounded-lg border overflow-hidden shadow-sm">
                 <div className="bg-muted/30 py-2 px-3 sm:py-2.5 sm:px-4 border-b flex items-center justify-between">
@@ -343,16 +345,22 @@ export default function TestInstructions({
                   </Badge>
                 </div>
                 <div className="p-3 sm:p-4">
-                  <p className="leading-relaxed text-sm sm:text-base">
-                    {test.instructions ||
-                      `This ${test.type} test consists of ${
+                  {test.instructions ? (
+                    <RichTextContent
+                      content={test.instructions}
+                      className="leading-relaxed text-sm sm:text-base"
+                    />
+                  ) : (
+                    <p className="leading-relaxed text-sm sm:text-base">
+                      This {test.type} test consists of {
                         test.sections.length
-                      } sections with ${totalQuestions} questions. 
-                      You will have ${Math.floor(
+                      } sections with {totalQuestions} questions. 
+                      You will have {Math.floor(
                         test.totalDuration / 60
                       )} minutes to complete the test. 
-                      Read each question carefully before answering.`}
-                  </p>
+                      Read each question carefully before answering.
+                    </p>
+                  )}
                 </div>
               </div>
               {/* Sections */}
