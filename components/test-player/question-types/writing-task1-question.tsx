@@ -42,6 +42,7 @@ export default function WritingTask1QuestionRenderer({
   showCorrectAnswer = false,
   onQuestionHighlighted = () => {},
 }: WritingTask1QuestionProps) {
+  console.log("==> value", value)
   const [currentEssay, setCurrentEssay] = useState<string | null>(
     value?.text ?? null
   );
@@ -84,10 +85,12 @@ export default function WritingTask1QuestionRenderer({
     onChange({ text: content });
   };
 
+  console.log("==> ", aiScore?.score , question.points)
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col lg:flex-row gap-4">
-        <div className="p-4 flex-1 max-h-[500px] overflow-auto bg-white border-gray-100 rounded-md border">
+        <div className="p-4 flex-1 max-h-[600px] overflow-auto bg-white border-gray-100 rounded-md border">
           <RichTextEditor
             value={question.text || ""}
             onChange={(content) => onQuestionHighlighted(question.id, content)}
@@ -113,9 +116,10 @@ export default function WritingTask1QuestionRenderer({
             value={currentEssay || ""}
             onChange={handleTextChange}
             placeholder="Write your answer here..."
-            className="min-h-[300px]"
+            className="max-h-[600px]"
             readonly={readOnly}
-            minHeight={300}
+            minHeight={600}
+            overflow={true}
           />
           <div className="flex justify-between items-center mt-2">
             <p
@@ -137,11 +141,11 @@ export default function WritingTask1QuestionRenderer({
                 >
                   {showSampleAnswer ? (
                     <>
-                      <EyeOff className="mr-2 h-4 w-4" /> Hide Sample Answer
+                      <EyeOff className="mr-2 h-4 w-4" /> Ẩn gợi ý
                     </>
                   ) : (
                     <>
-                      <Eye className="mr-2 h-4 w-4" /> View Sample Answer
+                      <Eye className="mr-2 h-4 w-4" /> Xem gợi ý
                     </>
                   )}
                 </Button>
@@ -154,6 +158,7 @@ export default function WritingTask1QuestionRenderer({
         <Card className="p-4 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
           <h4 className="font-medium mb-2 flex items-center">
             <Award className="mr-2 h-5 w-5 text-green-600 dark:text-green-400" />
+           
             AI Score: {aiScore.score.toFixed(1)} / {question.points}
           </h4>
 

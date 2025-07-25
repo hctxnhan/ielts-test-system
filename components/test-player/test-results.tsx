@@ -86,7 +86,7 @@ const MetricCard = ({
 );
 
 // SectionPerformance component for section score visualization
-const SectionPerformance = ({ section }: { section: SectionResult }) => {
+const SectionPerformance = ({ section, skill }: { section: SectionResult, skill: string }) => {
   if (!section) return null;
   return (
     <div
@@ -113,9 +113,12 @@ const SectionPerformance = ({ section }: { section: SectionResult }) => {
         </div>
 
         <div className="flex justify-between items-center text-xs text-muted-foreground">
-          <div>
-            {section.totalScore}/{section.maxScore} điểm
-          </div>
+          {
+            skill !== 'writing' && <div>
+              {section.totalScore}/{section.maxScore} điểm
+            </div>
+          }
+
           <div>
             {section.totalCount - section.unansweredCount}/{section.totalCount}{' '}
             đã trả lời
@@ -133,7 +136,6 @@ export interface TestResultsProps {
 
 export default function TestResults({ currentTest, testResults }: TestResultsProps) {
   const [showReview, setShowReview] = useState(false);
-
   if (!currentTest) {
     return (
       <div className="flex justify-center items-center h-96">
@@ -186,18 +188,18 @@ export default function TestResults({ currentTest, testResults }: TestResultsPro
               <ScoreCircle percentage={scorePercentage} />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 w-full lg:flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 w-full lg:flex-1">
               <MetricCard
                 icon={Clock}
                 title="Thời gian làm bài"
                 value={`${timeTakenMinutes}m ${remainingSeconds}s`}
               />
-              <MetricCard
+              {/* <MetricCard
                 icon={CheckCircle2}
                 title="Số câu đúng"
                 value={`${correctAnswers}/${totalQuestions}`}
                 iconColor="text-green-500"
-              />
+              /> */}
               <MetricCard
                 icon={BarChart3}
                 title="Band Ước Tính"
@@ -214,7 +216,7 @@ export default function TestResults({ currentTest, testResults }: TestResultsPro
             </h3>
             <div className="space-y-2 text-xs sm:text-sm">
               {testResults.sectionResults.map((section: SectionResult) => (
-                <SectionPerformance key={section.id} section={section} />
+                <SectionPerformance key={section.id} section={section} skill={currentTest.type} />
               ))}
             </div>
           </div>

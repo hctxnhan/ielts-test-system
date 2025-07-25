@@ -48,6 +48,7 @@ interface RichTextEditorProps {
   minHeight?: number;
   maxHeight?: number;
   readonly?: boolean;
+  overflow?: boolean;
 }
 
 // Custom extension to allow style attributes on all nodes
@@ -239,12 +240,12 @@ const FloatingHighlightToolbar = ({ editor, readonly = false }: { editor: Editor
 
   const toggleHighlight = (color: string) => {
     if (!editor) return;
-    
+
     // In readonly mode, we need to temporarily enable editing for highlighting
     if (readonly) {
       const wasEditable = editor.isEditable;
       editor.setEditable(true);
-      
+
       // If the same color is already applied, remove the highlight
       const currentHighlight = editor.getAttributes("highlight");
       if (currentHighlight?.color === color) {
@@ -252,7 +253,7 @@ const FloatingHighlightToolbar = ({ editor, readonly = false }: { editor: Editor
       } else {
         editor.chain().focus().toggleHighlight({ color }).run();
       }
-      
+
       // Restore readonly state
       editor.setEditable(wasEditable);
     } else {
@@ -268,7 +269,7 @@ const FloatingHighlightToolbar = ({ editor, readonly = false }: { editor: Editor
 
   const removeHighlight = () => {
     if (!editor) return;
-    
+
     if (readonly) {
       const wasEditable = editor.isEditable;
       editor.setEditable(true);
@@ -308,7 +309,7 @@ const FloatingHighlightToolbar = ({ editor, readonly = false }: { editor: Editor
       // Get viewport dimensions
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
-      
+
       // Toolbar approximate dimensions (adjust based on actual toolbar size)
       const toolbarWidth = 200; // Approximate width of the toolbar
       const toolbarHeight = 40; // Approximate height of the toolbar
@@ -382,11 +383,10 @@ const FloatingHighlightToolbar = ({ editor, readonly = false }: { editor: Editor
         {colors.map((color) => (
           <button
             key={color.value}
-            className={`w-6 h-6 rounded border hover:border-gray-400 ${color.class} ${
-              currentColor === color.value
+            className={`w-6 h-6 rounded border hover:border-gray-400 ${color.class} ${currentColor === color.value
                 ? "border-gray-800 ring-1 ring-gray-400"
                 : "border-gray-300"
-            }`}
+              }`}
             title={`${color.name}${currentColor === color.value ? " (current)" : ""}`}
             onClick={() => toggleHighlight(color.value)}
           />
@@ -445,52 +445,52 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
 
   const setTextAlign = (alignment: 'left' | 'center' | 'right' | 'justify') => {
     console.log('Setting text alignment to:', alignment);
-    
+
     // Focus the editor first
     editor.commands.focus();
-    
+
     // Get the current selection
     const { from, to } = editor.state.selection;
     console.log('Selection from:', from, 'to:', to);
-    
+
     // Use a more direct approach to set node attributes
     const success = editor.chain()
       .command(({ tr, state }) => {
         const { from, to } = state.selection;
-        
+
         // Apply text-align style to all block nodes in selection
         state.doc.nodesBetween(from, to, (node, pos) => {
           console.log('Processing node:', node.type.name, 'at position:', pos, 'attrs:', node.attrs);
-          
+
           if (node.type.name === 'paragraph' || node.type.name.startsWith('heading')) {
             const currentStyle = node.attrs.style || '';
             console.log('Current style:', currentStyle);
-            
+
             // Remove existing text-align styles
             const cleanStyle = currentStyle.replace(/text-align:\s*[^;]+;?\s*/g, '').trim();
             // Add new text-align style
-            const newStyle = cleanStyle 
-              ? `${cleanStyle}; text-align: ${alignment}` 
+            const newStyle = cleanStyle
+              ? `${cleanStyle}; text-align: ${alignment}`
               : `text-align: ${alignment}`;
-            
+
             console.log('New style will be:', newStyle);
-            
+
             // Apply the new style
             tr.setNodeMarkup(pos, undefined, {
               ...node.attrs,
               style: newStyle
             });
-            
+
             console.log('Node updated with style:', newStyle);
           }
         });
-        
+
         return true;
       })
       .run();
-    
+
     console.log('Command success:', success);
-    
+
     // Force a re-render to update the current alignment state
     setTimeout(() => {
       const alignment = getCurrentAlignment();
@@ -502,15 +502,15 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
   const getCurrentAlignment = () => {
     const { state } = editor;
     const { $from } = state.selection;
-    
+
     // Try to get the alignment from the current node
     let currentNode = $from.node($from.depth);
-    
+
     // If we're in a text node, get the parent node
     if (currentNode.type.name === 'text') {
       currentNode = $from.node($from.depth - 1);
     }
-    
+
     // Check for inline style
     if (currentNode && currentNode.attrs && currentNode.attrs.style) {
       const match = currentNode.attrs.style.match(/text-align:\s*([^;]+)/);
@@ -518,7 +518,7 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
         return match[1].trim();
       }
     }
-    
+
     // Check for class-based alignment
     if (currentNode && currentNode.attrs && currentNode.attrs.class) {
       const classes = currentNode.attrs.class.split(' ');
@@ -531,7 +531,7 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
         }
       }
     }
-    
+
     return 'left';
   };
 
@@ -682,6 +682,7 @@ export function RichTextEditor({
   className,
   minHeight = 200,
   readonly = false,
+  overflow = false,
 }: RichTextEditorProps) {
   const [isMounted, setIsMounted] = useState(false);
   const editor = useEditor({
@@ -720,7 +721,8 @@ export function RichTextEditor({
           "min-h-[150px]",
           readonly && "cursor-default select-text",
         ),
-        style: `min-height: ${minHeight - (readonly ? 20 : 60)}px; overflow-y: auto;`,
+        // style: `min-height: ${minHeight - (readonly ? 20 : 60)}px; overflow-y: auto;`,
+        style: `min-height: ${minHeight - (readonly ? 20 : 60)}px; overflow-y: ${overflow ? "auto" : "hidden"};`,
       },
       ...(readonly && {
         handleKeyDown: () => true, // Block all keyboard input
@@ -755,9 +757,12 @@ export function RichTextEditor({
     <div
       className={cn(
         "rich-text-editor border rounded-md bg-white relative",
-        readonly && "border-none",
+        // readonly && "border-none",
+        readonly ? "border-none cursor-default select-text" : "focus:outline-none focus:ring-0",
+        overflow ? "overflow-y-auto" : "overflow-hidden",
         className,
       )}
+      style={{ minHeight }}
     >
       <style
         dangerouslySetInnerHTML={{
@@ -768,6 +773,7 @@ export function RichTextEditor({
           line-height: 1.5;
           color: #374151;
           padding: 12px 16px;
+          caret-color: #111;
         }
         .rich-text-editor .ProseMirror h1 {
           font-size: 2em;
@@ -891,9 +897,8 @@ export function RichTextEditor({
         }
         .rich-text-editor .ProseMirror mark[data-color="#fed7aa"] {
           background-color: #fed7aa;
-        }        ${
-          readonly
-            ? `
+        }        ${readonly
+              ? `
         .rich-text-editor .ProseMirror {
           cursor: default !important;
           caret-color: transparent !important;
@@ -910,12 +915,19 @@ export function RichTextEditor({
         .rich-text-editor .ProseMirror .ProseMirror-focused {
           outline: none !important;
         }
+        .rich-text-editor .ProseMirror:focus {
+          outline: none !important; 
+          box-shadow: none !important;
+        }
+        .rich-text-editor .ProseMirror {
+  caret-color: #111 !important;
+}
         .rich-text-editor .ProseMirror p.is-editor-empty:first-child::before {
           display: none !important;
         }
         `
-            : ""
-        }
+              : ""
+            }
         `,
         }}
       />
