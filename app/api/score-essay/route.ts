@@ -1,3 +1,4 @@
+import { scoreEssayWithAI } from "@testComponents/app/actions/score-essay";
 import { type NextRequest, NextResponse } from "next/server";
 // import { scoreEssayWithAI } from "@testComponents/lib/ai-scoring";
 
@@ -12,9 +13,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // const result = await scoreEssayWithAI(prompt, essay, scoringPrompt);
+    const result = await scoreEssayWithAI(prompt, essay, scoringPrompt);
 
-    // return NextResponse.json(result);
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Error in score-essay API route:", error);
     return NextResponse.json(

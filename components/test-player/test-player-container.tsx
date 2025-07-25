@@ -48,12 +48,14 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
     if (!test || !progress) {
       return;
     }
-
+   
     const getEssayScore = useTestStore.getState().scoreEssayFn;
     if (!getEssayScore) {
       console.warn("Debug: Essay scoring function is not available");
       return;
     }
+
+   
 
     const currentAnswers = { ...progress.answers };
     let hasChanges = false;
@@ -77,6 +79,11 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
             essay: answer.answer.text,
             scoringPrompt: question.scoringPrompt || "",
           });
+
+          console.log("===> response", response, question.text)
+          console.log("===> essay", answer.answer.text)
+          console.log("===> scoringPrompt", question.scoringPrompt)
+          console.log("===> scoringPrompt", question)
 
           if (response.ok) {
             return {
@@ -180,8 +187,9 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
 
   // Navigation between sections
   const handleNextSection = useCallback(() => {
+   
     if (!progress || !test) return;
-
+    
     const isLastSection =
       progress.currentSectionIndex === test.sections.length - 1;
     if (isLastSection) {
@@ -211,6 +219,7 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
       };
 
       useTestStore.setState({ progress: updatedProgress });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     },
     [progress]
   );
