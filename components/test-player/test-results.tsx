@@ -12,6 +12,7 @@ import { SectionResult, Test, TestResult } from '@testComponents/lib/types';
 import { BarChart3, CheckCircle2, Clock, Search } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import TestReview from './test-review-container';
+import { getIeltsBandScore } from '@testComponents/utils/calculatingBandScore';
 
 // Helper function to determine color based on percentage score
 const getScoreColorClass = (percentage: number) => {
@@ -162,10 +163,18 @@ export default function TestResults({ currentTest, testResults }: TestResultsPro
     percentageScore: scorePercentage
   } = testResults;
 
+
   // Estimate band score
+  // const estimatedBandScore = useMemo(() => {
+  //   return Math.min(9, Math.max(1, Math.round(scorePercentage / 11.1)));
+  // }, [scorePercentage]);
+
   const estimatedBandScore = useMemo(() => {
-    return Math.min(9, Math.max(1, Math.round(scorePercentage / 11.1)));
-  }, [scorePercentage]);
+    let testType = currentTest.type?.toLowerCase()
+    if (testType === 'reading') testType = 'academic_reading'
+    return getIeltsBandScore(testType, correctAnswers) ?? 0;
+  }, [currentTest.type, correctAnswers]);
+
 
   return (
     <>
@@ -198,13 +207,21 @@ export default function TestResults({ currentTest, testResults }: TestResultsPro
                 icon={CheckCircle2}
                 title="Số câu đúng"
                 value={`${correctAnswers}/${totalQuestions}`}
-                iconColor="text-green-500"
+                iconColor
+                ="text-green-500"
               /> */}
-              <MetricCard
+              {/* <MetricCard
                 icon={BarChart3}
                 title="Band Ước Tính"
                 value={`${estimatedBandScore}/${9}`}
-              />
+              /> */}
+              {currentTest.type?.toLowerCase() !== 'writing' && (
+                <MetricCard
+                  icon={BarChart3}
+                  title="Band Ước Tính"
+                  value={`${estimatedBandScore}/${9}`}
+                />
+              )}
             </div>
           </div>
 

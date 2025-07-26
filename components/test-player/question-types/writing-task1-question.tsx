@@ -42,7 +42,7 @@ export default function WritingTask1QuestionRenderer({
   showCorrectAnswer = false,
   onQuestionHighlighted = () => {},
 }: WritingTask1QuestionProps) {
-  console.log("==> value", value)
+
   const [currentEssay, setCurrentEssay] = useState<string | null>(
     value?.text ?? null
   );
@@ -85,7 +85,6 @@ export default function WritingTask1QuestionRenderer({
     onChange({ text: content });
   };
 
-  console.log("==> ", aiScore?.score , question.points)
 
   return (
     <div className="space-y-4">
@@ -159,7 +158,7 @@ export default function WritingTask1QuestionRenderer({
           <h4 className="font-medium mb-2 flex items-center">
             <Award className="mr-2 h-5 w-5 text-green-600 dark:text-green-400" />
            
-            AI Score: {aiScore.score.toFixed(1)} / {question.points}
+            {/* AI Score: {aiScore.score.toFixed(1)} / {question.points} */}
           </h4>
 
           <div className="mt-2">
