@@ -60,6 +60,10 @@ export default function PickFromListQuestionRenderer({
     }
   };
 
+  const selectedCount = value ? Object.values(value).length : 0;
+  const maxSelections = question.subQuestions.length;
+  const isMaxSelected = selectedCount >= maxSelections;
+
   return (
     <div className="mx-auto space-y-6">
       <RichTextEditor
@@ -87,6 +91,9 @@ export default function PickFromListQuestionRenderer({
             const isCorrect = showCorrectAnswer && isSelected && isCorrectItem;
             const isIncorrect = showCorrectAnswer && isSelected && !isCorrectItem;
             const shouldShowAsCorrect = showCorrectAnswer && isCorrectItem && !isSelected;
+            
+            // Check if this item should be grayed out (max selections reached and this item is not selected)
+            const isGreyedOut = isMaxSelected && !isSelected && !readOnly && !showCorrectAnswer;
 
             return (
               <div
@@ -96,7 +103,8 @@ export default function PickFromListQuestionRenderer({
                   isCorrect && "border-green-500 bg-green-50",
                   isIncorrect && "border-red-500 bg-red-50",
                   shouldShowAsCorrect && "border-green-500 bg-green-50",
-                  !isCorrect && !isIncorrect && !shouldShowAsCorrect && "border-gray-200 hover:border-gray-300"
+                  isGreyedOut && "border-gray-100 bg-gray-50",
+                  !isCorrect && !isIncorrect && !shouldShowAsCorrect && !isGreyedOut && "border-gray-200 hover:border-gray-300"
                 )}
               >
                 <Checkbox
@@ -105,12 +113,13 @@ export default function PickFromListQuestionRenderer({
                   onCheckedChange={(checked) =>
                     handleItemSelection(item.id, checked as boolean)
                   }
-                  disabled={readOnly}
+                  disabled={readOnly || isGreyedOut}
                   className={cn(
                     "mt-0.5",
                     isCorrect && "border-green-500 data-[state=checked]:bg-green-500",
                     isIncorrect && "border-red-500 data-[state=checked]:bg-red-500",
-                    shouldShowAsCorrect && "border-green-500"
+                    shouldShowAsCorrect && "border-green-500",
+                    isGreyedOut && "border-gray-300 opacity-50"
                   )}
                 />
                 <Label
@@ -119,7 +128,8 @@ export default function PickFromListQuestionRenderer({
                     "flex-1 cursor-pointer text-sm leading-relaxed",
                     isCorrect && "text-green-800",
                     isIncorrect && "text-red-800",
-                    shouldShowAsCorrect && "text-green-800"
+                    shouldShowAsCorrect && "text-green-800",
+                    isGreyedOut && "text-gray-400 cursor-not-allowed"
                   )}
                 >
                   <span className="font-medium mr-2">{letter}.</span>
