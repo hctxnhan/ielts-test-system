@@ -18,7 +18,7 @@ interface CreatorState {
   createNewTest: (
     type: TestType,
     title: string,
-    readingVariant?: ReadingVariant,
+    readingVariant?: ReadingVariant
   ) => void;
   updateTestDetails: (details: Partial<Test>) => void;
   addSection: () => void;
@@ -28,10 +28,14 @@ interface CreatorState {
   updateQuestion: (
     sectionId: string,
     questionId: string,
-    updates: Partial<Question>,
+    updates: Partial<Question>
   ) => void;
   removeQuestion: (sectionId: string, questionId: string) => void;
-  reorderQuestion: (sectionId: string, questionId: string, direction: 'up' | 'down') => void;
+  reorderQuestion: (
+    sectionId: string,
+    questionId: string,
+    direction: "up" | "down"
+  ) => void;
   // saveTest: () => void;
   loadTest: (test: Test) => void;
   deleteTest: (testId: string) => void;
@@ -50,7 +54,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
   createNewTest: (
     type: TestType,
     title: string,
-    readingVariant?: ReadingVariant,
+    readingVariant?: ReadingVariant
   ) => {
     const newTest: Test = {
       title,
@@ -133,7 +137,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
     if (!currentTest) return;
 
     const updatedSections = currentTest.sections.map((section) =>
-      section.id === sectionId ? { ...section, ...updates } : section,
+      section.id === sectionId ? { ...section, ...updates } : section
     );
 
     set({
@@ -150,7 +154,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
     if (!currentTest) return;
 
     const updatedSections = currentTest.sections.filter(
-      (section) => section.id !== sectionId,
+      (section) => section.id !== sectionId
     );
 
     set({
@@ -168,7 +172,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
     if (!currentTest) return;
 
     const sectionIndex = currentTest.sections.findIndex(
-      (section) => section.id === sectionId,
+      (section) => section.id === sectionId
     );
 
     if (sectionIndex === -1) return;
@@ -373,7 +377,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
           id: uuidv4(),
           type: "writing-task1",
           text: "Task 1",
-          points: 8,
+          points: 1,
           scoringStrategy: "all-or-nothing", // Default for writing tasks
           index: currentTest.sections[sectionIndex].questions.length + 1,
           partialEndingIndex: 0,
@@ -389,7 +393,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
           id: uuidv4(),
           type: "writing-task2",
           text: "Task 2",
-          points: 12,
+          points: 1,
           scoringStrategy: "all-or-nothing", // Default for writing tasks
           index: currentTest.sections[sectionIndex].questions.length + 1,
           partialEndingIndex: 0,
@@ -418,7 +422,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
   updateQuestion: (
     sectionId: string,
     questionId: string,
-    updates: Partial<Question>,
+    updates: Partial<Question>
   ) => {
     const { currentTest } = get();
     if (!currentTest) return;
@@ -427,7 +431,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
       if (section.id !== sectionId) return section;
 
       const updatedQuestions = section.questions.map((question) =>
-        question.id === questionId ? { ...question, ...updates } : question,
+        question.id === questionId ? { ...question, ...updates } : question
       );
 
       return {
@@ -466,7 +470,11 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
     });
   },
 
-  reorderQuestion: (sectionId: string, questionId: string, direction: 'up' | 'down') => {
+  reorderQuestion: (
+    sectionId: string,
+    questionId: string,
+    direction: "up" | "down"
+  ) => {
     const { currentTest } = get();
     if (!currentTest) return;
 
@@ -475,17 +483,20 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
 
       const questions = [...section.questions];
       const currentIndex = questions.findIndex((q) => q.id === questionId);
-      
+
       if (currentIndex === -1) return section;
-      
-      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-      
+
+      const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+
       // Check bounds
       if (newIndex < 0 || newIndex >= questions.length) return section;
-      
+
       // Swap questions
-      [questions[currentIndex], questions[newIndex]] = [questions[newIndex], questions[currentIndex]];
-      
+      [questions[currentIndex], questions[newIndex]] = [
+        questions[newIndex],
+        questions[currentIndex],
+      ];
+
       // Update the index property of questions to reflect their new positions
       questions.forEach((question, index) => {
         question.index = index + 1;
@@ -537,7 +548,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
     if (!currentTest) return 0;
     return currentTest.sections.reduce(
       (total, section) => total + section.duration,
-      0,
+      0
     );
   },
 
@@ -546,7 +557,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
     if (!currentTest) return 0;
     return currentTest.sections.reduce(
       (total, section) => total + section.questions.length,
-      0,
+      0
     );
   },
 }));

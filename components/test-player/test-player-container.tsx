@@ -86,13 +86,14 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
           console.log("===> scoringPrompt", question)
 
           if (response.ok) {
+            console.log("Debug: Scoring successful for question", question.id, response.score, question.points);
             return {
               ...answer,
-              score: (response.score * question.points) / 9,
+              score: (response.score),
               feedback: response.feedback,
               answer: {
                 ...answer.answer,
-                score: (response.score * question.points) / 9,
+                score: (response.score),
                 feedback: response.feedback,
               },
             };
