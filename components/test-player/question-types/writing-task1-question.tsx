@@ -51,7 +51,7 @@ export default function WritingTask1QuestionRenderer({
       ? { score: value.score, feedback: value.feedback }
       : null
   );
-  const [showFeedback, setShowFeedback] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(true);
   const [showSampleAnswer, setShowSampleAnswer] = useState(false);
 
   // Update local state if the external value changes (e.g., loading from progress)

@@ -75,18 +75,13 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
       } else if (!answer.score && !answer.feedback) {
         try {
           const response = await getEssayScore({
-            prompt: question.text,
+            text: question.text,
+            prompt: question.prompt || "",
             essay: answer.answer.text,
             scoringPrompt: question.scoringPrompt || "",
           });
 
-          console.log("===> response", response, question.text)
-          console.log("===> essay", answer.answer.text)
-          console.log("===> scoringPrompt", question.scoringPrompt)
-          console.log("===> scoringPrompt", question)
-
           if (response.ok) {
-            console.log("Debug: Scoring successful for question", question.id, response.score, question.points);
             return {
               ...answer,
               score: (response.score),

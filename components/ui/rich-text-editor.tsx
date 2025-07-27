@@ -444,15 +444,11 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
   };
 
   const setTextAlign = (alignment: 'left' | 'center' | 'right' | 'justify') => {
-    console.log('Setting text alignment to:', alignment);
-
     // Focus the editor first
     editor.commands.focus();
 
     // Get the current selection
     const { from, to } = editor.state.selection;
-    console.log('Selection from:', from, 'to:', to);
-
     // Use a more direct approach to set node attributes
     const success = editor.chain()
       .command(({ tr, state }) => {
@@ -460,12 +456,8 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
 
         // Apply text-align style to all block nodes in selection
         state.doc.nodesBetween(from, to, (node, pos) => {
-          console.log('Processing node:', node.type.name, 'at position:', pos, 'attrs:', node.attrs);
-
           if (node.type.name === 'paragraph' || node.type.name.startsWith('heading')) {
             const currentStyle = node.attrs.style || '';
-            console.log('Current style:', currentStyle);
-
             // Remove existing text-align styles
             const cleanStyle = currentStyle.replace(/text-align:\s*[^;]+;?\s*/g, '').trim();
             // Add new text-align style
@@ -473,15 +465,12 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
               ? `${cleanStyle}; text-align: ${alignment}`
               : `text-align: ${alignment}`;
 
-            console.log('New style will be:', newStyle);
-
             // Apply the new style
             tr.setNodeMarkup(pos, undefined, {
               ...node.attrs,
               style: newStyle
             });
 
-            console.log('Node updated with style:', newStyle);
           }
         });
 
@@ -489,12 +478,9 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
       })
       .run();
 
-    console.log('Command success:', success);
-
     // Force a re-render to update the current alignment state
     setTimeout(() => {
       const alignment = getCurrentAlignment();
-      console.log('Current alignment after update:', alignment);
       setCurrentAlignment(alignment);
     }, 10);
   };

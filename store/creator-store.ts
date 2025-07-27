@@ -377,7 +377,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
           id: uuidv4(),
           type: "writing-task1",
           text: "Task 1",
-          points: 1,
+          points: 9,
           scoringStrategy: "all-or-nothing", // Default for writing tasks
           index: currentTest.sections[sectionIndex].questions.length + 1,
           partialEndingIndex: 0,
@@ -393,7 +393,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
           id: uuidv4(),
           type: "writing-task2",
           text: "Task 2",
-          points: 1,
+          points: 9,
           scoringStrategy: "all-or-nothing", // Default for writing tasks
           index: currentTest.sections[sectionIndex].questions.length + 1,
           partialEndingIndex: 0,

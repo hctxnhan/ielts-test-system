@@ -14,7 +14,7 @@ export type TestConfig = {
   customMode?: boolean;
   selectedSections?: string[];
   selectedTypes?: string[];
-}
+};
 
 // Type for the submission function
 export type SubmitResultFn = (
@@ -24,6 +24,7 @@ export type SubmitResultFn = (
 ) => Promise<any>;
 
 type ScoreEssayFn = (param: {
+  text: string;
   prompt: string;
   essay: string;
   scoringPrompt: string;
@@ -383,16 +384,21 @@ export const useTestStore = create<TestState>()((set, get) => ({
 
           // Get all selected items (values from the answer object)
           const selectedItems = Object.values(answer);
-          
+
           // Get all correct items from subQuestions
-          const correctItems = question.subQuestions?.map((sq: SubQuestionMeta) => sq.item) || [];
-          
+          const correctItems =
+            question.subQuestions?.map((sq: SubQuestionMeta) => sq.item) || [];
+
           // Check if all selected items are correct (regardless of order)
-          const allItemsCorrect = selectedItems.every(item => correctItems.includes(item));
-          
+          const allItemsCorrect = selectedItems.every((item) =>
+            correctItems.includes(item)
+          );
+
           // Check if we have the right number of correct items
-          const correctCount = selectedItems.filter(item => correctItems.includes(item)).length;
-          
+          const correctCount = selectedItems.filter((item) =>
+            correctItems.includes(item)
+          ).length;
+
           isCorrect = allItemsCorrect && correctCount === totalSubQuestions;
           score = isCorrect ? question.points : 0;
         }

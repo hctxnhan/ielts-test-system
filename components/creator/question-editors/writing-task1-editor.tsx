@@ -29,7 +29,7 @@ export default function WritingTask1Editor({
 
   return (
     <div className="grid gap-3">
-      <div className="grid gap-1.5">
+      <div className="hidden gap-1.5">
         <Label
           htmlFor={`prompt-${question.id}`}
           className="text-sm font-medium"

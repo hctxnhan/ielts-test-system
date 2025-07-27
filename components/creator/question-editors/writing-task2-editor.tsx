@@ -23,7 +23,7 @@ export default function WritingTask2Editor({
 }: WritingTask2EditorProps) {
   return (
     <div className="grid gap-3">
-      <div className="grid gap-1.5">
+      <div className="gap-1.5 hidden">
         <Label
           htmlFor={`prompt-${question.id}`}
           className="text-sm font-medium"
