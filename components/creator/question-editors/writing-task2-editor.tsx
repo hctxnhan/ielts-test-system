@@ -23,7 +23,7 @@ export default function WritingTask2Editor({
 }: WritingTask2EditorProps) {
   return (
     <div className="grid gap-3">
-      <div className="gap-1.5 hidden">
+      {/* <div className="gap-1.5 hidden">
         <Label
           htmlFor={`prompt-${question.id}`}
           className="text-sm font-medium"
@@ -41,7 +41,7 @@ export default function WritingTask2Editor({
           placeholder="Enter the essay prompt..."
           className="resize-none min-h-[80px] text-sm"
         />
-      </div>
+      </div> */}
 
       <div className="grid grid-cols-2 gap-3">
         <div className="grid gap-1.5">
