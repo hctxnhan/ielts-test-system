@@ -1,4 +1,6 @@
 "use client";
+
+import React from "react";
 import SectionEditor from "@testComponents/components/creator/section-editor";
 import FilePicker from "@testComponents/components/file-picker";
 import { Button } from "@testComponents/components/ui/button";
@@ -74,6 +76,8 @@ const TestSchema = z
     totalQuestions: z.number().int().min(0),
     instructions: z.string(),
     skillLevel: z.enum(["A1", "A2", "B1", "B2", "C1", "C2"]),
+    tips: z.string().optional(),
+    vocabulary: z.string().optional(),
   })
   .passthrough();
 
@@ -365,6 +369,44 @@ export function TestCreator({
                         updateTestDetails({ instructions: content })
                       }
                       placeholder="Instructions for test takers"
+                      minHeight={200}
+                      className="text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="edit-tips"
+                      className="text-xs font-medium"
+                    >
+                      Tips
+                    </Label>
+                    <RichTextEditor
+                      id="edit-tips"
+                      value={currentTest.tips || ""}
+                      onChange={(content) =>
+                        updateTestDetails({ tips: content })
+                      }
+                      placeholder="Helpful tips for test takers"
+                      minHeight={200}
+                      className="text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="edit-vocabulary"
+                      className="text-xs font-medium"
+                    >
+                      Vocabulary
+                    </Label>
+                    <RichTextEditor
+                      id="edit-vocabulary"
+                      value={currentTest.vocabulary || ""}
+                      onChange={(content) =>
+                        updateTestDetails({ vocabulary: content })
+                      }
+                      placeholder="Key vocabulary and definitions"
                       minHeight={200}
                       className="text-sm"
                     />

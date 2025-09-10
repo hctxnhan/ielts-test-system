@@ -43,7 +43,7 @@ export interface BaseQuestion {
   points: number;
   scoringStrategy: ScoringStrategy;
   subQuestions?: SubQuestionMeta[];
-
+  imageUrl?: string;
   index: number;
   partialEndingIndex: number;
 }
@@ -190,6 +190,8 @@ export interface Test {
   instructions: string;
   skillLevel?: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
   audioUrl?: string; // Added for listening tests
+  tips?: string; // Tips for test takers
+  vocabulary?: string; // Vocabulary help for test takers
 }
 
 export interface UserAnswer {

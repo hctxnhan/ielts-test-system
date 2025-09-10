@@ -59,6 +59,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
     const newTest: Test = {
       title,
       type,
+      skill: type, // Set skill to be the same as type
       description: "",
       sections: [],
       totalDuration: 0,

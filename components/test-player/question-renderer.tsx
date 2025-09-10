@@ -202,10 +202,27 @@ export default function QuestionRenderer({
     ? { maxWidth: "none" }
     : { maxWidth: 900, margin: "0 auto" };
 
+  // Component to render question image if it exists
+  const QuestionImage = () => {
+    if (!updatedQuestion.imageUrl) return null;
+    
+    return (
+      <div className="my-4">
+        <img
+          src={updatedQuestion.imageUrl}
+          alt="Question image"
+          className="max-w-full mx-auto h-auto rounded-md border border-gray-200 shadow-sm"
+          style={{ maxHeight: '400px', objectFit: 'contain' }}
+        />
+      </div>
+    );
+  };
+
   switch (updatedQuestion.type) {
     case "multiple-choice":
       return (
         <div style={containerStyle}>
+          <QuestionImage />
           <MultipleChoiceQuestionComponent
             question={updatedQuestion}
             value={(localAnswer as string | null) ?? undefined}
@@ -220,6 +237,7 @@ export default function QuestionRenderer({
     case "completion":
       return (
         <div style={containerStyle}>
+          <QuestionImage />
           <CompletionQuestionComponent
             question={updatedQuestion}
             value={localAnswer as Record<string, string> | null}
@@ -234,6 +252,7 @@ export default function QuestionRenderer({
     case "matching":
       return (
         <div style={containerStyle}>
+          <QuestionImage />
           <MatchingQuestionComponent
             question={updatedQuestion}
             value={localAnswer as Record<string, string> | null}
@@ -248,6 +267,7 @@ export default function QuestionRenderer({
     case "labeling":
       return (
         <div style={containerStyle}>
+          <QuestionImage />
           <LabelingQuestionComponent
             question={updatedQuestion}
             value={localAnswer as Record<string, string> | null}
@@ -262,6 +282,7 @@ export default function QuestionRenderer({
     case "pick-from-a-list":
       return (
         <div style={containerStyle}>
+          <QuestionImage />
           <PickFromListQuestionComponent
             question={updatedQuestion}
             value={localAnswer as Record<string, string> | null}
@@ -276,6 +297,7 @@ export default function QuestionRenderer({
     case "true-false-not-given":
       return (
         <div style={containerStyle}>
+          <QuestionImage />
           <TrueFalseNotGivenQuestionComponent
             question={updatedQuestion}
             value={localAnswer as Record<string, string> | null}
@@ -290,6 +312,7 @@ export default function QuestionRenderer({
     case "matching-headings":
       return (
         <div style={containerStyle}>
+          <QuestionImage />
           <MatchingHeadingsQuestionComponent
             question={updatedQuestion}
             value={localAnswer as Record<string, string> | null}
@@ -304,6 +327,7 @@ export default function QuestionRenderer({
     case "short-answer":
       return (
         <div style={containerStyle}>
+          <QuestionImage />
           <ShortAnswerQuestionComponent
             question={updatedQuestion}
             value={localAnswer as Record<string, string> | null}
@@ -319,6 +343,7 @@ export default function QuestionRenderer({
     case "writing-task2":
       return (
         <div style={containerStyle}>
+          <QuestionImage />
           <WritingTask1QuestionRenderer
             question={updatedQuestion}
             value={localAnswer as WritingTaskAnswer | null}

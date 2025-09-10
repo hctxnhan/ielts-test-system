@@ -14,7 +14,9 @@ import {
   CardDescription,
 } from "@testComponents/components/ui/card";
 import type { Question, ScoringStrategy } from "@testComponents/lib/types";
-import { BarChart2, MessageSquare } from "lucide-react";
+import type { FileObject } from "@testComponents/lib/supabase-storage";
+import { BarChart2, MessageSquare, Image } from "lucide-react";
+import FilePicker from "@testComponents/components/file-picker";
 import MultipleChoiceEditor from "./question-editors/multiple-choice-editor";
 import CompletionEditor from "./question-editors/completion-editor";
 import MatchingEditor from "./question-editors/matching-editor";
@@ -77,6 +79,23 @@ export default function QuestionEditorInline({
             minHeight={120}
             maxHeight={400}
             className="text-sm"
+          />
+        </div>
+
+        {/* Optional Image Field */}
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium flex items-center gap-1.5">
+            <Image className="h-3 w-3" />
+            Question Image (Optional)
+          </Label>
+          <FilePicker
+            fileType="image"
+            currentFileUrl={question.imageUrl}
+            onFileSelect={(file: FileObject) =>
+              onUpdateQuestion(sectionId, question.id, { 
+                imageUrl: file.url || undefined 
+              })
+            }
           />
         </div>
 
