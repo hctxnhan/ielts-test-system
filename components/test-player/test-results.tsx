@@ -153,16 +153,10 @@ export default function TestResults({ currentTest, testResults }: TestResultsPro
   } = testResults;
 
 
-  // Estimate band score
-  // const estimatedBandScore = useMemo(() => {
-  //   return Math.min(9, Math.max(1, Math.round(scorePercentage / 11.1)));
-  // }, [scorePercentage]);
-
   const estimatedBandScore = useMemo(() => {
-    let testType = currentTest.type?.toLowerCase()
-    if (testType === 'reading') testType = 'academic_reading'
-    return getIeltsBandScore(testType, correctAnswers) ?? 0;
-  }, [currentTest.type, correctAnswers]);
+    return Math.min(9, Math.max(1, Math.round(scorePercentage / 11.1)));
+  }, [scorePercentage]);
+
 
 
   return (
