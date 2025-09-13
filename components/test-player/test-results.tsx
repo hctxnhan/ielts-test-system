@@ -9,10 +9,10 @@ import {
 } from '@testComponents/components/ui/card';
 import { Progress } from '@testComponents/components/ui/progress';
 import { SectionResult, Test, TestResult } from '@testComponents/lib/types';
-import { BarChart3, CheckCircle2, Clock, Search } from 'lucide-react';
+import { getIeltsBandScore } from '@testComponents/utils/calculatingBandScore';
+import { BarChart3, Clock, Search } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import TestReview from './test-review-container';
-import { getIeltsBandScore } from '@testComponents/utils/calculatingBandScore';
 
 // Helper function to determine color based on percentage score
 const getScoreColorClass = (percentage: number) => {
@@ -22,13 +22,6 @@ const getScoreColorClass = (percentage: number) => {
   return 'text-rose-500';
 };
 
-// Helper function to determine background color based on percentage score
-const getScoreBgClass = (percentage: number) => {
-  if (percentage == 0) return 'bg-neutral-200';
-  if (percentage >= 70) return 'bg-green-500';
-  if (percentage >= 50) return 'bg-amber-500';
-  return 'bg-rose-500';
-};
 
 // ScoreCircle component for the circular progress visualization
 const ScoreCircle = ({ percentage }: { percentage: number }) => {
@@ -155,11 +148,7 @@ export default function TestResults({ currentTest, testResults }: TestResultsPro
   const remainingSeconds = timeTakenSeconds % 60;
 
   const {
-    totalQuestions,
-    answeredQuestions,
     correctAnswers,
-    totalScore,
-    maxPossibleScore,
     percentageScore: scorePercentage
   } = testResults;
 
@@ -203,18 +192,6 @@ export default function TestResults({ currentTest, testResults }: TestResultsPro
                 title="Thời gian làm bài"
                 value={`${timeTakenMinutes}m ${remainingSeconds}s`}
               />
-              {/* <MetricCard
-                icon={CheckCircle2}
-                title="Số câu đúng"
-                value={`${correctAnswers}/${totalQuestions}`}
-                iconColor
-                ="text-green-500"
-              /> */}
-              {/* <MetricCard
-                icon={BarChart3}
-                title="Band Ước Tính"
-                value={`${estimatedBandScore}/${9}`}
-              /> */}
               {currentTest.type?.toLowerCase() !== 'writing' && (
                 <MetricCard
                   icon={BarChart3}

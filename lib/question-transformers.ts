@@ -6,8 +6,10 @@ import {
   MultipleChoiceQuestion,
   PickFromAListQuestion,
   Question,
+  SentenceTranslationQuestion,
   ShortAnswerQuestion,
   TrueFalseNotGivenQuestion,
+  WordFormQuestion,
   WritingTask1Question,
   WritingTask2Question,
 } from "./types";
@@ -22,9 +24,11 @@ import {
   StandardQuestion,
   StandardQuestionItem,
   StandardQuestionOption,
+  StandardSentenceTranslationQuestion,
   StandardShortAnswerQuestion,
   StandardSubQuestionMeta,
   StandardTrueFalseNotGivenQuestion,
+  StandardWordFormQuestion,
   StandardWritingTask1Question,
   StandardWritingTask2Question,
 } from "./standardized-types";
@@ -84,6 +88,18 @@ function isWritingTask2Question(
   question: Question,
 ): question is WritingTask2Question {
   return question.type === "writing-task2";
+}
+
+function isSentenceTranslationQuestion(
+  question: Question,
+): question is SentenceTranslationQuestion {
+  return question.type === "sentence-translation";
+}
+
+function isWordFormQuestion(
+  question: Question,
+): question is WordFormQuestion {
+  return question.type === "word-form";
 }
 
 // Transform functions for each question type
@@ -349,6 +365,94 @@ function transformWritingTask(
   } as StandardWritingTask1Question | StandardWritingTask2Question;
 }
 
+function transformSentenceTranslation(
+  question: SentenceTranslationQuestion,
+): StandardSentenceTranslationQuestion {
+  // Handle both formats: questions with single sourceText and questions with sentences array
+  const questionData = question as any; // Cast to access both possible properties
+  
+  if (questionData.sourceText) {
+    // Single sentence format (from sample tests)
+    return {
+      ...question,
+      sourceText: questionData.sourceText,
+      referenceTranslation: questionData.referenceTranslation,
+      sourceLanguage: question.sourceLanguage,
+      targetLanguage: question.targetLanguage,
+      scoringPrompt: question.scoringPrompt,
+      scoringStrategy: "partial",
+      subQuestions: [
+        {
+          subId: question.id,
+          points: question.points,
+          questionText: questionData.sourceText,
+          answerText: questionData.referenceTranslation,
+        },
+      ],
+    } as StandardSentenceTranslationQuestion;
+  } else if (question.sentences && question.sentences.length > 0) {
+    // Multiple sentences format
+    const firstSentence = question.sentences[0];
+    const standardSubQuestions: StandardSubQuestionMeta[] = question.sentences.map((sentence, index) => ({
+      subId: sentence.id,
+      points: question.points / question.sentences.length,
+      questionText: sentence.sourceText,
+      answerText: sentence.referenceTranslations?.[0] || "",
+      subIndex: index,
+    }));
+
+    return {
+      ...question,
+      sourceText: firstSentence.sourceText,
+      referenceTranslation: firstSentence.referenceTranslations?.[0] || "",
+      sourceLanguage: question.sourceLanguage,
+      targetLanguage: question.targetLanguage,
+      scoringPrompt: question.scoringPrompt,
+      scoringStrategy: "partial",
+      subQuestions: standardSubQuestions,
+    } as StandardSentenceTranslationQuestion;
+  }
+  
+  // Fallback for empty questions
+  return {
+    ...question,
+    sourceText: "",
+    referenceTranslation: "",
+    sourceLanguage: question.sourceLanguage,
+    targetLanguage: question.targetLanguage,
+    scoringPrompt: question.scoringPrompt,
+    scoringStrategy: "partial",
+    subQuestions: [],
+  } as StandardSentenceTranslationQuestion;
+}
+
+function transformWordForm(
+  question: WordFormQuestion,
+): StandardWordFormQuestion {
+  const exercises = question.exercises || [];
+  
+  const standardSubQuestions: StandardSubQuestionMeta[] = exercises.map((exercise, index) => ({
+    subId: exercise.id,
+    points: question.points / Math.max(exercises.length, 1),
+    questionText: exercise.sentence,
+    answerText: exercise.correctForm,
+    subIndex: index,
+    correctAnswer: exercise.correctForm,
+  }));
+
+  return {
+    ...question,
+    exercises: exercises.map(ex => ({
+      id: ex.id,
+      sentence: ex.sentence,
+      baseWord: ex.baseWord,
+      correctForm: ex.correctForm,
+    })),
+    scoringStrategy: "partial",
+    subQuestions: standardSubQuestions,
+  } as StandardWordFormQuestion;
+}
+
 // Update the main transform function
 export function transformToStandardQuestion(
   question: Question,
@@ -380,7 +484,12 @@ export function transformToStandardQuestion(
   if (isWritingTask1Question(question) || isWritingTask2Question(question)) {
     return transformWritingTask(question);
   }
+  if (isSentenceTranslationQuestion(question)) {
+    return transformSentenceTranslation(question);
+  }
+  if (isWordFormQuestion(question)) {
+    return transformWordForm(question);
+  }
 
-  const type = (question as Question).type;
-  // throw new Error(`Unsupported question type: ${type}`);
+  throw new Error(`Unsupported question type: ${question.type}`);
 }

@@ -64,7 +64,7 @@ const SectionSchema = z
 const TestSchema = z
   .object({
     title: z.string().min(1, "Test title is required"),
-    type: z.enum(["listening", "reading", "writing", "speaking"]),
+    type: z.enum(["listening", "reading", "writing", "speaking", "grammar"]),
     description: z.string(),
     sections: z
       .array(SectionSchema)

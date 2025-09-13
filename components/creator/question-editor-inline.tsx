@@ -27,6 +27,8 @@ import ShortAnswerEditor from "./question-editors/short-answer-editor";
 import LabelingEditor from "./question-editors/labeling-editor";
 import WritingTask1Editor from "./question-editors/writing-task1-editor";
 import WritingTask2Editor from "./question-editors/writing-task2-editor";
+import SentenceTranslationEditor from "./question-editors/sentence-translation-editor";
+import WordFormEditor from "./question-editors/word-form-editor";
 
 interface QuestionEditorInlineProps {
   question: Question;
@@ -51,6 +53,8 @@ export default function QuestionEditorInline({
     "true-false-not-given",
     "matching-headings",
     "short-answer",
+    "sentence-translation",
+    "word-form",
   ].includes(question.type);
 
   return (
@@ -225,6 +229,21 @@ export default function QuestionEditorInline({
               question={question}
               sectionId={sectionId}
               onUpdateQuestion={onUpdateQuestion}
+            />
+          )}
+
+          {question.type === "sentence-translation" && (
+            <SentenceTranslationEditor
+              question={question}
+              sectionId={sectionId}
+              onUpdateQuestion={onUpdateQuestion}
+            />
+          )}
+
+          {question.type === "word-form" && (
+            <WordFormEditor
+              value={question}
+              onChange={(value) => onUpdateQuestion(sectionId, question.id, value)}
             />
           )}
         </div>

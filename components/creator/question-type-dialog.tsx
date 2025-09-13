@@ -100,6 +100,22 @@ export default function QuestionTypeDialog({
     },
   ];
 
+  // Grammar-specific question types
+  const grammarQuestionTypes = [
+    {
+      type: "sentence-translation" as QuestionType,
+      title: "Sentence Translation",
+      description: "Translate sentences between languages",
+      icon: "🌐",
+    },
+    {
+      type: "word-form" as QuestionType,
+      title: "Word Form Transformation",
+      description: "Change words to correct grammatical forms",
+      icon: "📝",
+    },
+  ];
+
   // Update the questionTypes array to include writing types
   let questionTypes = [...commonQuestionTypes];
 
@@ -109,6 +125,8 @@ export default function QuestionTypeDialog({
     questionTypes = [...questionTypes, ...readingQuestionTypes];
   } else if (testType === "writing") {
     questionTypes = [...writingQuestionTypes];
+  } else if (testType === "grammar") {
+    questionTypes = [...grammarQuestionTypes];
   }
 
   return (

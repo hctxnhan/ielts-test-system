@@ -1,5 +1,5 @@
 // Test Types
-export type TestType = "listening" | "reading" | "writing" | "speaking";
+export type TestType = "listening" | "reading" | "writing" | "speaking" | "grammar";
 export type ReadingVariant = "academic" | "general";
 
 // Add scoring strategy type
@@ -17,7 +17,9 @@ export type QuestionType =
   | "matching-headings"
   | "short-answer"
   | "writing-task1"
-  | "writing-task2";
+  | "writing-task2"
+  | "sentence-translation"
+  | "word-form";
 
 export interface SubQuestionMeta {
   subId: string;
@@ -145,6 +147,26 @@ export interface WritingTask2Question extends BaseQuestion {
   imageUrl?: string;
 }
 
+export interface SentenceTranslationQuestion extends BaseQuestion {
+  type: "sentence-translation";
+  sentences: { id: string; sourceText: string; referenceTranslations?: string[] }[];
+  sourceLanguage: "vietnamese" | "english";
+  targetLanguage: "english" | "vietnamese";
+  scoringPrompt?: string;
+}
+
+export interface WordFormQuestion extends BaseQuestion {
+  type: "word-form";
+  exercises: { 
+    id: string; 
+    sentence: string; 
+    baseWord: string; 
+    correctForm: string; 
+    position: number; // position of the blank in the sentence
+  }[];
+  scoringPrompt?: string;
+}
+
 export type Question =
   | MultipleChoiceQuestion
   | CompletionQuestion
@@ -156,7 +178,9 @@ export type Question =
   | MatchingHeadingsQuestion
   | ShortAnswerQuestion
   | WritingTask1Question
-  | WritingTask2Question;
+  | WritingTask2Question
+  | SentenceTranslationQuestion
+  | WordFormQuestion;
 
 export interface ReadingPassage {
   id: string;

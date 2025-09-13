@@ -113,6 +113,27 @@ export interface StandardWritingTask2Question extends StandardBaseQuestion {
   subQuestions: StandardSubQuestionMeta[];
 }
 
+export interface StandardSentenceTranslationQuestion extends StandardBaseQuestion {
+  type: "sentence-translation";
+  sourceText: string;
+  referenceTranslation?: string;
+  sourceLanguage: "vietnamese" | "english";
+  targetLanguage: "english" | "vietnamese";
+  scoringPrompt?: string;
+}
+
+export interface StandardWordFormQuestion extends StandardBaseQuestion {
+  type: "word-form";
+  exercises: {
+    id: string;
+    sentence: string;
+    baseWord: string;
+    correctForm: string;
+  }[];
+  scoringPrompt?: string;
+  subQuestions: StandardSubQuestionMeta[];
+}
+
 export type StandardQuestion =
   | StandardMultipleChoiceQuestion
   | StandardCompletionQuestion
@@ -123,7 +144,9 @@ export type StandardQuestion =
   | StandardMatchingHeadingsQuestion
   | StandardShortAnswerQuestion
   | StandardWritingTask1Question
-  | StandardWritingTask2Question;
+  | StandardWritingTask2Question
+  | StandardSentenceTranslationQuestion
+  | StandardWordFormQuestion;
 
 // Test interface with standardized questions
 export interface StandardTest {

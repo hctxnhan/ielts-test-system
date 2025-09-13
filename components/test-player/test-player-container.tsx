@@ -1,8 +1,8 @@
 "use client";
-import { processTestWithFilters, type TestFilterConfig } from "@testComponents/lib/test";
+import { processTestWithFilters } from "@testComponents/lib/test";
 import type { Test } from "@testComponents/lib/types";
 import { useTestStore } from "@testComponents/store/test-store";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import BaseTestContainer from "./base-test-container";
 import TestInstructions from "./test-instructions";
 import TestResults from "./test-results";

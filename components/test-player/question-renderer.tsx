@@ -6,6 +6,7 @@ import type {
   UserAnswer,
   WritingTaskAnswer,
 } from "@testComponents/lib/types"; // Import types
+import { QuestionPluginRegistry } from "@testComponents/lib/question-plugin-system";
 // Import actual components
 import CompletionQuestionComponent from "./question-types/completion-question";
 import LabelingQuestionComponent from "./question-types/labeling-question";
@@ -16,8 +17,9 @@ import PickFromListQuestionComponent from "./question-types/pick-from-list-quest
 import ShortAnswerQuestionComponent from "./question-types/short-answer-question";
 import TrueFalseNotGivenQuestionComponent from "./question-types/true-false-not-given-question";
 import WritingTask1QuestionRenderer from "./question-types/writing-task1-question"; // Correct component import
+import SentenceTranslationQuestionComponent from "./question-types/sentence-translation-question";
+import WordFormQuestionComponent from "./question-types/word-form-question";
 
-import { supportsPartialScoring } from "@testComponents/lib/test-utils";
 import { useTestStore } from "@testComponents/store/test-store";
 import { useEffect, useRef, useState } from "react";
 
@@ -39,29 +41,28 @@ function hasSubQuestions(question: Question): boolean {
 // Function to get the local answer from progress
 function getLocalAnswerFromProgress(
   question: Question,
-  answers: Record<string, UserAnswer> | undefined
+  answers: Record<string, UserAnswer> | undefined,
 ): AnswerType | WritingTaskAnswer {
   if (!answers) return null;
 
+  const supportPartial = QuestionPluginRegistry.supportsPartialScoring(question.type);
+
   // Handle questions supporting partial scoring with sub-questions
-  if (
-    supportsPartialScoring.includes(question.type) &&
-    hasSubQuestions(question) &&
-    question.scoringStrategy === 'partial'
-  ) {
+  if (supportPartial && hasSubQuestions(question) && question.scoringStrategy === "partial") {
+    console.log("Partial scoring with sub-questions detected", hasSubQuestions(question), question.scoringStrategy);
     const subAnswers: Record<string, string> = {};
     const questionAnswers = Object.values(answers).filter(
       (answer) =>
         answer.parentQuestionId === question.id ||
         (answer.questionId === question.id &&
-          answer.subQuestionId !== undefined)
+          answer.subQuestionId !== undefined),
     );
 
     questionAnswers.forEach((answer) => {
       if (
         answer.subQuestionId !== undefined &&
         answer.answer !== undefined &&
-        typeof answer.answer === 'string'
+        typeof answer.answer === "string"
       ) {
         subAnswers[answer.subQuestionId] = answer.answer;
       }
@@ -76,8 +77,10 @@ function getLocalAnswerFromProgress(
     !userAnswer ||
     userAnswer.answer === undefined ||
     userAnswer.answer === null ||
-    userAnswer.subQuestionId !== undefined
+    (userAnswer.subQuestionId !== undefined &&
+      userAnswer.subQuestionId !== null)
   ) {
+    console.log("No valid answer found for question:", question.id);
     return null;
   }
 
@@ -85,14 +88,14 @@ function getLocalAnswerFromProgress(
 
   // Handle T/F/NG specifically if it's NOT partial scoring / has no sub-questions
   // to ensure it returns a Record, matching the component's expected prop type
-  if (question.type === 'true-false-not-given' && !hasSubQuestions(question)) {
-    if (typeof answer === 'string') {
+  if (question.type === "true-false-not-given" && !hasSubQuestions(question)) {
+    if (typeof answer === "string") {
       // Use the main question ID as the key for the single answer
       return { [question.id]: answer };
     }
     console.warn(
       `Unexpected answer format for single T/F/NG question ${question.id}:`,
-      answer
+      answer,
     );
     return null;
   }
@@ -107,25 +110,26 @@ function submitQuestionAnswer(
   submitAnswer: (
     questionId: string,
     answer: any,
-    subQuestionId?: string
-  ) => void,
-  subId?: string
+    subQuestionId?: string,
+  ) => Promise<void>,
+  subId?: string,
 ): void {
   if (
     hasSubQuestions(question) &&
-    typeof newAnswer === 'object' &&
+    typeof newAnswer === "object" &&
     newAnswer !== null &&
-    supportsPartialScoring.includes(question.type)
+    question.scoringStrategy === "partial"
   ) {
     if (subId) {
       const answerForSubQuestion =
-        question.type === 'matching' ||
-        question.type === 'labeling' ||
-        question.type === 'pick-from-a-list' ||
-        question.type === 'matching-headings' ||
-        question.type === 'short-answer' ||
-        question.type === 'true-false-not-given' ||
-        question.type === 'completion'
+        question.type === "matching" ||
+        question.type === "labeling" ||
+        question.type === "pick-from-a-list" ||
+        question.type === "matching-headings" ||
+        question.type === "short-answer" ||
+        question.type === "true-false-not-given" ||
+        question.type === "completion" ||
+        question.type === "sentence-translation"
           ? (newAnswer as Record<string, string>)[subId]
           : newAnswer;
 
@@ -143,7 +147,7 @@ export default function QuestionRenderer({
   sectionId,
   answers,
   isReviewMode = false,
-  onQuestionContentChange
+  onQuestionContentChange,
 }: QuestionRendererProps) {
   const { submitAnswer, currentTest } = useTestStore();
   const [localAnswer, setLocalAnswer] = useState<
@@ -155,10 +159,10 @@ export default function QuestionRenderer({
   // Get updated question text from store
   const getUpdatedQuestion = () => {
     if (!currentTest) return question;
-    
+
     // Find the question in the current test data (which contains updates)
     for (const section of currentTest.sections) {
-      const foundQuestion = section.questions.find(q => q.id === question.id);
+      const foundQuestion = section.questions.find((q) => q.id === question.id);
       if (foundQuestion) {
         return foundQuestion;
       }
@@ -185,7 +189,7 @@ export default function QuestionRenderer({
   // Handle answer changes with debouncing
   const handleChange = (
     newAnswer: AnswerType | WritingTaskAnswer,
-    subId?: string
+    subId?: string,
   ) => {
     setLocalAnswer(newAnswer);
     setTimeout(() => {
@@ -205,14 +209,14 @@ export default function QuestionRenderer({
   // Component to render question image if it exists
   const QuestionImage = () => {
     if (!updatedQuestion.imageUrl) return null;
-    
+
     return (
       <div className="my-4">
         <img
           src={updatedQuestion.imageUrl}
           alt="Question image"
           className="max-w-full mx-auto h-auto rounded-md border border-gray-200 shadow-sm"
-          style={{ maxHeight: '400px', objectFit: 'contain' }}
+          style={{ maxHeight: "400px", objectFit: "contain" }}
         />
       </div>
     );
@@ -347,6 +351,36 @@ export default function QuestionRenderer({
           <WritingTask1QuestionRenderer
             question={updatedQuestion}
             value={localAnswer as WritingTaskAnswer | null}
+            onChange={handleChange}
+            readOnly={isReviewMode}
+            showCorrectAnswer={isReviewMode}
+            onQuestionHighlighted={onQuestionContentChange}
+          />
+        </div>
+      );
+
+    case "sentence-translation":
+      return (
+        <div style={containerStyle}>
+          <QuestionImage />
+          <SentenceTranslationQuestionComponent
+            question={updatedQuestion}
+            value={localAnswer as Record<string, string> | null}
+            onChange={handleChange}
+            readOnly={isReviewMode}
+            showCorrectAnswer={isReviewMode}
+            onQuestionHighlighted={onQuestionContentChange}
+          />
+        </div>
+      );
+
+    case "word-form":
+      return (
+        <div style={containerStyle}>
+          <QuestionImage />
+          <WordFormQuestionComponent
+            question={updatedQuestion}
+            value={localAnswer as Record<string, string> | null}
             onChange={handleChange}
             readOnly={isReviewMode}
             showCorrectAnswer={isReviewMode}

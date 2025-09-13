@@ -59,31 +59,42 @@ export function getQuestionScore(
   question: Question,
   answers: Record<string, UserAnswer>,
 ): { score: number; maxScore: number } {
-  let score = 0;
-  let maxScore = 0;
-
-  if (
-    supportsPartialScoring.includes(question.type) &&
-    question.scoringStrategy === "partial" &&
-    question.subQuestions?.length
-  ) {
-    const subQuestions = question.subQuestions || [];
-    score = subQuestions.reduce((acc, subQ) => {
+  // For questions with sub-questions and partial scoring, sum up sub-question scores
+  if (question.subQuestions?.length && question.scoringStrategy === "partial") {
+    let totalScore = 0;
+    let totalMaxScore = 0;
+    
+    question.subQuestions.forEach((subQ) => {
       const answer = answers[subQ.subId];
-      maxScore += subQ.points;
-
-      return acc + (answer?.isCorrect ? (answer.score ?? subQ.points) : 0);
-    }, 0);
+      if (answer) {
+        totalScore += answer.score || 0;
+        totalMaxScore += answer.maxScore || subQ.points || 0;
+      } else {
+        // No answer submitted for this sub-question
+        totalMaxScore += subQ.points || 0;
+      }
+    });
+    
+    return {
+      score: totalScore,
+      maxScore: totalMaxScore,
+    };
   } else {
-    maxScore = question.points;
+    // For single questions, use the answer's pre-calculated score
     const answer = answers[question.id];
-    score = answer?.isCorrect ? (answer.score ?? question.points) : 0;
+    if (answer) {
+      return {
+        score: answer.score || 0,
+        maxScore: answer.maxScore || question.points || 0,
+      };
+    } else {
+      // No answer submitted
+      return {
+        score: 0,
+        maxScore: question.points || 0,
+      };
+    }
   }
-
-  return {
-    score,
-    maxScore,
-  };
 }
 
 /**
@@ -118,7 +129,7 @@ export function getTestStats(
   let maxPossibleScore = 0;
 
   // Process each section
-  test.sections.forEach((section) => {
+  for (const section of test.sections) {
     const sectionStats = getSectionStats(section, answers);
 
     totalQuestions += sectionStats.sectionTotalQuestions;
@@ -126,7 +137,7 @@ export function getTestStats(
     correctAnswers += sectionStats.sectionCorrectAnswers;
     totalScore += sectionStats.sectionScore;
     maxPossibleScore += sectionStats.sectionTotalScore;
-  });
+  }
 
   const percentageScore =
     Math.round((totalScore / maxPossibleScore) * 100) || 0;
@@ -140,16 +151,6 @@ export function getTestStats(
     percentageScore,
   };
 }
-
-export const supportsPartialScoring = [
-  "completion",
-  "matching",
-  "labeling",
-  "pick-from-a-list",
-  "true-false-not-given",
-  "matching-headings",
-  "short-answer",
-];
 
 /**
  * Calculate statistics for a specific section
@@ -165,17 +166,13 @@ export function getSectionStats(
   let incorrectAnswers = 0;
 
   // Process each question in the section
-  section.questions.forEach((question) => {
+  for (const question of section.questions) {
     const { score, maxScore } = getQuestionScore(question, answers);
     sectionScore += score;
     sectionTotalScore += maxScore;
 
     // Collect answers for both subquestions and main questions
-    if (
-      supportsPartialScoring.includes(question.type) &&
-      question.subQuestions?.length &&
-      question.scoringStrategy === "partial"
-    ) {
+    if (question.subQuestions?.length && question.scoringStrategy === "partial") {
       question.subQuestions.forEach((sq) => {
         const answer = answers[sq.subId];
         const questionStatus = getQuestionStatus(sq.subId, answers, question);
@@ -201,7 +198,7 @@ export function getSectionStats(
         }
       }
     }
-  });
+  }
 
   const sectionPercentage =
     Math.round((sectionScore / sectionTotalScore) * 100) || 0;
