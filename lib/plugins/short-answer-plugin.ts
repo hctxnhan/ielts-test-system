@@ -12,7 +12,7 @@ import type {
   ShortAnswerQuestion,
   Question,
 } from "@testComponents/lib/types";
-import { StandardQuestion } from "@testComponents/lib/standardized-types";
+import { StandardQuestion, StandardQuestionItem, StandardSubQuestionMeta } from "@testComponents/lib/standardized-types";
 import { v4 as uuidv4 } from "uuid";
 
 // Using 'as unknown as' to bypass strict type checking for component props,
@@ -69,20 +69,30 @@ class ShortAnswerPlugin extends BaseQuestionPlugin<ShortAnswerQuestion> {
   }
 
   transform(question: ShortAnswerQuestion): StandardQuestion {
+    const standardItems: StandardQuestionItem[] = question.questions.map((q) => ({
+      id: q.id,
+      text: q.text,
+    }));
+
+    const standardSubQuestions: StandardSubQuestionMeta[] =
+      question.subQuestions.map((sub) => {
+        const shortAnswerSub = sub as any;
+        return {
+          subId: sub.subId,
+          item: sub.item,
+          points: sub.points,
+          correctAnswer: shortAnswerSub.acceptableAnswers,
+          questionText: standardItems.find((item) => item.id === sub.item)?.text,
+          answerText: shortAnswerSub.acceptableAnswers?.join(", "),
+          acceptableAnswers: shortAnswerSub.acceptableAnswers,
+        };
+      });
+
     return {
-      id: question.id,
-      type: question.type,
-      text: question.text,
-      points: question.points,
-      scoringStrategy: question.scoringStrategy,
-      index: question.index,
-      partialEndingIndex: question.partialEndingIndex,
-      subQuestions: question.subQuestions.map((sq) => ({
-        subId: sq.subId,
-        questionText: question.questions.find(q => q.id === sq.item)?.text || "",
-        acceptableAnswers: sq.acceptableAnswers,
-        points: sq.points,
-      })),
+      ...question,
+      items: standardItems,
+      subQuestions: standardSubQuestions,
+      wordLimit: question.wordLimit,
     } as StandardQuestion;
   }
 

@@ -1,5 +1,4 @@
 "use client";
-import React, { useEffect } from "react";
 import TestPlayer from "@testComponents/components/test-player/test-player";
 import { Button } from "@testComponents/components/ui/button";
 import {
@@ -9,10 +8,9 @@ import {
   CardTitle,
 } from "@testComponents/components/ui/card";
 import { Textarea } from "@testComponents/components/ui/textarea";
-import { updateQuestionIndexes } from "@testComponents/lib/test";
 import type { Test } from "@testComponents/lib/types";
 import { useTestStore } from "@testComponents/store/test-store";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { scoreEssay } from "../actions/score-essay";
 
 export default function TestsPage() {
@@ -121,9 +119,9 @@ export default function TestsPage() {
   const handleStartTest = () => {
     try {
       // Parse the JSON test object
-      const testObject: Test = JSON.parse(testJson);
+      const test: Test = JSON.parse(testJson);
 
-      const test = updateQuestionIndexes(testObject);
+      // const test = updateQuestionIndexes(testObject);
 
       setCurrentTest(test);
     } catch (error) {

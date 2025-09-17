@@ -6,11 +6,10 @@ import { Card } from "@testComponents/components/ui/card";
 import { Textarea } from "@testComponents/components/ui/textarea";
 import { Label } from "@testComponents/components/ui/label";
 import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
-import type { SentenceTranslationQuestion } from "@testComponents/lib/types";
-import { useTestStore } from "@testComponents/store/test-store";
+import type { SentenceTranslationQuestion, UserAnswer } from "@testComponents/lib/types";
 import { cn } from "@testComponents/lib/utils";
-import { Award, Bot, Eye, EyeOff } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Award, Eye, EyeOff } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import rehypeRaw from "rehype-raw";
@@ -23,13 +22,7 @@ interface SentenceTranslationQuestionProps {
   readOnly?: boolean;
   showCorrectAnswer?: boolean;
   onQuestionHighlighted?: (questionId: string, content: string) => void;
-}
-
-interface ScoringResult {
-  score: number;
-  feedback: string;
-  ok?: boolean;
-  error?: string;
+  answer?: UserAnswer;
 }
 
 export default function SentenceTranslationQuestionRenderer({
@@ -39,12 +32,35 @@ export default function SentenceTranslationQuestionRenderer({
   readOnly = false,
   showCorrectAnswer = false,
   onQuestionHighlighted = () => {},
+  answer,
 }: SentenceTranslationQuestionProps) {
-  const { scoreEssayFn } = useTestStore();
-  const [aiScores, setAiScores] = useState<Record<string, ScoringResult>>({});
   const [showFeedback, setShowFeedback] = useState<Record<string, boolean>>({});
-  const [isScoring, setIsScoring] = useState<Record<string, boolean>>({});
-
+  
+  // Extract AI scores from the answer prop
+  const aiScores = useMemo(() => {
+    const scores: Record<string, { score: number; feedback: string }> = {};
+    
+    // The answer prop is actually the entire answers object containing individual sentence results
+    if (answer && typeof answer === 'object') {
+      // Iterate through all answer entries to find ones belonging to this question
+      Object.values(answer).forEach((answerEntry: {
+        questionId?: string;
+        subQuestionId?: string;
+        score?: number;
+        feedback?: string;
+      }) => {
+        if (answerEntry.questionId === question.id && answerEntry.subQuestionId) {
+          scores[answerEntry.subQuestionId] = {
+            score: answerEntry.score || 0, // Score is already in decimal format (0-1)
+            feedback: answerEntry.feedback || ""
+          };
+        }
+      });
+    }
+    
+    return scores;
+  }, [answer, question]);
+  
   // Handle both question formats: single sentence and multiple sentences
   interface ExtendedQuestion extends SentenceTranslationQuestion {
     sourceText?: string;
@@ -52,16 +68,20 @@ export default function SentenceTranslationQuestionRenderer({
   }
   
   const questionData = question as ExtendedQuestion;
-  const sentences = question.sentences || (questionData.sourceText ? [{
-    id: question.id,
-    sourceText: questionData.sourceText,
-    referenceTranslations: questionData.referenceTranslation ? [questionData.referenceTranslation] : []
-  }] : []);
+  
+  // Memoize sentences to prevent unnecessary re-computations
+  const sentences = useMemo(() => {
+    return question.sentences || (questionData.sourceText ? [{
+      id: question.id,
+      sourceText: questionData.sourceText,
+      referenceTranslations: questionData.referenceTranslation ? [questionData.referenceTranslation] : []
+    }] : []);
+  }, [question.sentences, question.id, questionData.sourceText, questionData.referenceTranslation]);
 
-  // Initialize feedback visibility for sentences that have AI scores
+  // Initialize and manage feedback visibility
   useEffect(() => {
-    if (showCorrectAnswer) {
-      // In review mode, show all feedback by default
+    if (showCorrectAnswer && Object.keys(aiScores).length > 0) {
+      // In review mode, show feedback for sentences that have AI scores
       const initialFeedback: Record<string, boolean> = {};
       sentences.forEach(sentence => {
         if (aiScores[sentence.id]) {
@@ -69,8 +89,11 @@ export default function SentenceTranslationQuestionRenderer({
         }
       });
       setShowFeedback(initialFeedback);
+    } else {
+      // Not in review mode or no AI scores, hide all feedback
+      setShowFeedback({});
     }
-  }, [showCorrectAnswer, sentences, aiScores]);
+  }, [showCorrectAnswer, aiScores, sentences]);
 
   const handleChange = (sentenceId: string, newValue: string) => {
     if (readOnly) return;
@@ -78,87 +101,17 @@ export default function SentenceTranslationQuestionRenderer({
     const newAnswers = { ...(value || {}) };
     newAnswers[sentenceId] = newValue;
 
-    onChange(newAnswers, sentenceId);
-  };
-
-  const scoreTranslation = async (sentenceId: string, userTranslation: string, sourceText: string) => {
-    if (!scoreEssayFn || !userTranslation.trim()) return;
-
-    setIsScoring(prev => ({ ...prev, [sentenceId]: true }));
-
-    try {
-      const sentence = sentences.find(s => s.id === sentenceId);
-      const referenceTranslations = sentence?.referenceTranslations?.join("\n") || "";
-      
-      // Use custom scoring prompt if provided, otherwise use default
-      const prompt = question.scoringPrompt || `Evaluate this translation from ${question.sourceLanguage} to ${question.targetLanguage}:
-
-Source: "${sourceText}"
-Student Translation: "${userTranslation}"
-
-${referenceTranslations ? `Reference translations:\n${referenceTranslations}\n` : ""}
-
-Please evaluate on a scale of 0-1 (where 1 is perfect translation) considering:
-- Accuracy of meaning (40%)
-- Grammar and syntax (30%) 
-- Natural expression (20%)
-- Cultural appropriateness (10%)
-
-Provide specific, constructive feedback focusing on:
-- What was done well
-- Areas for improvement
-- Specific grammar or vocabulary suggestions
-- Cultural context if relevant
-
-Be encouraging but precise in your feedback.`;
-
-      const result = await scoreEssayFn({
-        text: userTranslation,
-        prompt: sourceText,
-        essay: userTranslation,
-        scoringPrompt: prompt,
-      });
-
-      if (result.ok) {
-        setAiScores(prev => ({ ...prev, [sentenceId]: result }));
-        setShowFeedback(prev => ({ ...prev, [sentenceId]: true }));
-        
-        // Submit just the translation text - AI scores are stored separately in component state
-        onChange({ 
-          ...value, 
-          [sentenceId]: userTranslation
-        }, sentenceId);
-      } else {
-        console.error("AI scoring failed:", result.error);
-      }
-    } catch (error) {
-      console.error("Error scoring translation:", error);
-    } finally {
-      setIsScoring(prev => ({ ...prev, [sentenceId]: false }));
-    }
-  };
-
-  const scoreAllTranslations = async () => {
-    if (!scoreEssayFn || !value) return;
-
-    const sentencesToScore = sentences.filter(sentence => {
-      const userAnswer = value[sentence.id];
-      return userAnswer && userAnswer.trim() && !aiScores[sentence.id];
-    });
-
-    for (const sentence of sentencesToScore) {
-      const userAnswer = value[sentence.id];
-      if (userAnswer && userAnswer.trim()) {
-        await scoreTranslation(sentence.id, userAnswer, sentence.sourceText);
-        // Add a small delay between requests to avoid overwhelming the API
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+    if (question.scoringStrategy === "partial") {
+      onChange(newAnswers, sentenceId);
+    } else {
+      onChange(newAnswers);
     }
   };
 
   const getLanguageLabel = (lang: string) => {
     return lang === "vietnamese" ? "Tiếng Việt" : "English";
   };
+
 
   return (
     <div className="space-y-4">
@@ -177,12 +130,38 @@ Be encouraging but precise in your feedback.`;
 
       <div className="space-y-6">
         {sentences.map((sentence, index) => {
-          const userAnswer = value?.[sentence.id] || "";
+          // Get user answer from value prop (during answering) or from answer prop (during review)
+          let userAnswer = "";
+          if (value && value[sentence.id]) {
+            // During answering mode
+            userAnswer = String(value[sentence.id]);
+          } else if (answer && typeof answer === 'object') {
+            // During review mode, find the answer entry for this sentence
+            const answerEntry = Object.values(answer).find((entry: {
+              questionId?: string;
+              subQuestionId?: string;
+              answer?: string;
+            }) => entry.questionId === question.id && entry.subQuestionId === sentence.id);
+            
+            if (answerEntry && answerEntry.answer) {
+              userAnswer = String(answerEntry.answer);
+            }
+          }
+          
           const aiScore = aiScores[sentence.id];
-          const isCorrect = showCorrectAnswer && userAnswer && 
+          const { feedback, score } = aiScore || {};
+          
+          // Check if answer is correct based on exact match with reference translations
+          const isExactMatch = showCorrectAnswer && userAnswer && 
             sentence.referenceTranslations?.some(ref => 
               ref.toLowerCase().trim() === userAnswer.toLowerCase().trim()
             );
+          
+          // Check if answer is correct based on AI score (80% or higher)
+          const isAICorrect = showCorrectAnswer && score && score >= 0.8;
+          
+          // Consider answer correct if either exact match or AI score is 80%+
+          const isCorrect = isExactMatch || isAICorrect;
           const isIncorrect = showCorrectAnswer && userAnswer && !isCorrect;
 
           return (
@@ -218,26 +197,6 @@ Be encouraging but precise in your feedback.`;
                       <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                         {getLanguageLabel(question.targetLanguage)}
                       </Label>
-                      {/* AI Scoring Button */}
-                      {!readOnly && !showCorrectAnswer && scoreEssayFn && userAnswer.trim() && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => scoreTranslation(sentence.id, userAnswer, sentence.sourceText)}
-                          disabled={isScoring[sentence.id]}
-                          className="text-xs h-7"
-                        >
-                          {isScoring[sentence.id] ? (
-                            <>
-                              <Bot className="mr-1 h-3 w-3 animate-spin" /> Scoring...
-                            </>
-                          ) : (
-                            <>
-                              <Bot className="mr-1 h-3 w-3" /> Get AI Score
-                            </>
-                          )}
-                        </Button>
-                      )}
                     </div>
                     <Textarea
                       value={userAnswer}
@@ -257,14 +216,14 @@ Be encouraging but precise in your feedback.`;
                   </div>
 
                   {/* AI Score Display */}
-                  {aiScore && (
+                  {score !== undefined && (
                     <div className="mt-3">
                       <Card className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-200/50 dark:border-blue-800/50">
                         <div className="p-3">
                           <div className="flex items-center justify-between mb-2">
                             <h4 className="font-medium text-sm flex items-center text-blue-900 dark:text-blue-100">
                               <Award className="mr-1 h-4 w-4 text-blue-600 dark:text-blue-400" />
-                              AI Score: {(aiScore.score * 100).toFixed(0)}%
+                              AI Score: {(score * 100).toFixed(0)}%
                             </h4>
                             <Button
                               variant="link"
@@ -284,14 +243,14 @@ Be encouraging but precise in your feedback.`;
                             </Button>
                           </div>
 
-                          {showFeedback[sentence.id] && (
+                          {showFeedback[sentence.id] && feedback && (
                             <div className="mt-2 p-3 bg-white dark:bg-gray-800/50 rounded border text-xs">
                               <div className="prose prose-sm max-w-none">
                                 <ReactMarkdown
                                   remarkPlugins={[remarkGfm]}
                                   rehypePlugins={[rehypeRaw, rehypeHighlight]}
                                 >
-                                  {aiScore.feedback}
+                                  {feedback}
                                 </ReactMarkdown>
                               </div>
                             </div>
@@ -326,28 +285,6 @@ Be encouraging but precise in your feedback.`;
             </div>
           );
         })}
-
-        {/* Score All Button - moved to bottom for better flow */}
-        {!readOnly && !showCorrectAnswer && scoreEssayFn && value && Object.values(value).some(v => v && v.trim()) && (
-          <div className="flex justify-center pt-4 border-t">
-            <Button
-              variant="outline"
-              onClick={scoreAllTranslations}
-              disabled={Object.values(isScoring).some(Boolean)}
-              className="px-6"
-            >
-              {Object.values(isScoring).some(Boolean) ? (
-                <>
-                  <Bot className="mr-2 h-4 w-4 animate-spin" /> Scoring All Translations...
-                </>
-              ) : (
-                <>
-                  <Bot className="mr-2 h-4 w-4" /> Score All Translations
-                </>
-              )}
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );

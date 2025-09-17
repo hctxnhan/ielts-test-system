@@ -153,6 +153,7 @@ export interface SentenceTranslationQuestion extends BaseQuestion {
   sourceLanguage: "vietnamese" | "english";
   targetLanguage: "english" | "vietnamese";
   scoringPrompt?: string;
+  subQuestions: SubQuestionMeta[];
 }
 
 export interface WordFormQuestion extends BaseQuestion {

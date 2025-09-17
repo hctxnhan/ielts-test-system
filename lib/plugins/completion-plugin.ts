@@ -59,19 +59,18 @@ export class CompletionPlugin extends BaseQuestionPlugin<CompletionQuestion> {
   }
 
   transform(question: CompletionQuestion): StandardCompletionQuestion {
-    const standardSubQuestions: StandardSubQuestionMeta[] = question.subQuestions.map((subQ, index) => ({
-      subId: subQ.subId,
-      points: subQ.points,
-      correctAnswer: subQ.acceptableAnswers[0] || "",
-      subIndex: index,
-    }));
+    const standardSubQuestions: StandardSubQuestionMeta[] =
+      question.subQuestions.map((sub) => ({
+        subId: sub.subId,
+        points: sub.points,
+        acceptableAnswers: sub.acceptableAnswers,
+        questionText: question.text,
+      }));
 
     return {
       ...question,
-      blanks: question.blanks,
       subQuestions: standardSubQuestions,
-      scoringStrategy: "partial",
-    };
+    } as StandardCompletionQuestion;
   }
 
   score(context: ScoringContext): ScoringResult {

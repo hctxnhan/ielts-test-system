@@ -7,16 +7,7 @@ import type {
   WritingTaskAnswer,
 } from "@testComponents/lib/types"; // Import types
 import { QuestionPluginRegistry } from "@testComponents/lib/question-plugin-system";
-// Import actual components
-import CompletionQuestionComponent from "./question-types/completion-question";
-import LabelingQuestionComponent from "./question-types/labeling-question";
-import MatchingHeadingsQuestionComponent from "./question-types/matching-headings-question";
-import MatchingQuestionComponent from "./question-types/matching-question";
-import MultipleChoiceQuestionComponent from "./question-types/multiple-choice-question";
-import PickFromListQuestionComponent from "./question-types/pick-from-list-question";
-import ShortAnswerQuestionComponent from "./question-types/short-answer-question";
-import TrueFalseNotGivenQuestionComponent from "./question-types/true-false-not-given-question";
-import WritingTask1QuestionRenderer from "./question-types/writing-task1-question"; // Correct component import
+import WritingTask1QuestionRenderer from "./question-types/writing-task1-question"; // Fallback renderer for writing tasks
 import SentenceTranslationQuestionComponent from "./question-types/sentence-translation-question";
 import WordFormQuestionComponent from "./question-types/word-form-question";
 
@@ -27,15 +18,8 @@ interface QuestionRendererProps {
   question: Question;
   sectionId: string;
   isReviewMode?: boolean;
-  answers: any;
+  answers: Record<string, UserAnswer> | undefined;
   onQuestionContentChange?: (questionId: string, content: string) => void;
-}
-
-// Type guard for questions with subQuestions
-function hasSubQuestions(question: Question): boolean {
-  return (
-    question.subQuestions !== undefined && question.subQuestions.length > 0
-  );
 }
 
 // Function to get the local answer from progress
@@ -45,11 +29,12 @@ function getLocalAnswerFromProgress(
 ): AnswerType | WritingTaskAnswer {
   if (!answers) return null;
 
-  const supportPartial = QuestionPluginRegistry.supportsPartialScoring(question.type);
+  const plugin = QuestionPluginRegistry.getPlugin(question.type);
+  const supportsPartialScoring = plugin?.config.supportsPartialScoring ?? false;
+  const hasSubQuestionsConfig = plugin?.config.hasSubQuestions ?? false;
 
   // Handle questions supporting partial scoring with sub-questions
-  if (supportPartial && hasSubQuestions(question) && question.scoringStrategy === "partial") {
-    console.log("Partial scoring with sub-questions detected", hasSubQuestions(question), question.scoringStrategy);
+  if (supportsPartialScoring && hasSubQuestionsConfig && question.scoringStrategy === "partial") {
     const subAnswers: Record<string, string> = {};
     const questionAnswers = Object.values(answers).filter(
       (answer) =>
@@ -80,21 +65,20 @@ function getLocalAnswerFromProgress(
     (userAnswer.subQuestionId !== undefined &&
       userAnswer.subQuestionId !== null)
   ) {
-    console.log("No valid answer found for question:", question.id);
     return null;
   }
 
   const answer = userAnswer.answer;
 
-  // Handle T/F/NG specifically if it's NOT partial scoring / has no sub-questions
-  // to ensure it returns a Record, matching the component's expected prop type
-  if (question.type === "true-false-not-given" && !hasSubQuestions(question)) {
+  // Handle questions that need Record format but don't have sub-questions
+  // Currently only T/F/NG needs this special handling
+  if (question.type === "true-false-not-given" && !hasSubQuestionsConfig) {
     if (typeof answer === "string") {
       // Use the main question ID as the key for the single answer
       return { [question.id]: answer };
     }
     console.warn(
-      `Unexpected answer format for single T/F/NG question ${question.id}:`,
+      `Unexpected answer format for single ${question.type} question ${question.id}:`,
       answer,
     );
     return null;
@@ -109,30 +93,25 @@ function submitQuestionAnswer(
   newAnswer: AnswerType | WritingTaskAnswer,
   submitAnswer: (
     questionId: string,
-    answer: any,
+    answer: unknown,
     subQuestionId?: string,
   ) => Promise<void>,
   subId?: string,
 ): void {
+  // Check if this question should be scored on test completion
+  const plugin = QuestionPluginRegistry.getPlugin(question.type);
+  const hasSubQuestionsConfig = plugin?.config.hasSubQuestions;
+
   if (
-    hasSubQuestions(question) &&
+    hasSubQuestionsConfig &&
     typeof newAnswer === "object" &&
     newAnswer !== null &&
     question.scoringStrategy === "partial"
   ) {
+    // For questions scored immediately (not on completion), store individual answers when partial scoring
     if (subId) {
-      const answerForSubQuestion =
-        question.type === "matching" ||
-        question.type === "labeling" ||
-        question.type === "pick-from-a-list" ||
-        question.type === "matching-headings" ||
-        question.type === "short-answer" ||
-        question.type === "true-false-not-given" ||
-        question.type === "completion" ||
-        question.type === "sentence-translation"
-          ? (newAnswer as Record<string, string>)[subId]
-          : newAnswer;
-
+      // Extract the specific sub-question answer from the complete answers object
+      const answerForSubQuestion = (newAnswer as Record<string, string>)[subId];
       submitAnswer(question.id, answerForSubQuestion, subId);
     } else {
       submitAnswer(question.id, newAnswer);
@@ -144,7 +123,7 @@ function submitQuestionAnswer(
 
 export default function QuestionRenderer({
   question,
-  sectionId,
+  sectionId: _sectionId,
   answers,
   isReviewMode = false,
   onQuestionContentChange,
@@ -172,6 +151,20 @@ export default function QuestionRenderer({
 
   const updatedQuestion = getUpdatedQuestion();
 
+  // Determine answer prop based on plugin config.
+  // If the plugin supports partial scoring and has sub-questions, collect sub-answers from `answers` keyed by subQuestionId.
+  const plugin = QuestionPluginRegistry.getPlugin(updatedQuestion.type);
+  const supportsPartial = plugin?.config.supportsPartialScoring ?? false;
+  const hasSubQuestions = plugin?.config.hasSubQuestions ?? false;
+
+  const answer = supportsPartial && hasSubQuestions && updatedQuestion.scoringStrategy === 'partial'
+    ? Object.keys(localAnswer || {}).reduce((acc, key) => {
+        const val = answers?.[key];
+          acc[key] = val;
+        return acc;
+      }, {} as Record<string, UserAnswer | undefined>)
+    : answers?.[updatedQuestion.id];
+
   // Initialize local answer from store if available
   useEffect(() => {
     if (questionIdRef.current !== question.id) {
@@ -188,12 +181,13 @@ export default function QuestionRenderer({
 
   // Handle answer changes with debouncing
   const handleChange = (
-    newAnswer: AnswerType | WritingTaskAnswer,
+    newAnswer: unknown,
     subId?: string,
   ) => {
-    setLocalAnswer(newAnswer);
+    // store locally with expected types
+    setLocalAnswer(newAnswer as AnswerType | WritingTaskAnswer);
     setTimeout(() => {
-      submitQuestionAnswer(updatedQuestion, newAnswer, submitAnswer, subId);
+      submitQuestionAnswer(updatedQuestion, newAnswer as AnswerType | WritingTaskAnswer, submitAnswer, subId);
     }, 100);
   };
 
@@ -222,127 +216,27 @@ export default function QuestionRenderer({
     );
   };
 
+  // If a plugin provides a renderer, use it dynamically to reduce repetition.
+  const Renderer = QuestionPluginRegistry.getRenderer(updatedQuestion.type);
+  if (Renderer) {
+    return (
+      <div style={containerStyle}>
+        <QuestionImage />
+        <Renderer
+          question={updatedQuestion}
+          value={localAnswer as unknown}
+          onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
+          onQuestionHighlighted={onQuestionContentChange}
+          {...(answer !== undefined ? ({ answer: answer as unknown as UserAnswer }) : {})}
+        />
+      </div>
+    );
+  }
+
+  // Fallback to the original switch for any types without a registered renderer.
   switch (updatedQuestion.type) {
-    case "multiple-choice":
-      return (
-        <div style={containerStyle}>
-          <QuestionImage />
-          <MultipleChoiceQuestionComponent
-            question={updatedQuestion}
-            value={(localAnswer as string | null) ?? undefined}
-            onChange={handleChange}
-            readOnly={isReviewMode}
-            showCorrectAnswer={isReviewMode}
-            onQuestionHighlighted={onQuestionContentChange}
-          />
-        </div>
-      );
-
-    case "completion":
-      return (
-        <div style={containerStyle}>
-          <QuestionImage />
-          <CompletionQuestionComponent
-            question={updatedQuestion}
-            value={localAnswer as Record<string, string> | null}
-            onChange={handleChange}
-            readOnly={isReviewMode}
-            showCorrectAnswer={isReviewMode}
-            onQuestionHighlighted={onQuestionContentChange}
-          />
-        </div>
-      );
-
-    case "matching":
-      return (
-        <div style={containerStyle}>
-          <QuestionImage />
-          <MatchingQuestionComponent
-            question={updatedQuestion}
-            value={localAnswer as Record<string, string> | null}
-            onChange={handleChange}
-            readOnly={isReviewMode}
-            showCorrectAnswer={isReviewMode}
-            onQuestionHighlighted={onQuestionContentChange}
-          />
-        </div>
-      );
-
-    case "labeling":
-      return (
-        <div style={containerStyle}>
-          <QuestionImage />
-          <LabelingQuestionComponent
-            question={updatedQuestion}
-            value={localAnswer as Record<string, string> | null}
-            onChange={handleChange}
-            readOnly={isReviewMode}
-            showCorrectAnswer={isReviewMode}
-            onQuestionHighlighted={onQuestionContentChange}
-          />
-        </div>
-      );
-
-    case "pick-from-a-list":
-      return (
-        <div style={containerStyle}>
-          <QuestionImage />
-          <PickFromListQuestionComponent
-            question={updatedQuestion}
-            value={localAnswer as Record<string, string> | null}
-            onChange={handleChange}
-            readOnly={isReviewMode}
-            showCorrectAnswer={isReviewMode}
-            onQuestionHighlighted={onQuestionContentChange}
-          />
-        </div>
-      );
-
-    case "true-false-not-given":
-      return (
-        <div style={containerStyle}>
-          <QuestionImage />
-          <TrueFalseNotGivenQuestionComponent
-            question={updatedQuestion}
-            value={localAnswer as Record<string, string> | null}
-            onChange={handleChange}
-            readOnly={isReviewMode}
-            showCorrectAnswer={isReviewMode}
-            onQuestionHighlighted={onQuestionContentChange}
-          />
-        </div>
-      );
-
-    case "matching-headings":
-      return (
-        <div style={containerStyle}>
-          <QuestionImage />
-          <MatchingHeadingsQuestionComponent
-            question={updatedQuestion}
-            value={localAnswer as Record<string, string> | null}
-            onChange={handleChange}
-            readOnly={isReviewMode}
-            showCorrectAnswer={isReviewMode}
-            onQuestionHighlighted={onQuestionContentChange}
-          />
-        </div>
-      );
-
-    case "short-answer":
-      return (
-        <div style={containerStyle}>
-          <QuestionImage />
-          <ShortAnswerQuestionComponent
-            question={updatedQuestion}
-            value={localAnswer as Record<string, string> | null}
-            onChange={handleChange}
-            readOnly={isReviewMode}
-            showCorrectAnswer={isReviewMode}
-            onQuestionHighlighted={onQuestionContentChange}
-          />
-        </div>
-      );
-
     case "writing-task1":
     case "writing-task2":
       return (
@@ -355,6 +249,7 @@ export default function QuestionRenderer({
             readOnly={isReviewMode}
             showCorrectAnswer={isReviewMode}
             onQuestionHighlighted={onQuestionContentChange}
+            answer={answer as unknown as UserAnswer}
           />
         </div>
       );
@@ -370,6 +265,7 @@ export default function QuestionRenderer({
             readOnly={isReviewMode}
             showCorrectAnswer={isReviewMode}
             onQuestionHighlighted={onQuestionContentChange}
+            answer={answer as unknown as UserAnswer}
           />
         </div>
       );
@@ -385,11 +281,12 @@ export default function QuestionRenderer({
             readOnly={isReviewMode}
             showCorrectAnswer={isReviewMode}
             onQuestionHighlighted={onQuestionContentChange}
+            answer={answer as unknown as UserAnswer}
           />
         </div>
       );
 
     default:
-      return null;
+    //   return null;
   }
 }

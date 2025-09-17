@@ -17,7 +17,8 @@ export class TrueFalseNotGivenPlugin extends BaseQuestionPlugin<TrueFalseNotGive
     category: ["reading" as const],
     supportsPartialScoring: true,
     supportsAIScoring: false,
-    defaultPoints: 1
+    defaultPoints: 1,
+    hasSubQuestions: true,
   };
 
   createRenderer(): React.ComponentType<QuestionRendererProps<TrueFalseNotGivenQuestion>> {

@@ -31,6 +31,7 @@ class WritingTask1Plugin extends BaseQuestionPlugin<WritingTask1Question> {
     supportsPartialScoring: false,
     supportsAIScoring: true,
     defaultPoints: 9,
+    scoreOnCompletion: true,
   };
 
   createDefault(index: number): WritingTask1Question {
@@ -63,19 +64,19 @@ class WritingTask1Plugin extends BaseQuestionPlugin<WritingTask1Question> {
   }
 
   transform(question: WritingTask1Question): StandardQuestion {
+    const standardSubQuestions = [
+      {
+        subId: question.id,
+        points: question.points,
+        questionText: question.text,
+        answerText: question.sampleAnswer,
+      },
+    ];
+
     return {
-      id: question.id,
-      type: question.type,
-      text: question.text,
-      points: question.points,
-      scoringStrategy: question.scoringStrategy,
-      index: question.index,
-      partialEndingIndex: question.partialEndingIndex,
-      prompt: question.prompt,
-      imageUrl: question.imageUrl,
-      wordLimit: question.wordLimit,
-      sampleAnswer: question.sampleAnswer,
-      scoringPrompt: question.scoringPrompt,
+      ...question,
+      scoringStrategy: "partial",
+      subQuestions: standardSubQuestions,
     } as StandardQuestion;
   }
 
@@ -97,7 +98,7 @@ class WritingTask1Plugin extends BaseQuestionPlugin<WritingTask1Question> {
   }
 
   async score(context: ScoringContext): Promise<ScoringResult> {
-    const { question, answer, scoreEssayFn } = context;
+    const { question, answer, aiScoringFn } = context;
     const writingQuestion = question as WritingTask1Question;
     const userAnswer = answer as WritingTaskAnswer;
 
@@ -105,17 +106,32 @@ class WritingTask1Plugin extends BaseQuestionPlugin<WritingTask1Question> {
       return { isCorrect: false, score: 0, maxScore: writingQuestion.points, feedback: "Answer is too short to be scored." };
     }
 
-    if (!scoreEssayFn) {
-      console.error("scoreEssayFn is not provided in the scoring context for a writing task.");
+    if (!aiScoringFn) {
+      console.error("aiScoringFn is not provided in the scoring context for a writing task.");
       return { isCorrect: false, score: 0, maxScore: writingQuestion.points, feedback: "Scoring function not available." };
     }
 
     try {
-      const aiResult = await scoreEssayFn({
+      const aiResult = await aiScoringFn({
         text: writingQuestion.text,
         prompt: writingQuestion.prompt,
         essay: userAnswer.text,
-        scoringPrompt: writingQuestion.scoringPrompt || "Score this IELTS Writing Task 1 response based on standard criteria.",
+        scoringPrompt: writingQuestion.scoringPrompt || `You are an expert Vietnamese IELTS examiner. Your task is to evaluate this IELTS Writing Task 1 response based on the official scoring criteria.
+
+Provide a score between 1 and 9 (can include decimals like 7.5) and detailed feedback in Vietnamese.
+
+**Scoring Criteria Details (Evaluate based on these):**
+
+*   **Task Achievement/Response (Mức độ hoàn thành yêu cầu):** Assess how well the essay addresses all parts of the task prompt, develops a clear position, and presents relevant, extended, and supported ideas.
+*   **Coherence and Cohesion (Tính mạch lạc và liên kết):** Evaluate the organization of information and ideas, the clarity of progression throughout the response, and the effective use of cohesive devices (linking words, pronouns, etc.). Check paragraphing.
+*   **Lexical Resource (Vốn từ vựng):** Assess the range of vocabulary used, its accuracy, appropriateness for the task, and the control of features like collocation and word formation.
+*   **Grammatical Range and Accuracy (Độ đa dạng và chính xác của ngữ pháp):** Evaluate the range and accuracy of grammatical structures used, including sentence complexity and control over errors.
+
+Provide specific, constructive feedback in Vietnamese focusing on:
+- Strengths and areas for improvement in each criterion
+- Specific examples from the text
+- Suggestions for improvement
+- Overall band score justification`,
       });
 
       if (aiResult.ok) {

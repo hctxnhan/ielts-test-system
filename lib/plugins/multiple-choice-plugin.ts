@@ -63,16 +63,30 @@ export class MultipleChoicePlugin extends BaseQuestionPlugin<MultipleChoiceQuest
   }
 
   transform(question: MultipleChoiceQuestion): StandardMultipleChoiceQuestion {
-    const standardOptions: StandardQuestionOption[] = question.options.map((option) => ({
-      id: option.id,
-      text: option.text,
-    }));
+    const standardItems: StandardQuestionOption[] = question.options.map(
+      (opt) => ({
+        id: opt.id,
+        text: opt.text,
+        isCorrect: opt.isCorrect,
+      }),
+    );
+
+    const correctOption = standardItems.find((opt) => opt.isCorrect);
+    const subQuestion = {
+      subId: question.id,
+      points: question.points,
+      item: question.id,
+      questionText: question.text,
+      answerText: correctOption?.text,
+      correctAnswer: correctOption?.id,
+    };
 
     return {
       ...question,
-      options: standardOptions,
-      subQuestions: [], // Multiple choice doesn't use sub-questions
-    };
+      scoringStrategy: "partial",
+      items: standardItems,
+      subQuestions: [subQuestion],
+    } as StandardMultipleChoiceQuestion;
   }
 
   score(context: ScoringContext): ScoringResult {

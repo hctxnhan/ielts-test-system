@@ -71,6 +71,8 @@ export interface QuestionPluginConfig {
   supportsPartialScoring: boolean;
   supportsAIScoring: boolean;
   defaultPoints: number;
+  scoreOnCompletion?: boolean; // If true, scoring happens when test is completed instead of immediately after each answer is submitted
+  hasSubQuestions?: boolean; // If true, the question has sub-questions with complex answer structure
 }
 
 export interface QuestionPlugin<T extends Question = Question> {
@@ -186,6 +188,12 @@ export class QuestionPluginRegistry {
   static supportsPartialScoring(type: QuestionType): boolean {
     const plugin = this.getPlugin(type);
     return plugin?.config.supportsPartialScoring ?? false;
+  }
+  
+  // Helper function to check if a question type has sub-questions
+  static hasSubQuestions(type: QuestionType): boolean {
+    const plugin = this.getPlugin(type);
+    return plugin?.config.hasSubQuestions ?? false;
   }
   
 

@@ -187,7 +187,7 @@ export default function TestBottomNavigation({
                   disabled={isSubmitting || readOnly}
                   className="px-2 py-1 shrink-0 bg-green-600 hover:bg-green-700"
                 >
-                  ✓
+                  {isSubmitting ? "⏳" : "✓"}
                 </Button>
               ) : (
                 <Button

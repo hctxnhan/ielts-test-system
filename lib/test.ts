@@ -1,5 +1,5 @@
-import { transformToStandardQuestion } from "./question-transformers";
-import { Test } from './types';
+import { QuestionPluginRegistry } from "./question-plugin-system";
+import { Test, Question } from "./types";
 
 export interface TestFilterConfig {
   customMode?: boolean;
@@ -14,23 +14,23 @@ export function updateQuestionIndexes(test: Test): Test {
     const updatedQuestions = section.questions.map((question) => {
       const startQuestionIndex = currentIndex;
 
+      const standardizedQuestion =
+        QuestionPluginRegistry.transformQuestion(question);
+
       // Calculate the endQuestionIndex based on scoring strategy
       let endQuestionIndex: number;
 
-      if (question.scoringStrategy === "partial") {
+      if (standardizedQuestion.scoringStrategy === "partial") {
         endQuestionIndex =
-          startQuestionIndex + (question.subQuestions?.length || 1) - 1;
+          startQuestionIndex + (standardizedQuestion.subQuestions?.length || 1) - 1;
       } else {
         endQuestionIndex = startQuestionIndex;
       }
 
       currentIndex = endQuestionIndex + 1;
 
-      // Transform the question to standardized format and back
-      const standardizedQuestion = transformToStandardQuestion(question);
-
       return {
-        ...standardizedQuestion,
+        ...(standardizedQuestion as unknown as Question),
         index: startQuestionIndex,
         partialEndingIndex: endQuestionIndex,
       };
@@ -48,7 +48,10 @@ export function updateQuestionIndexes(test: Test): Test {
   };
 }
 
-export function processTestWithFilters(test: Test, config?: TestFilterConfig): Test {
+export function processTestWithFilters(
+  test: Test,
+  config?: TestFilterConfig,
+): Test {
   let processedTest = test;
 
   // Apply filtering if custom mode is enabled
@@ -59,12 +62,15 @@ export function processTestWithFilters(test: Test, config?: TestFilterConfig): T
       sections: processedTest.sections
         .filter(
           (section) =>
-            !config.selectedSections?.length || config.selectedSections.includes(section.id),
+            !config.selectedSections?.length ||
+            config.selectedSections.includes(section.id),
         )
         .map((section) => ({
           ...section,
-          questions: section.questions.filter((q) =>
-            !config.selectedTypes?.length || config.selectedTypes.includes(q.type),
+          questions: section.questions.filter(
+            (q) =>
+              !config.selectedTypes?.length ||
+              config.selectedTypes.includes(q.type),
           ),
         }))
         .filter((section) => section.questions.length > 0), // Remove sections with no questions
@@ -76,4 +82,3 @@ export function processTestWithFilters(test: Test, config?: TestFilterConfig): T
 
   return processedTest;
 }
-

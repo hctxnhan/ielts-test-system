@@ -1,4 +1,5 @@
 "use client";
+import React from 'react';
 import { processTestWithFilters } from "@testComponents/lib/test";
 import type { Test } from "@testComponents/lib/types";
 import { useTestStore } from "@testComponents/store/test-store";
@@ -43,99 +44,6 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
 
   const showResults = progress?.completed && !!sectionResults;
 
-  // Function to score all writing questions in the test
-  const scoreAllWritingQuestions = async () => {
-    if (!test || !progress) {
-      return;
-    }
-   
-    const getEssayScore = useTestStore.getState().scoreEssayFn;
-    if (!getEssayScore) {
-      console.warn("Debug: Essay scoring function is not available");
-      return;
-    }
-
-   
-
-    const currentAnswers = { ...progress.answers };
-    let hasChanges = false;
-
-    const processQuestion = async (question: any, answer: any) => {
-      if (answer?.answer?.text && answer.answer.text.length < 100) {
-        return {
-          ...answer,
-          score: 0,
-          feedback: "Answer is too short.",
-          answer: {
-            ...answer.answer,
-            score: 0,
-            feedback: "Answer is too short.",
-          },
-        };
-      } else if (!answer.score && !answer.feedback) {
-        try {
-          const response = await getEssayScore({
-            text: question.text,
-            prompt: question.prompt || "",
-            essay: answer.answer.text,
-            scoringPrompt: question.scoringPrompt || "",
-          });
-
-          if (response.ok) {
-            return {
-              ...answer,
-              score: (response.score),
-              feedback: response.feedback,
-              answer: {
-                ...answer.answer,
-                score: (response.score),
-                feedback: response.feedback,
-              },
-            };
-          } else {
-            console.warn(
-              "Debug: Scoring failed for question",
-              question.id,
-              "Response:",
-              response
-            );
-          }
-        } catch (error) {
-          console.error(
-            `Error scoring writing question ${question.id}:`,
-            error
-          );
-        }
-      }
-      return answer;
-    };
-
-    for (const section of test.sections) {
-      for (const question of section.questions) {
-        const answer = currentAnswers[question.id];
-        if (
-          (question.type === "writing-task1" ||
-            question.type === "writing-task2") &&
-          answer?.answer?.text
-        ) {
-          const updatedAnswer = await processQuestion(question, answer);
-
-          if (updatedAnswer !== answer) {
-            currentAnswers[question.id] = updatedAnswer;
-            hasChanges = true;
-          }
-        }
-      }
-    }
-
-    if (hasChanges) {
-      useTestStore.setState({
-        progress: { ...progress, answers: currentAnswers },
-      });
-    } else {
-    }
-  };
-
 
   const handleStartTest = (
     customMode?: boolean,
@@ -168,18 +76,18 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
       try {
         setIsSubmitting(true);
 
-        // Score all writing questions before completing the test
-        await scoreAllWritingQuestions();
-
+        // Complete test (this will score scoreOnSubmit questions like sentence-translation)
+        await completeTest();
+        
+        // Submit results after all scoring is complete
         await useTestStore.getState().submitTestResults(test.id);
-        completeTest();
       } catch (error) {
-        console.error("Error submitting test results:", error);
+        console.error("Error during test completion:", error);
       } finally {
         setIsSubmitting(false);
       }
     }
-  }, [completeTest, test, scoreAllWritingQuestions]);
+  }, [completeTest, test]);
 
   // Navigation between sections
   const handleNextSection = useCallback(() => {

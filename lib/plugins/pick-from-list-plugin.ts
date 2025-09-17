@@ -17,7 +17,8 @@ export class PickFromListPlugin extends BaseQuestionPlugin<PickFromAListQuestion
     category: ["reading" as const, "listening" as const],
     supportsPartialScoring: true,
     supportsAIScoring: false,
-    defaultPoints: 1
+    defaultPoints: 1,
+    hasSubQuestions: true,
   };
 
   createRenderer(): React.ComponentType<QuestionRendererProps<PickFromAListQuestion>> {
@@ -85,19 +86,29 @@ export class PickFromListPlugin extends BaseQuestionPlugin<PickFromAListQuestion
       text: item.text,
     }));
 
-    const standardSubQuestions: StandardSubQuestionMeta[] = question.subQuestions.map((subQ, index) => ({
-      subId: subQ.subId,
-      correctAnswer: subQ.correctAnswer,
-      points: subQ.points,
-      subIndex: index,
-    }));
+    const standardSubQuestions: StandardSubQuestionMeta[] = [];
+
+    if (question.subQuestions && question.subQuestions.length > 0) {
+      for (const sub of question.subQuestions) {
+        const itemId = sub.item || "";
+        const itemData = standardItems.find((item) => item.id === itemId);
+
+        standardSubQuestions.push({
+          subId: sub.subId,
+          item: itemId,
+          points: sub.points,
+          correctAnswer: "true",
+          questionText: itemData?.text || "",
+          answerText: itemData?.text || "",
+        });
+      }
+    }
 
     return {
       ...question,
       items: standardItems,
       subQuestions: standardSubQuestions,
-      scoringStrategy: "partial",
-    };
+    } as StandardPickFromListQuestion;
   }
 
   score(context: ScoringContext): ScoringResult {

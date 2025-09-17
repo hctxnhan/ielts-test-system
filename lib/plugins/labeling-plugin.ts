@@ -1,7 +1,7 @@
 import React from "react";
 import { v4 as uuidv4 } from "uuid";
 import type { LabelingQuestion } from "../types";
-import type { StandardLabelingQuestion, StandardQuestionItem, StandardSubQuestionMeta } from "../standardized-types";
+import type { StandardLabelingQuestion, StandardQuestionItem, StandardSubQuestionMeta, StandardQuestionOption } from "../standardized-types";
 import { BaseQuestionPlugin, ValidationResult, QuestionRendererProps, QuestionEditorProps, ScoringContext, ScoringResult } from "../question-plugin-system";
 
 // Import the existing components
@@ -17,7 +17,8 @@ export class LabelingPlugin extends BaseQuestionPlugin<LabelingQuestion> {
     category: ["reading" as const, "listening" as const],
     supportsPartialScoring: true,
     supportsAIScoring: false,
-    defaultPoints: 1
+    defaultPoints: 1,
+    hasSubQuestions: true,
   };
 
   createRenderer(): React.ComponentType<QuestionRendererProps<LabelingQuestion>> {
@@ -95,33 +96,37 @@ export class LabelingPlugin extends BaseQuestionPlugin<LabelingQuestion> {
   }
 
   transform(question: LabelingQuestion): StandardLabelingQuestion {
-    const standardItems: StandardQuestionItem[] = question.labels.map((label) => ({
-      id: label.id,
-      text: label.text,
-    }));
+    const standardItems: StandardQuestionItem[] = question.labels.map(
+      (label) => ({
+        id: label.id,
+        text: label.text,
+      }),
+    );
 
-    const standardOptions: StandardQuestionItem[] = question.options.map((option) => ({
-      id: option.id,
-      text: option.text,
-    }));
+    const standardOptions: StandardQuestionOption[] = question.options.map(
+      (opt) => ({
+        id: opt.id,
+        text: opt.text,
+      }),
+    );
 
-    const standardSubQuestions: StandardSubQuestionMeta[] = question.subQuestions.map((subQ, index) => ({
-      subId: subQ.subId,
-      item: subQ.item,
-      points: subQ.points,
-      correctAnswer: subQ.correctAnswer,
-      questionText: standardItems.find((item) => item.id === subQ.item)?.text,
-      answerText: standardOptions.find((opt) => opt.id === subQ.correctAnswer)?.text,
-      subIndex: index,
-    }));
+    const standardSubQuestions: StandardSubQuestionMeta[] =
+      question.subQuestions.map((sub) => ({
+        subId: sub.subId,
+        item: sub.item,
+        points: sub.points,
+        correctAnswer: sub.correctAnswer,
+        questionText: standardItems.find((item) => item.id === sub.item)?.text,
+        answerText: standardOptions.find((opt) => opt.id === sub.correctAnswer)
+          ?.text,
+      }));
 
     return {
       ...question,
       items: standardItems,
       options: standardOptions,
       subQuestions: standardSubQuestions,
-      scoringStrategy: "partial",
-    };
+    } as StandardLabelingQuestion;
   }
 
   score(context: ScoringContext): ScoringResult {

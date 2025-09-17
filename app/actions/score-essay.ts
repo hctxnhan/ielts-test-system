@@ -3,6 +3,7 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateObject, jsonSchema } from "ai";
 
 interface ScoringParams {
+  text: string;
   prompt: string;
   essay: string;
   scoringPrompt: string;
@@ -38,6 +39,7 @@ const schema = jsonSchema<AIScoreResponse>({
 });
 
 export async function scoreEssayWithAI(
+  text: string,
   prompt: string,
   essay: string,
   scoringPrompt?: string
@@ -48,42 +50,25 @@ export async function scoreEssayWithAI(
     });
     const model = openrouter(process.env.OPENROUTER_MODEL_ID || '');
 
-    // Refined instruction prompt for the AI model
-    const instruction = `
-    You are an expert Vietnamese IELTS examiner. Your task is to evaluate the provided IELTS Writing Task essay based on the official scoring criteria.
-
-    Provide a score between 1 and 9 (can include decimals like 7.5) and detailed feedback in Vietnamese.
+    // Use the provided scoring prompt or a generic fallback
+    const promptToUse = scoringPrompt || `
+    You are an expert language examiner. Evaluate the response based on the context and criteria provided.
+    
+    Provide an appropriate numerical score and detailed feedback in markdown format.
     `;
-
-    // Default scoring criteria details (can be overridden by scoringPrompt)
-    const defaultPrompt = `
-    **Scoring Criteria Details (Evaluate based on these):**
-
-    *   **Task Achievement/Response (Mức độ hoàn thành yêu cầu):** Assess how well the essay addresses all parts of the task prompt, develops a clear position, and presents relevant, extended, and supported ideas.
-    *   **Coherence and Cohesion (Tính mạch lạc và liên kết):** Evaluate the organization of information and ideas, the clarity of progression throughout the response, and the effective use of cohesive devices (linking words, pronouns, etc.). Check paragraphing.
-    *   **Lexical Resource (Vốn từ vựng):** Assess the range of vocabulary used, its accuracy, appropriateness for the task, and the control of features like collocation and word formation.
-    *   **Grammatical Range and Accuracy (Độ đa dạng và chính xác của ngữ pháp):** Evaluate the range and accuracy of grammatical structures used, including sentence complexity and control over errors.
-    `;
-
-    // Use the provided scoringPrompt if available (e.g., focusing on specific aspects), otherwise use the default criteria details
-    const promptToUse = scoringPrompt
-      ? `**Custom Scoring Focus:**\n${scoringPrompt}`
-      : defaultPrompt;
 
     if (!process.env.OPENROUTER_API_KEY) {
       throw new Error('OPENROUTER_API_KEY is not set in environment variables');
     }
 
     const fullPrompt = `
-      ${instruction}
       ${promptToUse}
 
-      **Task:** ${prompt}
-      **Essay:** ${essay}
-      **Score:** Provide a score between 1 and 9 (can include decimals like 7.5).
-      **Feedback:** Provide detailed feedback/breakdown in Vietnamese using markdown formatting.
+      **Context/Question:** ${text}
+      **Task/Prompt:** ${prompt}
+      **Student Response:** ${essay}
       
-      IMPORTANT: Your explanation should be plain text in markdown format. DO NOT wrap your feedback in JSON or quotes DO NOT mention the score in here, and DO NOT include nested JSON objects in your response.
+      IMPORTANT: Your explanation should be plain text in markdown format. DO NOT wrap your feedback in JSON or quotes DO NOT mention the score in the feedback, and DO NOT include nested JSON objects in your response.
       
       Return your response in this exact JSON structure:
       {
@@ -101,10 +86,11 @@ export async function scoreEssayWithAI(
       }
     });
 
+
     if (
       !result ||
       !result.object ||
-      !result.object.score ||
+      typeof result.object.score !== "number" ||
       !result.object.detailedBreakdown
     ) {
       throw new Error('Invalid response from AI model');
@@ -142,7 +128,7 @@ export async function scoreEssay(
   params: ScoringParams,
 ): Promise<ScoringResult> {
   try {
-    const { prompt, essay, scoringPrompt } = params;
+    const { text, prompt, essay, scoringPrompt } = params;
 
     if (!essay || essay.trim().length === 0) {
       return {
@@ -153,7 +139,7 @@ export async function scoreEssay(
       };
     }
 
-    const result = await scoreEssayWithAI(prompt, essay, scoringPrompt);
+    const result = await scoreEssayWithAI(text, prompt, essay, scoringPrompt);
 
     return {
       ok: true,
@@ -165,7 +151,7 @@ export async function scoreEssay(
     return {
       ok: false,
       score: 0,
-      feedback: "Unable to score your essay. Please try again later.",
+      feedback: "Unable to score your response. Please try again later.",
       error: error instanceof Error ? error.message : "Unknown error occurred",
     };
   }

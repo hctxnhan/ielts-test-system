@@ -12,7 +12,10 @@ import type {
   SentenceTranslationQuestion,
   Question,
 } from "@testComponents/lib/types";
-import { StandardQuestion } from "@testComponents/lib/standardized-types";
+import {
+  StandardQuestion,
+  StandardSubQuestionMeta,
+} from "@testComponents/lib/standardized-types";
 import { v4 as uuidv4 } from "uuid";
 
 // Reusing existing components
@@ -23,15 +26,19 @@ class SentenceTranslationPlugin extends BaseQuestionPlugin<SentenceTranslationQu
   config: QuestionPlugin<SentenceTranslationQuestion>["config"] = {
     type: "sentence-translation",
     displayName: "Sentence Translation",
-    description: "Users translate sentences from a source to a target language.",
+    description:
+      "Users translate sentences from a source to a target language.",
     icon: "languages",
     category: ["grammar", "writing"],
     supportsPartialScoring: true,
     supportsAIScoring: true,
     defaultPoints: 1,
+    scoreOnCompletion: true,
+    hasSubQuestions: true,
   };
 
   createDefault(index: number): SentenceTranslationQuestion {
+    const sentenceId = uuidv4();
     return {
       id: uuidv4(),
       type: "sentence-translation",
@@ -42,9 +49,15 @@ class SentenceTranslationPlugin extends BaseQuestionPlugin<SentenceTranslationQu
       partialEndingIndex: 0,
       sentences: [
         {
-          id: uuidv4(),
+          id: sentenceId,
           sourceText: "",
           referenceTranslations: [""],
+        },
+      ],
+      subQuestions: [
+        {
+          subId: sentenceId,
+          points: 1,
         },
       ],
       sourceLanguage: "vietnamese",
@@ -53,36 +66,52 @@ class SentenceTranslationPlugin extends BaseQuestionPlugin<SentenceTranslationQu
     };
   }
 
-  createRenderer(): React.ComponentType<QuestionRendererProps<SentenceTranslationQuestion>> {
+  createRenderer(): React.ComponentType<
+    QuestionRendererProps<SentenceTranslationQuestion>
+  > {
     return SentenceTranslationQuestionRenderer as unknown as React.ComponentType<
       QuestionRendererProps<SentenceTranslationQuestion>
     >;
   }
 
-  createEditor(): React.ComponentType<QuestionEditorProps<SentenceTranslationQuestion>> {
+  createEditor(): React.ComponentType<
+    QuestionEditorProps<SentenceTranslationQuestion>
+  > {
     return SentenceTranslationEditor as unknown as React.ComponentType<
       QuestionEditorProps<SentenceTranslationQuestion>
     >;
   }
 
   transform(question: SentenceTranslationQuestion): StandardQuestion {
-    return {
-      id: question.id,
-      type: question.type,
-      text: question.text,
-      points: question.points,
-      scoringStrategy: question.scoringStrategy,
-      index: question.index,
-      partialEndingIndex: question.partialEndingIndex,
-      // Custom transformation for this question type
-      subQuestions: question.sentences.map(s => ({
+    const sentences = question.sentences || [];
+    const sentencesCount = sentences.length || 1;
+
+    const standardSubQuestions: StandardSubQuestionMeta[] = sentences.map(
+      (s) => ({
         subId: s.id,
         questionText: s.sourceText,
         acceptableAnswers: s.referenceTranslations,
-        points: question.points / (question.sentences.length || 1),
-      })),
+        points: question.points / sentencesCount,
+      }),
+    );
+
+    // Provide legacy-compatible fields (sourceText/referenceTranslation) using the first sentence
+    const legacySourceText =
+      sentences.length > 0 ? sentences[0].sourceText : "";
+    const legacyReference =
+      sentences.length > 0
+        ? (sentences[0].referenceTranslations || [])[0]
+        : undefined;
+
+    return {
+      ...question,
+      subQuestions: standardSubQuestions,
       prompt: question.scoringPrompt,
-    } as StandardQuestion;
+      sourceText: legacySourceText,
+      referenceTranslation: legacyReference,
+      sourceLanguage: question.sourceLanguage,
+      targetLanguage: question.targetLanguage,
+    } as unknown as StandardQuestion;
   }
 
   validate(question: SentenceTranslationQuestion): ValidationResult {
@@ -93,7 +122,9 @@ class SentenceTranslationPlugin extends BaseQuestionPlugin<SentenceTranslationQu
     } else {
       question.sentences.forEach((s, index) => {
         if (!s.sourceText.trim()) {
-          result.errors.push(`Source text for sentence #${index + 1} is empty.`);
+          result.errors.push(
+            `Source text for sentence #${index + 1} is empty.`,
+          );
         }
         // It's okay for referenceTranslations to be empty if AI scoring is used
       });
@@ -104,49 +135,222 @@ class SentenceTranslationPlugin extends BaseQuestionPlugin<SentenceTranslationQu
   }
 
   async score(context: ScoringContext): Promise<ScoringResult> {
-    const { question, answer, subQuestionId, scoreEssayFn } = context;
+    const { question, answer, subQuestionId, aiScoringFn } = context;
     const translationQuestion = question as SentenceTranslationQuestion;
+
+    // Expect answers in object format: Record<string, string>
     const userAnswers = (answer as Record<string, string>) || {};
 
-    const sentence = translationQuestion.sentences.find(s => s.id === subQuestionId);
-    if (!sentence) {
-      return { isCorrect: false, score: 0, maxScore: 0, feedback: "Sentence not found." };
+    const scoringStrategy = translationQuestion.scoringStrategy || "partial";
+
+    // Check if sentences array exists (new format)
+    if (
+      translationQuestion.sentences &&
+      Array.isArray(translationQuestion.sentences) &&
+      translationQuestion.sentences.length > 0
+    ) {
+      if (scoringStrategy === "partial" && subQuestionId) {
+        // Partial scoring - score individual sentence
+        const sentence = translationQuestion.sentences.find(
+          (s) => s.id === subQuestionId,
+        );
+
+        if (!sentence) {
+          return {
+            isCorrect: false,
+            score: 0,
+            maxScore: 0,
+            feedback: "Sentence not found.",
+          };
+        }
+
+        const userAnswer = userAnswers[sentence.id] || "";
+        const sentencesCount = translationQuestion.sentences.length;
+        const maxScore = translationQuestion.points / sentencesCount;
+
+        return await this.scoreTranslation({
+          sourceText: sentence.sourceText,
+          userAnswer,
+          referenceTranslations: sentence.referenceTranslations || [],
+          maxScore,
+          sourceLanguage: translationQuestion.sourceLanguage,
+          targetLanguage: translationQuestion.targetLanguage,
+          scoringPrompt: translationQuestion.scoringPrompt,
+          aiScoringFn,
+        });
+      } else {
+        // All-or-nothing scoring - score entire question
+
+        const sentences = translationQuestion.sentences;
+        const totalSentences = sentences.length;
+        let allCorrect = true;
+        const feedbacks: string[] = [];
+
+        // Score all sentences
+        for (const sentence of sentences) {
+          const userAnswer = userAnswers[sentence.id] || "";
+          const sentenceMaxScore = translationQuestion.points / totalSentences;
+
+          const result = await this.scoreTranslation({
+            sourceText: sentence.sourceText,
+            userAnswer,
+            referenceTranslations: sentence.referenceTranslations || [],
+            maxScore: sentenceMaxScore,
+            sourceLanguage: translationQuestion.sourceLanguage,
+            targetLanguage: translationQuestion.targetLanguage,
+            scoringPrompt: translationQuestion.scoringPrompt,
+            aiScoringFn,
+          });
+
+          if (!result.isCorrect) {
+            allCorrect = false;
+          }
+          if (result.feedback) {
+            feedbacks.push(
+              `Sentence ${sentences.indexOf(sentence) + 1}: ${result.feedback}`,
+            );
+          }
+        }
+
+        return {
+          isCorrect: allCorrect,
+          score: allCorrect ? translationQuestion.points : 0,
+          maxScore: translationQuestion.points,
+          feedback: allCorrect
+            ? "All translations correct!"
+            : `Some translations need improvement. ${feedbacks.join(" ")}`,
+        };
+      }
     }
 
-    const userAnswer = userAnswers[sentence.id] || "";
-    const maxScore = translationQuestion.points / (translationQuestion.sentences.length || 1);
+    // Handle legacy format with sourceText (single translation)
+    interface ExtendedQuestion extends SentenceTranslationQuestion {
+      sourceText?: string;
+      referenceTranslation?: string;
+    }
+    const questionData = translationQuestion as ExtendedQuestion;
+    if (questionData.sourceText) {
+      // For legacy format, use the question ID as the answer key
+      const userAnswer = userAnswers[translationQuestion.id] || "";
+      const maxScore = translationQuestion.points || 0;
 
-    // 1. Reference-based scoring (if available and AI scorer is not)
-    if (sentence.referenceTranslations && sentence.referenceTranslations.length > 0 && !scoreEssayFn) {
-      const isCorrect = sentence.referenceTranslations.some(
-        ref => ref.trim().toLowerCase() === userAnswer.trim().toLowerCase()
+      return await this.scoreTranslation({
+        sourceText: questionData.sourceText,
+        userAnswer,
+        referenceTranslations: questionData.referenceTranslation
+          ? [questionData.referenceTranslation]
+          : [],
+        maxScore,
+        sourceLanguage: translationQuestion.sourceLanguage,
+        targetLanguage: translationQuestion.targetLanguage,
+        scoringPrompt: translationQuestion.scoringPrompt,
+        aiScoringFn,
+      });
+    }
+
+    return {
+      isCorrect: false,
+      score: 0,
+      maxScore: 0,
+      feedback: "Invalid question format.",
+    };
+  }
+
+  private async scoreTranslation(params: {
+    sourceText: string;
+    userAnswer: string;
+    referenceTranslations: string[];
+    maxScore: number;
+    sourceLanguage: string;
+    targetLanguage: string;
+    scoringPrompt?: string;
+    aiScoringFn?: (params: {
+      text: string;
+      prompt: string;
+      essay: string;
+      scoringPrompt: string;
+    }) => Promise<{
+      score: number;
+      feedback: string;
+      ok: boolean;
+      error?: string;
+    }>;
+  }): Promise<ScoringResult> {
+    const {
+      sourceText,
+      userAnswer,
+      referenceTranslations,
+      maxScore,
+      sourceLanguage,
+      targetLanguage,
+      scoringPrompt,
+      aiScoringFn,
+    } = params;
+
+    if (!userAnswer.trim()) {
+      return {
+        isCorrect: false,
+        score: 0,
+        maxScore,
+        feedback: "No answer provided.",
+      };
+    }
+
+    // 1. Reference-based scoring (if available and no AI scorer)
+    if (referenceTranslations.length > 0 && !aiScoringFn) {
+      const isCorrect = referenceTranslations.some(
+        (ref) => ref.trim().toLowerCase() === userAnswer.trim().toLowerCase(),
       );
+
       return {
         isCorrect,
         score: isCorrect ? maxScore : 0,
         maxScore,
+        feedback: isCorrect
+          ? "Correct translation!"
+          : "Translation does not match reference answers.",
       };
     }
 
-    // 2. AI-based scoring (if scorer function is provided)
-    if (scoreEssayFn) {
-      if (!userAnswer.trim()) {
-        return { isCorrect: false, score: 0, maxScore, feedback: "No answer provided." };
-      }
+    // 2. AI-based scoring
+    if (aiScoringFn) {
       try {
-        const prompt = translationQuestion.scoringPrompt || `Evaluate this translation from ${translationQuestion.sourceLanguage} to ${translationQuestion.targetLanguage} on a scale of 0-1. Source: "${sentence.sourceText}". Translation: "${userAnswer}".`;
-        const aiResult = await scoreEssayFn({
+        const prompt =
+          scoringPrompt ||
+          `You are an expert language teacher specializing in translation evaluation. Your task is to evaluate the translation quality.
+
+Evaluate this translation from ${sourceLanguage} to ${targetLanguage}:
+
+Source: "${sourceText}"
+Student Translation: "${userAnswer}"
+
+${referenceTranslations.length > 0 ? `Reference translations:\n${referenceTranslations.join("\n")}\n` : ""}
+
+Please evaluate on a scale of 0-1 (where 1 is perfect translation) considering:
+- Accuracy of meaning (40%)
+- Grammar and syntax (30%) 
+- Natural expression (20%)
+- Cultural appropriateness (10%)
+
+Provide specific, constructive feedback focusing on:
+- What was done well
+- Areas for improvement
+- Specific grammar or vocabulary suggestions
+- Cultural context if relevant
+
+Be encouraging but precise in your feedback.`;
+
+        const aiResult = await aiScoringFn({
           text: userAnswer,
-          prompt: sentence.sourceText,
+          prompt: sourceText,
           essay: userAnswer,
           scoringPrompt: prompt,
         });
 
         if (aiResult.ok) {
-          // Scale AI score (0-1) to the max points for this sub-question
           const scaledScore = aiResult.score * maxScore;
           return {
-            isCorrect: scaledScore >= maxScore * 0.5, // Consider >50% as "correct"
+            isCorrect: scaledScore >= maxScore * 0.5,
             score: scaledScore,
             maxScore,
             feedback: aiResult.feedback,
@@ -155,6 +359,10 @@ class SentenceTranslationPlugin extends BaseQuestionPlugin<SentenceTranslationQu
           throw new Error(aiResult.error || "Unknown AI scoring error");
         }
       } catch (error) {
+        console.error(
+          "💥 sentence-translation-plugin: AI scoring failed:",
+          error,
+        );
         return {
           isCorrect: false,
           score: 0,
@@ -164,16 +372,18 @@ class SentenceTranslationPlugin extends BaseQuestionPlugin<SentenceTranslationQu
       }
     }
 
-    // 3. Fallback if no scoring method is available
+    // 3. Fallback
     return {
       isCorrect: false,
       score: 0,
       maxScore,
-      feedback: "No scoring method available (no reference translations or AI scorer).",
+      feedback: "No scoring method available.",
     };
   }
 
-  isQuestionOfType(question: Question): question is SentenceTranslationQuestion {
+  isQuestionOfType(
+    question: Question,
+  ): question is SentenceTranslationQuestion {
     return question.type === "sentence-translation";
   }
 }

@@ -17,7 +17,8 @@ export class MatchingPlugin extends BaseQuestionPlugin<MatchingQuestion> {
     category: ["reading" as const, "listening" as const, "grammar" as const],
     supportsPartialScoring: true,
     supportsAIScoring: false,
-    defaultPoints: 1
+    defaultPoints: 1,
+    hasSubQuestions: true,
   };
 
   createRenderer(): React.ComponentType<QuestionRendererProps<MatchingQuestion>> {
@@ -94,26 +95,30 @@ export class MatchingPlugin extends BaseQuestionPlugin<MatchingQuestion> {
       text: item.text,
     }));
 
-    const standardOptions: StandardQuestionOption[] = question.options.map((option) => ({
-      id: option.id,
-      text: option.text,
-    }));
+    const standardOptions: StandardQuestionOption[] = question.options.map(
+      (opt) => ({
+        id: opt.id,
+        text: opt.text,
+      }),
+    );
 
-    const standardSubQuestions: StandardSubQuestionMeta[] = question.subQuestions.map((subQ, index) => ({
-      subId: subQ.subId,
-      item: subQ.item,
-      correctAnswer: subQ.correctAnswer,
-      points: subQ.points,
-      subIndex: index,
-    }));
+    const standardSubQuestions: StandardSubQuestionMeta[] =
+      question.subQuestions.map((sub) => ({
+        subId: sub.subId,
+        item: sub.item,
+        points: sub.points,
+        correctAnswer: sub.correctAnswer,
+        questionText: standardItems.find((item) => item.id === sub.item)?.text,
+        answerText: standardOptions.find((opt) => opt.id === sub.correctAnswer)
+          ?.text,
+      }));
 
     return {
       ...question,
       items: standardItems,
       options: standardOptions,
       subQuestions: standardSubQuestions,
-      scoringStrategy: "partial",
-    };
+    } as StandardMatchingQuestion;
   }
 
   score(context: ScoringContext): ScoringResult {

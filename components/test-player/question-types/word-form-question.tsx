@@ -1,15 +1,13 @@
 "use client";
 
-import React from "react";
 import { Button } from "@testComponents/components/ui/button";
 import { Card } from "@testComponents/components/ui/card";
 import { Input } from "@testComponents/components/ui/input";
 import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
-import type { WordFormQuestion } from "@testComponents/lib/types";
-import { useTestStore } from "@testComponents/store/test-store";
+import type { WordFormQuestion, UserAnswer } from "@testComponents/lib/types";
 import { cn } from "@testComponents/lib/utils";
-import { Award, Bot, Eye, EyeOff } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Award, Eye, EyeOff } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import rehypeRaw from "rehype-raw";
@@ -22,13 +20,7 @@ interface WordFormQuestionProps {
   readOnly?: boolean;
   showCorrectAnswer?: boolean;
   onQuestionHighlighted?: (questionId: string, content: string) => void;
-}
-
-interface ScoringResult {
-  score: number;
-  feedback: string;
-  ok?: boolean;
-  error?: string;
+  answer?: UserAnswer;
 }
 
 export default function WordFormQuestionRenderer({
@@ -38,11 +30,33 @@ export default function WordFormQuestionRenderer({
   readOnly = false,
   showCorrectAnswer = false,
   onQuestionHighlighted = () => {},
+  answer,
 }: WordFormQuestionProps) {
-  const { scoreEssayFn } = useTestStore();
-  const [aiScores, setAiScores] = useState<Record<string, ScoringResult>>({});
   const [showFeedback, setShowFeedback] = useState<Record<string, boolean>>({});
-  const [isScoring, setIsScoring] = useState<Record<string, boolean>>({});
+  // Extract AI scores from the answer prop
+  const aiScores = React.useMemo(() => {
+    const scores: Record<string, { score: number; feedback: string }> = {};
+    
+    // The answer prop is actually the entire answers object containing individual exercise results
+    if (answer && typeof answer === 'object') {
+      // Iterate through all answer entries to find ones belonging to this question
+      Object.values(answer).forEach((answerEntry: {
+        questionId?: string;
+        subQuestionId?: string;
+        score?: number;
+        feedback?: string;
+      }) => {
+        if (answerEntry.questionId === question.id && answerEntry.subQuestionId) {
+          scores[answerEntry.subQuestionId] = {
+            score: answerEntry.score || 0, // Score is already in decimal format (0-1)
+            feedback: answerEntry.feedback || ""
+          };
+        }
+      });
+    }
+    
+    return scores;
+  }, [answer, question]);
 
   // Handle both question formats: single exercise and multiple exercises
   interface ExtendedQuestion extends WordFormQuestion {
@@ -80,76 +94,6 @@ export default function WordFormQuestionRenderer({
     newAnswers[exerciseId] = newValue;
 
     onChange(newAnswers, exerciseId);
-  };
-
-  const scoreWordForm = async (exerciseId: string, userAnswer: string, exercise: { id: string; sentence: string; baseWord: string; correctForm: string; position: number }) => {
-    if (!scoreEssayFn || !userAnswer.trim()) return;
-
-    setIsScoring(prev => ({ ...prev, [exerciseId]: true }));
-
-    try {
-      // Use custom scoring prompt if provided, otherwise use default
-      const prompt = question.scoringPrompt || `Evaluate this word form transformation exercise:
-
-Base word: "${exercise.baseWord}"
-Student answer: "${userAnswer}"
-Correct form: "${exercise.correctForm}"
-
-Context sentence: "${exercise.sentence}"
-
-Please evaluate on a scale of 0-1 (where 1 is correct) considering:
-- Grammatical correctness (50%)
-- Appropriate word form transformation (30%)
-- Spelling accuracy (20%)
-
-Provide specific, constructive feedback focusing on:
-- Whether the word form is correct for the context
-- Grammar rule explanation if applicable
-- Spelling corrections if needed
-- Alternative correct forms if any exist
-
-Be encouraging but precise in your feedback.`;
-
-      const result = await scoreEssayFn({
-        text: userAnswer,
-        prompt: exercise.sentence,
-        essay: userAnswer,
-        scoringPrompt: prompt,
-      });
-
-      if (result.ok) {
-        setAiScores(prev => ({ ...prev, [exerciseId]: result }));
-        setShowFeedback(prev => ({ ...prev, [exerciseId]: true }));
-        
-        onChange({ 
-          ...value, 
-          [exerciseId]: userAnswer
-        }, exerciseId);
-      } else {
-        console.error("AI scoring failed:", result.error);
-      }
-    } catch (error) {
-      console.error("Error scoring word form:", error);
-    } finally {
-      setIsScoring(prev => ({ ...prev, [exerciseId]: false }));
-    }
-  };
-
-  const scoreAllExercises = async () => {
-    if (!scoreEssayFn || !value) return;
-
-    const exercisesToScore = exercises.filter(exercise => {
-      const userAnswer = value[exercise.id];
-      return userAnswer && userAnswer.trim() && !aiScores[exercise.id];
-    });
-
-    for (const exercise of exercisesToScore) {
-      const userAnswer = value[exercise.id];
-      if (userAnswer && userAnswer.trim()) {
-        await scoreWordForm(exercise.id, userAnswer, exercise);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    }
   };
 
   // Function to render sentence with blank
@@ -229,10 +173,36 @@ Be encouraging but precise in your feedback.`;
         {/* Word form exercises */}
         <div className="space-y-6">
           {exercises.map((exercise, index) => {
-            const userAnswer = value?.[exercise.id] || "";
+            // Get user answer from value prop (during answering) or from answer prop (during review)
+            let userAnswer = "";
+            if (value && value[exercise.id]) {
+              // During answering mode
+              userAnswer = String(value[exercise.id]);
+            } else if (answer && typeof answer === 'object') {
+              // During review mode, find the answer entry for this exercise
+              const answerEntry = Object.values(answer).find((entry: {
+                questionId?: string;
+                subQuestionId?: string;
+                answer?: string;
+              }) => entry.questionId === question.id && entry.subQuestionId === exercise.id);
+              
+              if (answerEntry && answerEntry.answer) {
+                userAnswer = String(answerEntry.answer);
+              }
+            }
+            
             const aiScore = aiScores[exercise.id];
-            const isCorrect = Boolean(showCorrectAnswer && userAnswer && 
+            const { feedback, score } = aiScore || {};
+            
+            // Check if answer is correct based on exact match with correct form
+            const isExactMatch = Boolean(showCorrectAnswer && userAnswer && 
               userAnswer.toLowerCase().trim() === exercise.correctForm.toLowerCase().trim());
+            
+            // Check if answer is correct based on AI score (80% or higher)
+            const isAICorrect = Boolean(showCorrectAnswer && score && score >= 0.8);
+            
+            // Consider answer correct if either exact match or AI score is 80%+
+            const isCorrect = isExactMatch || isAICorrect;
             const isIncorrect = Boolean(showCorrectAnswer && userAnswer && !isCorrect);
 
             return (
@@ -246,26 +216,6 @@ Be encouraging but precise in your feedback.`;
                       </div>
                       <span className="text-sm font-medium">Exercise {index + 1}</span>
                     </div>
-                    {/* AI Scoring Button */}
-                    {!readOnly && !showCorrectAnswer && scoreEssayFn && userAnswer.trim() && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => scoreWordForm(exercise.id, userAnswer, exercise)}
-                        disabled={isScoring[exercise.id]}
-                        className="text-xs h-7"
-                      >
-                        {isScoring[exercise.id] ? (
-                          <>
-                            <Bot className="mr-1 h-3 w-3 animate-spin" /> Scoring...
-                          </>
-                        ) : (
-                          <>
-                            <Bot className="mr-1 h-3 w-3" /> Get AI Score
-                          </>
-                        )}
-                      </Button>
-                    )}
                   </div>
                 </div>
 
@@ -277,14 +227,14 @@ Be encouraging but precise in your feedback.`;
                     </div>
 
                     {/* AI Score Display */}
-                    {aiScore && (
+                    {score !== undefined && (
                       <div className="mt-3">
                         <Card className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-200/50 dark:border-blue-800/50">
                           <div className="p-3">
                             <div className="flex items-center justify-between mb-2">
                               <h4 className="font-medium text-sm flex items-center text-blue-900 dark:text-blue-100">
                                 <Award className="mr-1 h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                AI Score: {(aiScore.score * 100).toFixed(0)}%
+                                AI Score: {(score * 100).toFixed(0)}%
                               </h4>
                               <Button
                                 variant="link"
@@ -304,14 +254,14 @@ Be encouraging but precise in your feedback.`;
                               </Button>
                             </div>
 
-                            {showFeedback[exercise.id] && (
+                            {showFeedback[exercise.id] && feedback && (
                               <div className="mt-2 p-3 bg-white dark:bg-gray-800/50 rounded border text-xs">
                                 <div className="prose prose-sm max-w-none">
                                   <ReactMarkdown
                                     remarkPlugins={[remarkGfm]}
                                     rehypePlugins={[rehypeRaw, rehypeHighlight]}
                                   >
-                                    {aiScore.feedback}
+                                    {feedback}
                                   </ReactMarkdown>
                                 </div>
                               </div>
@@ -345,28 +295,6 @@ Be encouraging but precise in your feedback.`;
             );
           })}
         </div>
-
-        {/* Score All Button */}
-        {!readOnly && !showCorrectAnswer && scoreEssayFn && value && Object.values(value).some(v => v && v.trim()) && (
-          <div className="flex justify-center pt-4 border-t">
-            <Button
-              variant="outline"
-              onClick={scoreAllExercises}
-              disabled={Object.values(isScoring).some(Boolean)}
-              className="px-6"
-            >
-              {Object.values(isScoring).some(Boolean) ? (
-                <>
-                  <Bot className="mr-2 h-4 w-4 animate-spin" /> Scoring All Exercises...
-                </>
-              ) : (
-                <>
-                  <Bot className="mr-2 h-4 w-4" /> Score All Exercises
-                </>
-              )}
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );
