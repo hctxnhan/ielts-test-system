@@ -29,7 +29,6 @@ export default function MultipleChoiceQuestion({
 }: MultipleChoiceQuestionProps) {
   return (
     <div className="space-y-2">
-      {/* <RichTextContent content={question.text || ""} className="text-sm" /> */}
       <RichTextEditor
         value={question.text || ""}
         onChange={(content) => onQuestionHighlighted(question.id, content)}

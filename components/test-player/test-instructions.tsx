@@ -1,10 +1,12 @@
 "use client";
 
+import React from "react";
 import { Button } from "@testComponents/components/ui/button";
 import {
   Card
 } from "@testComponents/components/ui/card";
 import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@testComponents/components/ui/tabs";
 import { countSectionQuestion } from "@testComponents/lib/test-utils";
 import type { Test, QuestionType } from "@testComponents/lib/types";
 import {
@@ -16,9 +18,11 @@ import {
   HelpCircle,
   Layers,
   Layout,
+  Lightbulb,
   Pencil,
   PlayCircle,
   Target,
+  BookOpenCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "../ui/badge";
@@ -332,36 +336,83 @@ export default function TestInstructions({
                 />
               )}
               <div className="bg-muted/10 rounded-lg border overflow-hidden shadow-sm">
-                <div className="bg-muted/30 py-2 px-3 sm:py-2.5 sm:px-4 border-b flex items-center justify-between">
-                  <h3 className="font-medium flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
-                    <Layout className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
-                    <span>Instructions</span>
-                  </h3>
-                  <Badge
-                    variant="outline"
-                    className="text-xs h-5 sm:h-6 px-2 sm:px-2.5"
-                  >
-                    Important
-                  </Badge>
-                </div>
-                <div className="p-3 sm:p-4">
-                  {test.instructions ? (
-                    <RichTextContent
-                      content={test.instructions}
-                      className="leading-relaxed text-sm sm:text-base"
-                    />
-                  ) : (
-                    <p className="leading-relaxed text-sm sm:text-base">
-                      This {test.type} test consists of {
-                        test.sections.length
-                      } sections with {totalQuestions} questions. 
-                      You will have {Math.floor(
-                        test.totalDuration / 60
-                      )} minutes to complete the test. 
-                      Read each question carefully before answering.
-                    </p>
+                <Tabs defaultValue="instructions" className="w-full">
+                  <TabsList className={`grid w-full bg-muted/30 rounded-none border-b ${
+                    test.tips && test.vocabulary ? 'grid-cols-3' : 
+                    (test.tips || test.vocabulary) ? 'grid-cols-2' : 'grid-cols-1'
+                  }`}>
+                    <TabsTrigger 
+                      value="instructions" 
+                      className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm data-[state=active]:bg-white"
+                    >
+                      <Layout className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      Instructions
+                    </TabsTrigger>
+                    {test.tips && (
+                      <TabsTrigger 
+                        value="tips" 
+                        className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm data-[state=active]:bg-white"
+                      >
+                        <Lightbulb className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        Tips
+                      </TabsTrigger>
+                    )}
+                    {test.vocabulary && (
+                      <TabsTrigger 
+                        value="vocabulary" 
+                        className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm data-[state=active]:bg-white"
+                      >
+                        <BookOpenCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        Vocabulary
+                      </TabsTrigger>
+                    )}
+                  </TabsList>
+
+                  <TabsContent value="instructions" className="p-3 sm:p-4 mt-0">
+                    <div className="flex items-center justify-between mb-3">
+                      <Badge
+                        variant="outline"
+                        className="text-xs h-5 sm:h-6 px-2 sm:px-2.5"
+                      >
+                        Important
+                      </Badge>
+                    </div>
+                    {test.instructions ? (
+                      <RichTextContent
+                        content={test.instructions}
+                        className="leading-relaxed text-sm sm:text-base"
+                      />
+                    ) : (
+                      <p className="leading-relaxed text-sm sm:text-base">
+                        This {test.type} test consists of {
+                          test.sections.length
+                        } sections with {totalQuestions} questions. 
+                        You will have {Math.floor(
+                          test.totalDuration / 60
+                        )} minutes to complete the test. 
+                        Read each question carefully before answering.
+                      </p>
+                    )}
+                  </TabsContent>
+
+                  {test.tips && (
+                    <TabsContent value="tips" className="p-3 sm:p-4 mt-0">
+                      <RichTextContent
+                        content={test.tips}
+                        className="leading-relaxed text-sm sm:text-base"
+                      />
+                    </TabsContent>
                   )}
-                </div>
+
+                  {test.vocabulary && (
+                    <TabsContent value="vocabulary" className="p-3 sm:p-4 mt-0">
+                      <RichTextContent
+                        content={test.vocabulary}
+                        className="leading-relaxed text-sm sm:text-base"
+                      />
+                    </TabsContent>
+                  )}
+                </Tabs>
               </div>
               {/* Sections */}
               <div>

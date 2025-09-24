@@ -1,5 +1,5 @@
 // Test Types
-export type TestType = "listening" | "reading" | "writing" | "speaking";
+export type TestType = "listening" | "reading" | "writing" | "speaking" | "grammar";
 export type ReadingVariant = "academic" | "general";
 
 // Add scoring strategy type
@@ -17,7 +17,9 @@ export type QuestionType =
   | "matching-headings"
   | "short-answer"
   | "writing-task1"
-  | "writing-task2";
+  | "writing-task2"
+  | "sentence-translation"
+  | "word-form";
 
 export interface SubQuestionMeta {
   subId: string;
@@ -43,7 +45,7 @@ export interface BaseQuestion {
   points: number;
   scoringStrategy: ScoringStrategy;
   subQuestions?: SubQuestionMeta[];
-
+  imageUrl?: string;
   index: number;
   partialEndingIndex: number;
 }
@@ -145,6 +147,27 @@ export interface WritingTask2Question extends BaseQuestion {
   imageUrl?: string;
 }
 
+export interface SentenceTranslationQuestion extends BaseQuestion {
+  type: "sentence-translation";
+  sentences: { id: string; sourceText: string; referenceTranslations?: string[] }[];
+  sourceLanguage: "vietnamese" | "english";
+  targetLanguage: "english" | "vietnamese";
+  scoringPrompt?: string;
+  subQuestions: SubQuestionMeta[];
+}
+
+export interface WordFormQuestion extends BaseQuestion {
+  type: "word-form";
+  exercises: { 
+    id: string; 
+    sentence: string; 
+    baseWord: string; 
+    correctForm: string; 
+    position: number; // position of the blank in the sentence
+  }[];
+  scoringPrompt?: string;
+}
+
 export type Question =
   | MultipleChoiceQuestion
   | CompletionQuestion
@@ -156,7 +179,9 @@ export type Question =
   | MatchingHeadingsQuestion
   | ShortAnswerQuestion
   | WritingTask1Question
-  | WritingTask2Question;
+  | WritingTask2Question
+  | SentenceTranslationQuestion
+  | WordFormQuestion;
 
 export interface ReadingPassage {
   id: string;
@@ -190,6 +215,8 @@ export interface Test {
   instructions: string;
   skillLevel?: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
   audioUrl?: string; // Added for listening tests
+  tips?: string; // Tips for test takers
+  vocabulary?: string; // Vocabulary help for test takers
 }
 
 export interface UserAnswer {

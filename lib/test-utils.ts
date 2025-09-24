@@ -10,26 +10,41 @@ export function getQuestionStatus(
 ): "completed" | "partial" | "untouched" {
   const answer = answers[questionId];
 
-
-  // if it's pick from a list, no matter if it's a sub-question or not, we check how many items are selected, if it's at least = to number of sub-questions, we consider it completed, else untouched
-  if (question?.type === "pick-from-a-list" && question.subQuestions) {
-    // Count how many sub-questions are answered
-    // Check how many subquestion IDs have answers in the answers object
-    const subQuestionIds = question.subQuestions.map((sq) => sq.subId);
-    const selectedCount = subQuestionIds.filter(
-      (id) => Boolean(answers[id]?.answer),
-    ).length;
-
-    if (selectedCount >= question.subQuestions.length) {
-      return "completed";
-    } else if (selectedCount > 0) {
-      return "partial";
-    }
-    return "untouched";
-  }
-
   if (!answer) return "untouched";
 
+  // For all-or-nothing questions, if there's an answer object, it's completed
+  // (the scoring logic has already determined if it's correct/incorrect)
+  if (question.scoringStrategy === "all-or-nothing") {
+    // Check if the answer has any content
+    if (typeof answer.answer === "object" && answer.answer !== null && !Array.isArray(answer.answer)) {
+      const hasContent = Object.values(answer.answer).some(v => Boolean(v) && (typeof v === "string" ? v.trim() !== "" : true));
+      return hasContent ? "completed" : "untouched";
+    }
+    if (typeof answer.answer === "string") {
+      return answer.answer.trim() !== "" ? "completed" : "untouched";
+    }
+    // For other types of answers, if it exists, it's completed
+    return Boolean(answer.answer) ? "completed" : "untouched";
+  }
+
+  // For partial scoring questions with sub-questions, check how many are answered
+  if (question.subQuestions && question.subQuestions.length > 0 && question.scoringStrategy === "partial") {
+    if (typeof answer.answer === "object" && answer.answer !== null && !Array.isArray(answer.answer)) {
+      const answeredCount = Object.values(answer.answer).filter(
+        (v) => Boolean(v) && (typeof v === "string" ? v.trim() !== "" : true),
+      ).length;
+
+      if (answeredCount >= question.subQuestions.length) {
+        return "completed";
+      }
+      if (answeredCount > 0) {
+        return "partial";
+      }
+      return "untouched";
+    }
+  }
+
+  // For simple questions without sub-questions
   if (
     (typeof answer.answer === "object" &&
       Object.values(answer.answer).filter((v) => Boolean(v)).length === 0) ||
@@ -59,48 +74,41 @@ export function getQuestionScore(
   question: Question,
   answers: Record<string, UserAnswer>,
 ): { score: number; maxScore: number } {
-  let score = 0;
-  let maxScore = 0;
-
-  if (
-    supportsPartialScoring.includes(question.type) &&
-    question.scoringStrategy === "partial" &&
-    question.subQuestions?.length
-  ) {
-    const subQuestions = question.subQuestions || [];
-    score = subQuestions.reduce((acc, subQ) => {
+  // For questions with sub-questions and partial scoring, sum up sub-question scores
+  if (question.subQuestions?.length && question.scoringStrategy === "partial") {
+    let totalScore = 0;
+    let totalMaxScore = 0;
+    
+    question.subQuestions.forEach((subQ) => {
       const answer = answers[subQ.subId];
-      maxScore += subQ.points;
-
-      return acc + (answer?.isCorrect ? (answer.score ?? subQ.points) : 0);
-    }, 0);
+      if (answer) {
+        totalScore += answer.score || 0;
+        totalMaxScore += answer.maxScore || subQ.points || 0;
+      } else {
+        // No answer submitted for this sub-question
+        totalMaxScore += subQ.points || 0;
+      }
+    });
+    
+    return {
+      score: totalScore,
+      maxScore: totalMaxScore,
+    };
   } else {
-    maxScore = question.points;
+    // For single questions, use the answer's pre-calculated score
     const answer = answers[question.id];
-    score = answer?.isCorrect ? (answer.score ?? question.points) : 0;
-  }
-
-  return {
-    score,
-    maxScore,
-  };
-}
-
-/**
- * Get the status color class based on question status
- */
-export function getStatusColorClass(
-  status: "correct" | "partial" | "incorrect" | "untouched",
-): string {
-  switch (status) {
-    case "correct":
-      return "bg-green-500";
-    case "partial":
-      return "bg-amber-500";
-    case "incorrect":
-      return "bg-red-500";
-    default:
-      return "bg-gray-300";
+    if (answer) {
+      return {
+        score: answer.score || 0,
+        maxScore: answer.maxScore || question.points || 0,
+      };
+    } else {
+      // No answer submitted
+      return {
+        score: 0,
+        maxScore: question.points || 0,
+      };
+    }
   }
 }
 
@@ -118,7 +126,7 @@ export function getTestStats(
   let maxPossibleScore = 0;
 
   // Process each section
-  test.sections.forEach((section) => {
+  for (const section of test.sections) {
     const sectionStats = getSectionStats(section, answers);
 
     totalQuestions += sectionStats.sectionTotalQuestions;
@@ -126,7 +134,7 @@ export function getTestStats(
     correctAnswers += sectionStats.sectionCorrectAnswers;
     totalScore += sectionStats.sectionScore;
     maxPossibleScore += sectionStats.sectionTotalScore;
-  });
+  }
 
   const percentageScore =
     Math.round((totalScore / maxPossibleScore) * 100) || 0;
@@ -140,16 +148,6 @@ export function getTestStats(
     percentageScore,
   };
 }
-
-export const supportsPartialScoring = [
-  "completion",
-  "matching",
-  "labeling",
-  "pick-from-a-list",
-  "true-false-not-given",
-  "matching-headings",
-  "short-answer",
-];
 
 /**
  * Calculate statistics for a specific section
@@ -165,21 +163,38 @@ export function getSectionStats(
   let incorrectAnswers = 0;
 
   // Process each question in the section
-  section.questions.forEach((question) => {
+  for (const question of section.questions) {
     const { score, maxScore } = getQuestionScore(question, answers);
     sectionScore += score;
     sectionTotalScore += maxScore;
-
-    // Collect answers for both subquestions and main questions
-    if (
-      supportsPartialScoring.includes(question.type) &&
-      question.subQuestions?.length &&
-      question.scoringStrategy === "partial"
-    ) {
+    if (question.subQuestions?.length && question.scoringStrategy === "partial") {
+      // PARTIAL SCORING: Iterate through each sub-question to see if it's answered.
+      // Each sub-question has its own entry in the answers object.
       question.subQuestions.forEach((sq) => {
         const answer = answers[sq.subId];
-        const questionStatus = getQuestionStatus(sq.subId, answers, question);
-        if (questionStatus === "completed") {
+        if (answer && answer.answer) {
+          // For partial scoring, check if the sub-question answer has content
+          const hasContent = typeof answer.answer === "string" 
+            ? answer.answer.trim() !== "" 
+            : Boolean(answer.answer);
+          
+          if (hasContent) {
+            sectionAnswers.push(answer);
+            if (answer.isCorrect) {
+              correctAnswers++;
+            } else {
+              incorrectAnswers++;
+            }
+          }
+        }
+      });
+    } else {
+      // ALL-OR-NOTHING & SINGLE QUESTIONS: Check the status on the main question ID.
+      // getQuestionStatus handles both single answers and composite answer objects.
+      const questionStatus = getQuestionStatus(question.id, answers, question);
+      if (questionStatus === "completed") {
+        const answer = answers[question.id];
+        if (answer) {
           sectionAnswers.push(answer);
           if (answer.isCorrect) {
             correctAnswers++;
@@ -187,21 +202,9 @@ export function getSectionStats(
             incorrectAnswers++;
           }
         }
-      });
-    } else {
-      const questionStatus = getQuestionStatus(question.id, answers, question);
-
-      const answer = answers[question.id];
-      if (questionStatus === "completed") {
-        sectionAnswers.push(answer);
-        if (answer.isCorrect) {
-          correctAnswers++;
-        } else {
-          incorrectAnswers++;
-        }
       }
     }
-  });
+  }
 
   const sectionPercentage =
     Math.round((sectionScore / sectionTotalScore) * 100) || 0;

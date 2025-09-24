@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,13 +13,24 @@ import {
   TabsTrigger,
 } from "@testComponents/components/ui/tabs";
 import { Badge } from "@testComponents/components/ui/badge";
-import { Award } from "lucide-react";
+import { Award, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import type { Question, UserAnswer } from "@testComponents/lib/types";
 import QuestionRenderer from "./question-renderer";
-import {
-  formatAnswerForDisplay,
-  formatCorrectAnswerForDisplay,
-} from "@testComponents/lib/test-utils";
+
+// Simple display functions for answers
+const displayFormattedAnswer = (question: Question, answer: UserAnswer | null) => {
+  if (!answer?.answer) return "No answer provided";
+  if (typeof answer.answer === "string") return answer.answer;
+  if (typeof answer.answer === "object") return JSON.stringify(answer.answer);
+  return String(answer.answer);
+};
+
+const displayCorrectAnswer = (question: Question) => {
+  if (!question.correctAnswer) return "No correct answer available";
+  if (typeof question.correctAnswer === "string") return question.correctAnswer;
+  if (typeof question.correctAnswer === "object") return JSON.stringify(question.correctAnswer);
+  return String(question.correctAnswer);
+};
 
 interface TestResultsQuestionReviewProps {
   question: Question & {
@@ -30,8 +42,8 @@ interface TestResultsQuestionReviewProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sampleAnswer?: string;
-  isSubQuestion?: boolean;
-  subQuestionData?: any;
+  _isSubQuestion?: boolean;
+  _subQuestionData?: Record<string, any>;
 }
 
 export default function TestResultsQuestionReview({
@@ -40,20 +52,11 @@ export default function TestResultsQuestionReview({
   open,
   onOpenChange,
   sampleAnswer,
-  isSubQuestion,
-  subQuestionData,
+  _isSubQuestion,
+  _subQuestionData,
 }: TestResultsQuestionReviewProps) {
   // If this is a sub-question, we might need to reference the original question for some data
-  const originalQuestion = question.originalQuestion;
-
-  // Use our utility functions for formatting answers
-  const displayFormattedAnswer = (question: Question, answer: any) => {
-    return formatAnswerForDisplay(question, answer);
-  };
-
-  const displayCorrectAnswer = (question: Question) => {
-    return formatCorrectAnswerForDisplay(question);
-  };
+  const _originalQuestion = question.originalQuestion;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -84,22 +87,22 @@ export default function TestResultsQuestionReview({
                   <Badge
                     variant={
                       answer.isCorrect
-                        ? "success"
-                        : answer.partiallyCorrect
-                        ? "warning"
+                        ? "default"
+                        : (answer.score || 0) > 0 && (answer.score || 0) < (answer.maxScore || 0)
+                        ? "secondary"
                         : "destructive"
                     }
                     className={`${
                       answer.isCorrect
                         ? "bg-green-100 text-green-800 hover:bg-green-100"
-                        : answer.partiallyCorrect
+                        : (answer.score || 0) > 0 && (answer.score || 0) < (answer.maxScore || 0)
                         ? "bg-amber-100 text-amber-800 hover:bg-amber-100"
                         : "bg-red-100 text-red-800 hover:bg-red-100"
                     }`}
                   >
                     {answer.isCorrect
                       ? "Correct"
-                      : answer.partiallyCorrect
+                      : (answer.score || 0) > 0 && (answer.score || 0) < (answer.maxScore || 0)
                       ? "Partially Correct"
                       : "Incorrect"}
                   </Badge>
@@ -111,6 +114,8 @@ export default function TestResultsQuestionReview({
               <QuestionRenderer
                 question={question}
                 sectionId={question.sectionId}
+                answers={{}}
+                isReviewMode={true}
               />
             </div>
           </TabsContent>
@@ -139,7 +144,22 @@ export default function TestResultsQuestionReview({
                   </span>
                 </div>
 
-                {/* AI Scoring Feedback for writing tasks */}
+                {/* Scoring Feedback for all question types */}
+                {answer.feedback && (
+                  <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 rounded-md">
+                    <h4 className="font-medium mb-2 flex items-center">
+                      <Award className="mr-2 h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      {question.type === "writing-task1" || question.type === "writing-task2" 
+                        ? "AI Feedback" 
+                        : "Answer Feedback"}
+                    </h4>
+                    <div className="whitespace-pre-line text-sm">
+                      {answer.feedback}
+                    </div>
+                  </div>
+                )}
+
+                {/* Legacy AI Scoring Feedback for writing tasks (kept for backward compatibility) */}
                 {(question.type === "writing-task1" ||
                   question.type === "writing-task2") &&
                   answer.answer &&

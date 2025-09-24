@@ -14,7 +14,9 @@ import {
   CardDescription,
 } from "@testComponents/components/ui/card";
 import type { Question, ScoringStrategy } from "@testComponents/lib/types";
-import { BarChart2, MessageSquare } from "lucide-react";
+import type { FileObject } from "@testComponents/lib/supabase-storage";
+import { BarChart2, MessageSquare, Image } from "lucide-react";
+import FilePicker from "@testComponents/components/file-picker";
 import MultipleChoiceEditor from "./question-editors/multiple-choice-editor";
 import CompletionEditor from "./question-editors/completion-editor";
 import MatchingEditor from "./question-editors/matching-editor";
@@ -25,6 +27,8 @@ import ShortAnswerEditor from "./question-editors/short-answer-editor";
 import LabelingEditor from "./question-editors/labeling-editor";
 import WritingTask1Editor from "./question-editors/writing-task1-editor";
 import WritingTask2Editor from "./question-editors/writing-task2-editor";
+import SentenceTranslationEditor from "./question-editors/sentence-translation-editor";
+import WordFormEditor from "./question-editors/word-form-editor";
 
 interface QuestionEditorInlineProps {
   question: Question;
@@ -49,6 +53,8 @@ export default function QuestionEditorInline({
     "true-false-not-given",
     "matching-headings",
     "short-answer",
+    "sentence-translation",
+    "word-form",
   ].includes(question.type);
 
   return (
@@ -77,6 +83,23 @@ export default function QuestionEditorInline({
             minHeight={120}
             maxHeight={400}
             className="text-sm"
+          />
+        </div>
+
+        {/* Optional Image Field */}
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium flex items-center gap-1.5">
+            <Image className="h-3 w-3" />
+            Question Image (Optional)
+          </Label>
+          <FilePicker
+            fileType="image"
+            currentFileUrl={question.imageUrl}
+            onFileSelect={(file: FileObject) =>
+              onUpdateQuestion(sectionId, question.id, { 
+                imageUrl: file.url || undefined 
+              })
+            }
           />
         </div>
 
@@ -206,6 +229,21 @@ export default function QuestionEditorInline({
               question={question}
               sectionId={sectionId}
               onUpdateQuestion={onUpdateQuestion}
+            />
+          )}
+
+          {question.type === "sentence-translation" && (
+            <SentenceTranslationEditor
+              question={question}
+              sectionId={sectionId}
+              onUpdateQuestion={onUpdateQuestion}
+            />
+          )}
+
+          {question.type === "word-form" && (
+            <WordFormEditor
+              value={question}
+              onChange={(value) => onUpdateQuestion(sectionId, question.id, value)}
             />
           )}
         </div>

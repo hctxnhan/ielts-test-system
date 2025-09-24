@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@testComponents/lib/utils";
 import Color from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
@@ -106,15 +107,86 @@ const FloatingTableToolbar = ({ editor }: { editor: Editor | null }) => {
     const tableElement = editorElement.querySelector("table");
 
     if (tableElement) {
-      const editorRect = editorElement.getBoundingClientRect();
+      const _editorRect = editorElement.getBoundingClientRect();
       const tableRect = tableElement.getBoundingClientRect();
 
-      // Position the toolbar above the table
-      const top = tableRect.top - editorRect.top - 40; // 40px above the table
-      const left = tableRect.left - editorRect.left;
+      // Wait for next frame to ensure toolbar ref is available
+      requestAnimationFrame(() => {
+        // Get actual toolbar dimensions if available
+        const toolbarElement = toolbarRef.current;
+        let toolbarWidth = 300; // Default fallback width for table toolbar
+        let toolbarHeight = 50; // Default fallback height
 
-      setPosition({ top, left });
-      setIsVisible(true);
+        if (toolbarElement) {
+          const rect = toolbarElement.getBoundingClientRect();
+          toolbarWidth = rect.width || toolbarWidth;
+          toolbarHeight = rect.height || toolbarHeight;
+        }
+
+        // Get viewport dimensions
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        // Calculate initial position - above the table, aligned to left edge (viewport coordinates)
+        let left = tableRect.left;
+        let top = tableRect.top - toolbarHeight - 10; // 10px gap above table
+
+        // Smart horizontal positioning
+        const margin = 10;
+
+        if (left < margin) {
+          // Too far left - align to margin
+          left = margin;
+        } else if (left + toolbarWidth > viewportWidth - margin) {
+          // Too far right - align to right margin
+          left = viewportWidth - toolbarWidth - margin;
+        }
+
+        // Smart vertical positioning        
+        if (top < margin) {
+          // Not enough space above - position below table
+          top = tableRect.bottom + 10;
+          
+          // Check if there's enough space below
+          if (top + toolbarHeight > viewportHeight - margin) {
+            // Not enough space below either - use best available position
+            const availableSpaceAbove = tableRect.top - margin;
+            const availableSpaceBelow = viewportHeight - tableRect.bottom - margin;
+            
+            if (availableSpaceAbove >= toolbarHeight) {
+              // Use space above
+              top = tableRect.top - toolbarHeight - 5;
+            } else if (availableSpaceBelow >= toolbarHeight) {
+              // Use space below
+              top = tableRect.bottom + 5;
+            } else {
+              // Force position with best fit
+              if (availableSpaceAbove > availableSpaceBelow) {
+                top = tableRect.top - toolbarHeight - 5;
+              } else {
+                top = tableRect.bottom + 5;
+              }
+            }
+          }
+        }
+
+        // Final boundary check
+        if (left + toolbarWidth > viewportWidth) {
+          left = viewportWidth - toolbarWidth;
+        }
+        if (left < 0) {
+          left = 0;
+        }
+        if (top + toolbarHeight > viewportHeight) {
+          top = viewportHeight - toolbarHeight;
+        }
+        if (top < 0) {
+          top = 0;
+        }
+
+        setPosition({ top, left });
+        setIsVisible(true);
+      });
     }
   }, [editor]);
 
@@ -126,26 +198,72 @@ const FloatingTableToolbar = ({ editor }: { editor: Editor | null }) => {
       setTimeout(updatePosition, 10);
     };
 
+    const handleResize = () => {
+      // Reposition on window resize
+      setTimeout(updatePosition, 10);
+    };
+
+    const handleScroll = () => {
+      // Reposition on scroll
+      setTimeout(updatePosition, 10);
+    };
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      const toolbarElement = toolbarRef.current;
+      const editorElement = editor.view.dom;
+      
+      // Don't close if clicking inside the toolbar or editor
+      if (
+        toolbarElement?.contains(target) || 
+        editorElement?.contains(target)
+      ) {
+        return;
+      }
+      
+      // Close the toolbar if clicking outside
+      setIsVisible(false);
+    };
+
     editor.on("selectionUpdate", handleSelectionUpdate);
     editor.on("update", handleSelectionUpdate);
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("scroll", handleScroll);
+    
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsVisible(false);
+      }
+    };
+
+    // Add click outside and escape key listeners when toolbar is visible
+    if (isVisible) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscapeKey);
+    }
 
     return () => {
       editor.off("selectionUpdate", handleSelectionUpdate);
       editor.off("update", handleSelectionUpdate);
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", handleScroll);
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscapeKey);
     };
-  }, [editor, updatePosition]);
+  }, [editor, updatePosition, isVisible]);
 
   if (!isVisible || !editor?.isActive("table")) {
     return null;
   }
 
-  return (
+  const toolbarContent = (
     <div
       ref={toolbarRef}
-      className="absolute z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex gap-1"
+      className="fixed bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex gap-1"
       style={{
         top: `${position.top}px`,
         left: `${position.left}px`,
+        zIndex: 9999,
       }}
     >
       <Button
@@ -221,12 +339,18 @@ const FloatingTableToolbar = ({ editor }: { editor: Editor | null }) => {
       </Button>
     </div>
   );
+
+  // Use portal to render outside of any overflow containers
+  return typeof window !== 'undefined' 
+    ? createPortal(toolbarContent, document.body)
+    : null;
 };
 
 // Floating Highlight Toolbar Component
 const FloatingHighlightToolbar = ({ editor, readonly = false }: { editor: Editor | null; readonly?: boolean }) => {
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [isVisible, setIsVisible] = useState(false);
+  const [userDismissed, setUserDismissed] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
 
   const colors = [
@@ -289,6 +413,12 @@ const FloatingHighlightToolbar = ({ editor, readonly = false }: { editor: Editor
     // Only show if there's a text selection of more than 1 character
     if (from === to || to - from <= 1) {
       setIsVisible(false);
+      setUserDismissed(false); // Reset dismissal when no selection
+      return;
+    }
+
+    // Don't show if user has dismissed the toolbar for this selection
+    if (userDismissed) {
       return;
     }
 
@@ -299,62 +429,165 @@ const FloatingHighlightToolbar = ({ editor, readonly = false }: { editor: Editor
 
     if (start && end) {
       const editorElement = view.dom;
-      const editorRect = editorElement.getBoundingClientRect();
+      const _editorRect = editorElement.getBoundingClientRect();
 
-      // Calculate initial position
-      const centerX = (start.left + end.left) / 2;
-      let top = start.top - editorRect.top - 50; // 50px above the selection
-      let left = centerX - editorRect.left - 100; // Center the toolbar (approximate)
+      // Wait for next frame to ensure toolbar ref is available
+      requestAnimationFrame(() => {
+        // Get actual toolbar dimensions if available
+        const toolbarElement = toolbarRef.current;
+        let toolbarWidth = 280; // Default fallback width
+        let toolbarHeight = 50; // Default fallback height
 
-      // Get viewport dimensions
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
+        if (toolbarElement) {
+          const toolbarRect = toolbarElement.getBoundingClientRect();
+          toolbarWidth = toolbarRect.width || toolbarWidth;
+          toolbarHeight = toolbarRect.height || toolbarHeight;
+        }
 
-      // Toolbar approximate dimensions (adjust based on actual toolbar size)
-      const toolbarWidth = 200; // Approximate width of the toolbar
-      const toolbarHeight = 40; // Approximate height of the toolbar
+        // Get viewport dimensions
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
 
-      // Adjust horizontal position to stay within viewport
-      const absoluteLeft = editorRect.left + left;
-      if (absoluteLeft < 10) {
-        // Too far left, move right
-        left = 10 - editorRect.left;
-      } else if (absoluteLeft + toolbarWidth > viewportWidth - 10) {
-        // Too far right, move left
-        left = viewportWidth - toolbarWidth - 10 - editorRect.left;
-      }
+        // Calculate initial position - center horizontally above selection (viewport coordinates)
+        const selectionCenterX = (start.left + end.left) / 2;
+        let left = selectionCenterX - (toolbarWidth / 2);
+        let top = start.top - toolbarHeight - 10; // 10px gap above selection
 
-      // Adjust vertical position to stay within viewport
-      const absoluteTop = editorRect.top + top;
-      if (absoluteTop < 10) {
-        // Too far up, position below the selection instead
-        top = end.top - editorRect.top + 20;
-      } else if (absoluteTop + toolbarHeight > viewportHeight - 10) {
-        // Too far down, position above but closer to selection
-        top = start.top - editorRect.top - toolbarHeight - 10;
-      }
+        // Smart horizontal positioning
+        const margin = 10; // Minimum margin from viewport edges
 
-      setPosition({ top, left });
-      setIsVisible(true);
+        if (left < margin) {
+          // Too far left - align to left margin
+          left = margin;
+        } else if (left + toolbarWidth > viewportWidth - margin) {
+          // Too far right - align to right margin  
+          left = viewportWidth - toolbarWidth - margin;
+        }
+
+        // Smart vertical positioning
+        const selectionBottom = end.top;
+
+        if (top < margin) {
+          // Not enough space above - position below selection
+          top = selectionBottom + 10;
+          
+          // Check if there's enough space below
+          if (top + toolbarHeight > viewportHeight - margin) {
+            // Not enough space below either - position in viewport center or best available spot
+            const availableSpaceAbove = start.top - margin;
+            const availableSpaceBelow = viewportHeight - selectionBottom - margin;
+            
+            if (availableSpaceAbove > availableSpaceBelow && availableSpaceAbove >= toolbarHeight) {
+              // Use space above
+              top = start.top - toolbarHeight - 5;
+            } else if (availableSpaceBelow >= toolbarHeight) {
+              // Use space below
+              top = selectionBottom + 5;
+            } else {
+              // Force position with best fit - favor above if possible
+              if (availableSpaceAbove >= toolbarHeight / 2) {
+                top = start.top - toolbarHeight - 5;
+              } else {
+                top = selectionBottom + 5;
+              }
+            }
+          }
+        }
+
+        // Final boundary check - ensure toolbar is never completely outside viewport
+        if (left + toolbarWidth > viewportWidth) {
+          left = viewportWidth - toolbarWidth;
+        }
+        if (left < 0) {
+          left = 0;
+        }
+        if (top + toolbarHeight > viewportHeight) {
+          top = viewportHeight - toolbarHeight;
+        }
+        if (top < 0) {
+          top = 0;
+        }
+
+        setPosition({ top, left });
+        setIsVisible(true);
+      });
     }
-  }, [editor]);
+  }, [editor, userDismissed]);
 
   useEffect(() => {
     if (!editor) return;
 
     const handleMouseUp = () => {
-      // Small delay to ensure DOM is updated
+      // Small delay to ensure DOM is updated and to distinguish between click and selection
+      setTimeout(updatePosition, 100);
+    };
+
+    const handleResize = () => {
+      // Reposition on window resize
       setTimeout(updatePosition, 10);
     };
 
-    // Add mouseup event listener to the editor's DOM element
+    const handleScroll = () => {
+      // Reposition on scroll
+      setTimeout(updatePosition, 10);
+    };
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      const toolbarElement = toolbarRef.current;
+      const editorElement = editor.view.dom;
+      
+      // Don't close if clicking inside the toolbar
+      if (toolbarElement?.contains(target)) {
+        return;
+      }
+      
+      // For highlight toolbar, we need to be more careful about clicks in the editor
+      // Only close if clicking outside both toolbar and editor, or if there's no selection
+      if (!editorElement?.contains(target)) {
+        // Clicking completely outside - close immediately and mark as user dismissed
+        setIsVisible(false);
+        setUserDismissed(true);
+      } else {
+        // Clicking inside editor - check if there will still be a selection after a short delay
+        setTimeout(() => {
+          const { selection } = editor.state;
+          const { from, to } = selection;
+          if (from === to || to - from <= 1) {
+            setIsVisible(false);
+            setUserDismissed(false); // Reset since selection changed naturally
+          }
+        }, 50);
+      }
+    };
+
+    // Add event listeners
     const editorElement = editor.view.dom;
     editorElement.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleScroll);
+    
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsVisible(false);
+        setUserDismissed(true);
+      }
+    };
+
+    // Add click outside and escape key listeners when toolbar is visible
+    if (isVisible) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscapeKey);
+    }
 
     return () => {
       editorElement.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscapeKey);
     };
-  }, [editor, updatePosition]);
+  }, [editor, updatePosition, isVisible, userDismissed]);
 
   if (!isVisible || !editor) {
     return null;
@@ -370,13 +603,15 @@ const FloatingHighlightToolbar = ({ editor, readonly = false }: { editor: Editor
 
   const isHighlighted = editor.isActive("highlight");
   const currentColor = editor.getAttributes("highlight").color;
-  return (
+  
+  const toolbarContent = (
     <div
       ref={toolbarRef}
-      className="absolute z-50 bg-white border border-gray-200 rounded-md shadow-lg p-2"
+      className="fixed bg-white border border-gray-200 rounded-md shadow-lg p-2"
       style={{
         top: `${position.top}px`,
         left: `${position.left}px`,
+        zIndex: 9999,
       }}
     >
       <div className="flex gap-1">
@@ -406,6 +641,11 @@ const FloatingHighlightToolbar = ({ editor, readonly = false }: { editor: Editor
       </div>
     </div>
   );
+
+  // Use portal to render outside of any overflow containers
+  return typeof window !== 'undefined' 
+    ? createPortal(toolbarContent, document.body)
+    : null;
 };
 
 const Toolbar = ({ editor }: { editor: Editor | null }) => {
@@ -448,9 +688,9 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
     editor.commands.focus();
 
     // Get the current selection
-    const { from, to } = editor.state.selection;
+    const { from: _from, to: _to } = editor.state.selection;
     // Use a more direct approach to set node attributes
-    const success = editor.chain()
+    const _success = editor.chain()
       .command(({ tr, state }) => {
         const { from, to } = state.selection;
 

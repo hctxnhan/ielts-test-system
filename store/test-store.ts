@@ -1,8 +1,9 @@
 import { getSectionStats, getTestStats } from "@testComponents/lib/test-utils";
+import { QuestionPluginRegistry } from "@testComponents/lib/question-plugin-system";
 import type {
-  MultipleChoiceOption,
+  Question,
+  Section,
   SectionResult,
-  SubQuestionMeta,
   Test,
   TestProgress,
   TestResult,
@@ -20,8 +21,8 @@ export type TestConfig = {
 export type SubmitResultFn = (
   testId: number,
   results: TestResult,
-  config?: TestConfig
-) => Promise<any>;
+  config?: TestConfig,
+) => Promise<unknown>;
 
 type ScoreEssayFn = (param: {
   text: string;
@@ -47,15 +48,15 @@ interface TestState {
       selectedSections?: string[];
       selectedTypes?: string[];
       realTestMode?: boolean;
-    }
+    },
   ) => void;
   startTest: () => void;
   submitAnswer: (
     questionId: string,
-    answer: any,
-    subQuestionId?: string
-  ) => void;
-  completeTest: () => void;
+    answer: unknown,
+    subQuestionId?: string,
+  ) => Promise<void>;
+  completeTest: () => Promise<void>;
   resetTest: () => void;
   updateTimeRemaining: (time: number) => void;
   handleTimeEnd: () => void;
@@ -64,9 +65,9 @@ interface TestState {
   updatePassageContent: (sectionId: string, content: string) => void;
   updateQuestionContent: (questionId: string, content: string) => void;
   // Getters
-  questionById: (id: string, subId?: string) => any;
+  questionById: (id: string, subId?: string) => Question | null;
   // Computed
-  currentSection: () => any;
+  currentSection: () => Section | null;
 
   scoreEssayFn: ScoreEssayFn | null;
   setScoreEssayFn: (fn: ScoreEssayFn) => void;
@@ -83,425 +84,16 @@ interface TestState {
   resetCustomMode: () => void;
 }
 
-export const useTestStore = create<TestState>()((set, get) => ({
-  currentTest: null,
-  progress: null,
-  submitResultFn: null,
-  scoreEssayFn: null,
-  sectionResults: null,
-  realTestMode: false,
-  customMode: {
-    enabled: false,
-    includedSections: [],
-    includedQuestionTypes: [],
-  },
+// Answer management is handled inline now; scoring is deferred to completeTest.
 
-  setRealTestMode: (enabled: boolean) => set({ realTestMode: enabled }),
-
-  setCustomMode: (mode) =>
-    set((state) => ({ customMode: { ...state.customMode, ...mode } })),
-  resetCustomMode: () =>
-    set({
-      customMode: {
-        enabled: false,
-        includedSections: [],
-        includedQuestionTypes: [],
-      },
-    }),
-
-  loadTest: (
-    test: Test,
-    options?: {
-      customMode?: boolean;
-      selectedSections?: string[];
-      selectedTypes?: string[];
-      realTestMode?: boolean;
-    }
+export const useTestStore = create<TestState>()((set, get) => {
+  // Helper function to update progress with a new answer
+  const updateProgressWithAnswer = (
+    userAnswer: UserAnswer,
+    answerKey: string,
   ) => {
-    // Update states based on options if provided
-    if (options) {
-      if (options.realTestMode !== undefined) {
-        set({ realTestMode: options.realTestMode });
-      }
-
-      if (options.customMode !== undefined) {
-        const newCustomMode = {
-          enabled: options.customMode,
-          includedSections: options.selectedSections || [],
-          includedQuestionTypes: options.selectedTypes || [],
-        };
-        set({ customMode: newCustomMode });
-      }
-    }
-
-    // Just load the test as-is, no filtering
-    set({ currentTest: test });
-  },
-
-  startTest: () => {
-    const { currentTest } = get();
-    if (!currentTest) return;
-
-    set({
-      progress: {
-        testId: currentTest.id?.toString() || "",
-        currentSectionIndex: 0,
-        currentQuestionIndex: 0,
-        timeRemaining: currentTest.totalDuration,
-        answers: {},
-        completed: false,
-        startedAt: new Date().toISOString(),
-      },
-    });
-  },
-
-  setSubmitResultFn: (fn: SubmitResultFn) => {
-    set({ submitResultFn: fn });
-  },
-
-  submitTestResults: async (testId: number): Promise<boolean> => {
-    const { currentTest, progress, submitResultFn, customMode } = get();
-
-    if (!currentTest || !progress || !progress.answers || !submitResultFn) {
-      console.error(
-        "Cannot submit test results: missing test data or submission function"
-      );
-      return false;
-    }
-
-    try {
-      const testStats = getTestStats(currentTest, progress.answers);
-      const totalScore = testStats.totalScore;
-      const maxPossibleScore = testStats.maxPossibleScore;
-
-      // Calculate section results for display
-      const sectionResults: SectionResult[] = currentTest.sections.map(
-        (section) => {
-          const sectionStats = getSectionStats(section, progress.answers);
-
-          return {
-            title: section.title,
-            id: section.id,
-            correctCount: sectionStats.sectionCorrectAnswers,
-            incorrectCount: sectionStats.sectionIncorrectAnswers,
-            unansweredCount: sectionStats.sectionUnansweredQuestions,
-            totalCount: sectionStats.sectionTotalQuestions,
-            totalScore: sectionStats.sectionScore,
-            maxScore: sectionStats.sectionTotalScore,
-            percentageScore: sectionStats.sectionPercentage,
-          };
-        }
-      );
-
-      const testResults = {
-        totalScore,
-        maxPossibleScore,
-        totalQuestions: testStats.totalQuestions,
-        answeredQuestions: testStats.answeredQuestions,
-        correctAnswers: testStats.correctAnswers,
-        percentageScore: testStats.percentageScore,
-        sectionResults,
-        answers: progress.answers,
-        startedAt: progress.startedAt,
-        completedAt: new Date().toISOString(),
-      };
-
-      set({
-        sectionResults: testResults,
-      });
-
-      await submitResultFn(
-        testId,
-        {
-          ...testResults,
-          sectionResults,
-        },
-        {
-          customMode: customMode.enabled,
-          selectedSections: customMode.includedSections,
-          selectedTypes: customMode.includedQuestionTypes,
-        }
-      );
-
-      return true;
-    } catch (error) {
-      console.error("Error submitting test results:", error);
-      return false;
-    }
-  },
-
-  setScoreEssayFn: (fn: ScoreEssayFn) => {
-    set({ scoreEssayFn: fn });
-  },
-
-  submitAnswer: (questionId: string, answer: any, subQuestionId?: string) => {
-    const { progress, currentTest } = get();
-    if (!progress || !currentTest) return;
-
-    const currentSection = get().currentSection();
-    const question = get().questionById(questionId);
-
-    if (!question || !currentSection) return;
-
-    // Determine the answer key - if a subQuestionId is provided, use that
-    const answerKey = subQuestionId || questionId;
-    let feedback = "";
-
-    // Find the relevant subQuestion if one exists
-    const subQuestion = question.subQuestions?.find(
-      (sq: { subId: string }) => sq.subId === subQuestionId
-    );
-
-    // Find the question index in the test
-    let questionIndex = question.index !== undefined ? question.index : -1;
-    if (questionIndex === -1) {
-      // Try to determine the index by finding the question in all sections
-      for (let i = 0; i < currentTest.sections.length; i++) {
-        const section = currentTest.sections[i];
-        const indexInSection = section.questions.findIndex(
-          (q) => q.id === questionId
-        );
-        if (indexInSection !== -1) {
-          questionIndex = indexInSection;
-          break;
-        }
-      }
-    }
-
-    let isCorrect = false;
-    let score = 0;
-    const maxScore = subQuestion?.points || question.points;
-
-    // If we have a subQuestion, use its correct answer, otherwise use the question's
-    const correctAnswer = subQuestion?.correctAnswer;
-
-    if (subQuestion && correctAnswer) {
-      isCorrect = answer === correctAnswer;
-      score = isCorrect ? subQuestion.points : 0;
-    }
-
-    // Handle main question scoring as before
-    const scoringStrategy = question.scoringStrategy || "partial";
-
-    switch (question.type) {
-      case "multiple-choice":
-        isCorrect = question.options.some(
-          (option: MultipleChoiceOption) =>
-            option.id === answer && option.isCorrect
-        );
-
-        score = isCorrect ? question.points : 0;
-        break;
-
-      case "completion":
-        if (scoringStrategy === "partial") {
-          const subQuestion = question.subQuestions?.find(
-            (sq: SubQuestionMeta) => sq.subId === subQuestionId
-          );
-
-          if (subQuestion) {
-            const normalizedAnswer = answer
-              ?.trim()
-              .toLowerCase()
-              .replace(/\s+/g, " ");
-            isCorrect =
-              subQuestion.acceptableAnswers?.some(
-                (acceptableAnswer: string) =>
-                  acceptableAnswer.trim().toLowerCase().replace(/\s+/g, " ") ===
-                  normalizedAnswer
-              ) || false;
-
-            score = isCorrect ? subQuestion.points : 0;
-          }
-        } else {
-          const totalSubQuestions = question.subQuestions?.length || 0;
-          const correctCount = Object.entries(answer).filter(([key, value]) =>
-            question.subQuestions?.some(
-              (sq: SubQuestionMeta) =>
-                sq.subId === key &&
-                sq.acceptableAnswers?.some((acceptableAnswer: string) => {
-                  const normalizedAcceptableAnswer = acceptableAnswer
-                    .trim()
-                    .toLowerCase()
-                    .replace(/\s+/g, " ");
-                  const normalizedValue = (value as string)
-                    .trim()
-                    .toLowerCase()
-                    .replace(/\s+/g, " ");
-                  return normalizedAcceptableAnswer === normalizedValue;
-                })
-            )
-          ).length;
-
-          isCorrect = correctCount === totalSubQuestions;
-          score = isCorrect ? question.points : 0;
-        }
-        break;
-
-      case "matching":
-      case "matching-headings":
-      case "labeling":
-        if (scoringStrategy === "partial") {
-          const subQuestion = question.subQuestions?.find(
-            (sq: { subId: string }) => sq.subId === subQuestionId
-          );
-
-          isCorrect = subQuestion?.correctAnswer === answer;
-          score = isCorrect ? subQuestion?.points || 0 : 0;
-        } else {
-          const totalSubQuestions = question.subQuestions?.length || 0;
-          const correctCount = Object.entries(answer).filter(([key, value]) =>
-            question.subQuestions?.some(
-              (sq: SubQuestionMeta) =>
-                sq.subId === key && sq.correctAnswer === value
-            )
-          ).length;
-
-          isCorrect = correctCount === totalSubQuestions;
-          score = isCorrect ? question.points : 0;
-        }
-        break;
-
-      case "pick-from-a-list":
-        if (scoringStrategy === "partial") {
-          // For partial scoring, check if the current answer (item) is correct
-          // The answer parameter here is the item ID being selected
-          isCorrect = question.subQuestions?.some(
-            (sq: SubQuestionMeta) => sq.item === answer
-          );
-
-          score = isCorrect ? question.points : 0;
-        } else {
-          // For all-or-nothing scoring
-          const totalSubQuestions = question.subQuestions?.length || 0;
-          const totalAnswers = Object.entries(answer)?.length || 0;
-
-          if (totalAnswers !== totalSubQuestions) {
-            isCorrect = false;
-            score = 0;
-            break;
-          }
-
-          // Get all selected items (values from the answer object)
-          const selectedItems = Object.values(answer);
-
-          // Get all correct items from subQuestions
-          const correctItems =
-            question.subQuestions?.map((sq: SubQuestionMeta) => sq.item) || [];
-
-          // Check if all selected items are correct (regardless of order)
-          const allItemsCorrect = selectedItems.every((item) =>
-            correctItems.includes(item)
-          );
-
-          // Check if we have the right number of correct items
-          const correctCount = selectedItems.filter((item) =>
-            correctItems.includes(item)
-          ).length;
-
-          isCorrect = allItemsCorrect && correctCount === totalSubQuestions;
-          score = isCorrect ? question.points : 0;
-        }
-        break;
-
-      case "true-false-not-given":
-        if (scoringStrategy === "partial") {
-        } else {
-          const totalSubQuestions = question.subQuestions?.length || 0;
-          const correctCount = Object.entries(answer).filter(([key, value]) =>
-            question.subQuestions?.some(
-              (sq: SubQuestionMeta) =>
-                sq.subId === key && sq.correctAnswer === value
-            )
-          ).length;
-
-          isCorrect = correctCount === totalSubQuestions;
-          score = isCorrect ? question.points : 0;
-        }
-
-        break;
-
-      case "short-answer":
-        if (scoringStrategy === "partial") {
-          const subQuestion = question.subQuestions?.find(
-            (sq: { subId: string }) => sq.subId === subQuestionId
-          );
-
-          if (subQuestion) {
-            const acceptableAnswers =
-              (subQuestion as any).acceptableAnswers || [];
-            const normalizedAnswer = answer
-              .trim()
-              .toLowerCase()
-              .replace(/\s+/g, " ");
-            isCorrect = acceptableAnswers.some(
-              (acceptableAnswer: string) =>
-                acceptableAnswer.trim().toLowerCase().replace(/\s+/g, " ") ===
-                normalizedAnswer
-            );
-            score = isCorrect ? subQuestion.points : 0;
-          }
-        } else {
-          const totalQuestions = question.questions?.length || 0;
-          const correctCount = Object.entries(answer).filter(([key, value]) => {
-            const sq = question.subQuestions?.find(
-              (sq: SubQuestionMeta & { acceptableAnswers?: string[] }) =>
-                sq.subId === key &&
-                sq.acceptableAnswers?.some((acceptableAnswer: string) => {
-                  const normalizedAcceptableAnswer = acceptableAnswer
-                    .trim()
-                    .toLowerCase()
-                    .replace(/\s+/g, " ");
-                  const normalizedValue = (value as string)
-                    .trim()
-                    .toLowerCase()
-                    .replace(/\s+/g, " ");
-                  return normalizedAcceptableAnswer === normalizedValue;
-                })
-            );
-            return !!sq;
-          }).length;
-
-          isCorrect = correctCount === totalQuestions;
-          score = isCorrect ? question.points : 0;
-        }
-        break;
-
-      case "writing-task1":
-      case "writing-task2":
-        if (typeof answer === "object" && answer !== null && "text" in answer) {
-          const aiScore = answer.score as number | undefined;
-          score = aiScore ?? 0;
-          isCorrect = true;
-        } else {
-          console.warn(
-            "Invalid answer format received for writing task:",
-            answer
-          );
-          score = 0;
-          feedback = "";
-          isCorrect = false;
-        }
-        break;
-
-      default:
-        isCorrect = false;
-        score = 0;
-    }
-
-    const userAnswer: UserAnswer = {
-      questionId,
-      answer,
-      isCorrect,
-      score,
-      maxScore,
-      subQuestionId,
-      sectionId: currentSection.id,
-      questionType: question.type,
-      questionIndex,
-      parentQuestionId: subQuestionId ? questionId : undefined,
-      feedback,
-    };
+    const { progress } = get();
+    if (!progress) return;
 
     set({
       progress: {
@@ -512,137 +104,580 @@ export const useTestStore = create<TestState>()((set, get) => ({
         },
       },
     });
-  },
+  };
 
-  completeTest: () => {
-    const { progress, currentTest } = get();
-    if (!progress || !currentTest) return;
+  return {
+    currentTest: null,
+    progress: null,
+    submitResultFn: null,
+    scoreEssayFn: null,
+    sectionResults: null,
+    realTestMode: false,
+    customMode: {
+      enabled: false,
+      includedSections: [],
+      includedQuestionTypes: [],
+    },
 
-    // Calculate total score using our utility function for consistency
-    // This ensures we properly account for both main questions and sub-questions
-    const totalScore = Object.values(progress.answers).reduce(
-      (sum, answer) => sum + (answer.score || 0),
-      0
-    );
+    setRealTestMode: (enabled: boolean) => set({ realTestMode: enabled }),
 
-    set({
-      progress: {
-        ...progress,
-        completed: true,
-        completedAt: new Date().toISOString(),
-        score: totalScore,
+    setCustomMode: (mode) =>
+      set((state) => ({ customMode: { ...state.customMode, ...mode } })),
+    resetCustomMode: () =>
+      set({
+        customMode: {
+          enabled: false,
+          includedSections: [],
+          includedQuestionTypes: [],
+        },
+      }),
+
+    loadTest: (
+      test: Test,
+      options?: {
+        customMode?: boolean;
+        selectedSections?: string[];
+        selectedTypes?: string[];
+        realTestMode?: boolean;
       },
-    });
-  },
+    ) => {
+      // Update states based on options if provided
+      if (options) {
+        if (options.realTestMode !== undefined) {
+          set({ realTestMode: options.realTestMode });
+        }
 
-  handleTimeEnd: () => {
-    const { progress } = get();
-    if (!progress || progress.completed) return;
-
-    // Update time to 0 and complete the test
-    set({
-      progress: {
-        ...progress,
-        timeRemaining: 0,
-        completed: true,
-        completedAt: new Date().toISOString(),
-      },
-    });
-  },
-
-  resetTest: () => {
-    set({
-      currentTest: null,
-      progress: null,
-      sectionResults: null,
-      realTestMode: false,
-      customMode: {
-        enabled: false,
-        includedSections: [],
-        includedQuestionTypes: [],
-      },
-    });
-  },
-
-  updateTimeRemaining: (time: number) => {
-    const { progress } = get();
-    if (!progress) return;
-
-    set({
-      progress: {
-        ...progress,
-        timeRemaining: time,
-      },
-    });
-  },
-  updatePassageContent: (sectionId: string, content: string) => {
-    const { currentTest } = get();
-    if (!currentTest) return;
-
-    const updatedSections = currentTest.sections.map((section) => {
-      if (section.id === sectionId && section.readingPassage) {
-        return {
-          ...section,
-          readingPassage: {
-            ...section.readingPassage,
-            content: content,
-          },
-        };
+        if (options.customMode !== undefined) {
+          const newCustomMode = {
+            enabled: options.customMode,
+            includedSections: options.selectedSections || [],
+            includedQuestionTypes: options.selectedTypes || [],
+          };
+          set({ customMode: newCustomMode });
+        }
       }
-      return section;
-    });
 
-    set({
-      currentTest: {
-        ...currentTest,
-        sections: updatedSections,
-      },
-    });
-  },
+      // Just load the test as-is, no filtering
+      set({ currentTest: test });
+    },
 
-  updateQuestionContent: (questionId: string, content: string) => {
-    const { currentTest } = get();
-    if (!currentTest) return;
+    startTest: () => {
+      const { currentTest } = get();
+      if (!currentTest) return;
 
-    const updatedSections = currentTest.sections.map((section) => ({
-      ...section,
-      questions: section.questions.map((question) => {
-        if (question.id === questionId) {
+      set({
+        progress: {
+          testId: currentTest.id?.toString() || "",
+          currentSectionIndex: 0,
+          currentQuestionIndex: 0,
+          timeRemaining: currentTest.totalDuration,
+          answers: {},
+          completed: false,
+          startedAt: new Date().toISOString(),
+        },
+      });
+    },
+
+    setSubmitResultFn: (fn: SubmitResultFn) => {
+      set({ submitResultFn: fn });
+    },
+
+    submitTestResults: async (testId: number): Promise<boolean> => {
+      const { currentTest, progress, submitResultFn, customMode } = get();
+
+      if (!currentTest || !progress || !progress.answers || !submitResultFn) {
+        console.error(
+          "Cannot submit test results: missing test data or submission function",
+        );
+        return false;
+      }
+
+      try {
+        const testStats = getTestStats(currentTest, progress.answers);
+        const totalScore = testStats.totalScore;
+        const maxPossibleScore = testStats.maxPossibleScore;
+
+        // Calculate section results for display
+        const sectionResults: SectionResult[] = currentTest.sections.map(
+          (section) => {
+            const sectionStats = getSectionStats(section, progress.answers);
+
+            return {
+              title: section.title,
+              id: section.id,
+              correctCount: sectionStats.sectionCorrectAnswers,
+              incorrectCount: sectionStats.sectionIncorrectAnswers,
+              unansweredCount: sectionStats.sectionUnansweredQuestions,
+              totalCount: sectionStats.sectionTotalQuestions,
+              totalScore: sectionStats.sectionScore,
+              maxScore: sectionStats.sectionTotalScore,
+              percentageScore: sectionStats.sectionPercentage,
+            };
+          },
+        );
+
+        const testResults = {
+          totalScore,
+          maxPossibleScore,
+          totalQuestions: testStats.totalQuestions,
+          answeredQuestions: testStats.answeredQuestions,
+          correctAnswers: testStats.correctAnswers,
+          percentageScore: testStats.percentageScore,
+          sectionResults,
+          answers: progress.answers,
+          startedAt: progress.startedAt,
+          completedAt: new Date().toISOString(),
+        };
+
+        set({
+          sectionResults: testResults,
+        });
+
+        await submitResultFn(
+          testId,
+          {
+            ...testResults,
+            sectionResults,
+          },
+          {
+            customMode: customMode.enabled,
+            selectedSections: customMode.includedSections,
+            selectedTypes: customMode.includedQuestionTypes,
+          },
+        );
+
+        return true;
+      } catch (error) {
+        console.error("Error submitting test results:", error);
+        return false;
+      }
+    },
+
+    setScoreEssayFn: (fn: ScoreEssayFn) => {
+      set({ scoreEssayFn: fn });
+    },
+
+    submitAnswer: async (
+      questionId: string,
+      answer: unknown,
+      subQuestionId?: string,
+    ) => {
+      const { progress, currentTest } = get();
+      if (!progress || !currentTest) return;
+
+      const currentSection = get().currentSection();
+      const question = get().questionById(questionId);
+
+      if (!question || !currentSection) return;
+
+      // Always save the answer on submit and defer scoring until completeTest.
+      const plugin = QuestionPluginRegistry.getPlugin(question.type);
+
+      if (
+        plugin?.config.hasSubQuestions &&
+        typeof answer === "object" &&
+        answer !== null
+      ) {
+        // Store the whole sub-answers object under the main question ID
+        const userAnswer: UserAnswer = {
+          questionId,
+          answer,
+          isCorrect: false,
+          score: 0,
+          maxScore: question.points || 0,
+          subQuestionId: undefined,
+          sectionId: currentSection.id,
+          questionType: question.type,
+          questionIndex: question.index || 0,
+          parentQuestionId: undefined,
+          feedback: "",
+        };
+
+        updateProgressWithAnswer(userAnswer, questionId);
+      } else {
+        // Non-sub-question or individual sub-answer: store under subQuestionId or questionId
+        const userAnswer: UserAnswer = {
+          questionId,
+          answer,
+          isCorrect: false,
+          score: 0,
+          maxScore: question.points || 0,
+          subQuestionId,
+          sectionId: currentSection.id,
+          questionType: question.type,
+          questionIndex: question.index || 0,
+          parentQuestionId: subQuestionId ? questionId : undefined,
+          feedback: "",
+        };
+
+        updateProgressWithAnswer(userAnswer, subQuestionId || questionId);
+      }
+    },
+
+    completeTest: async () => {
+      const { progress, currentTest, scoreEssayFn } = get();
+
+      if (!progress || !currentTest) {
+        return;
+      }
+
+      // Handle questions that need to be scored when test is completed
+      const questionsToScore: {
+        question: Question;
+        section: Section;
+        answerKey: string;
+        answer: unknown;
+        subQuestionId?: string;
+      }[] = [];
+
+      // Collect all questions that have saved answers (we defer scoring until now)
+      for (const section of currentTest.sections) {
+        for (const question of section.questions) {
+          const plugin = QuestionPluginRegistry.getPlugin(question.type);
+
+          // For questions with sub-questions, the main answer key stores a record of sub-answers
+          if (plugin?.config.hasSubQuestions) {
+            const mainAnswerKey = question.id;
+
+            // 1) Check if the main answer entry contains a record of sub-answers
+            if (progress.answers[mainAnswerKey]) {
+              const mainAnswer = progress.answers[mainAnswerKey].answer;
+              if (typeof mainAnswer === "object" && mainAnswer !== null) {
+                const subAnswers = mainAnswer as Record<string, string>;
+
+                if (question.scoringStrategy === "partial") {
+                  // Partial: score each sub-question individually (from main record)
+                  Object.keys(subAnswers).forEach((subQuestionId) => {
+                    if (subAnswers[subQuestionId]) {
+                      questionsToScore.push({
+                        question,
+                        section,
+                        answerKey: mainAnswerKey,
+                        answer: subAnswers,
+                        subQuestionId,
+                      });
+                    }
+                  });
+                } else {
+                  // All-or-nothing: score entire main answer as one unit
+                  questionsToScore.push({
+                    question,
+                    section,
+                    answerKey: mainAnswerKey,
+                    answer: subAnswers,
+                  });
+                }
+              }
+            }
+
+            // 2) Also handle the case where partial sub-answers were saved individually
+            //    under their own keys (the renderer/store stores partial answers under
+            //    subQuestionId keys with parentQuestionId set). Search progress.answers
+            //    for entries that reference this question as parent and add them.
+            if (question.scoringStrategy === "partial") {
+              for (const [answerKey, stored] of Object.entries(progress.answers)) {
+                if (
+                  stored &&
+                  stored.parentQuestionId === question.id &&
+                  stored.subQuestionId !== undefined
+                ) {
+                  // Only include if there is an actual answer value
+                  const ans = stored.answer as string | Record<string, string> | null;
+                  if (ans !== undefined && ans !== null && String(ans).trim() !== "") {
+                    questionsToScore.push({
+                      question,
+                      section,
+                      answerKey,
+                      answer: { [stored.subQuestionId || answerKey]: ans },
+                      subQuestionId: stored.subQuestionId,
+                    });
+                  }
+                }
+              }
+            }
+          } else {
+            // Non-sub-question: check for an answer under the main question key
+            const mainAnswerKey = question.id;
+            if (progress.answers[mainAnswerKey]) {
+              questionsToScore.push({
+                question,
+                section,
+                answerKey: mainAnswerKey,
+                answer: progress.answers[mainAnswerKey].answer,
+              });
+            }
+          }
+        }
+      }
+
+      // Score all questions that need scoring on test completion
+      const updatedAnswers = { ...progress.answers };
+
+      for (const {
+        question,
+        answerKey,
+        answer,
+        subQuestionId,
+      } of questionsToScore) {
+        try {
+          const scoringResult = await QuestionPluginRegistry.scoreQuestion({
+            question,
+            answer,
+            subQuestionId,
+            aiScoringFn: scoreEssayFn || undefined,
+          });
+
+          // Decide how to apply scoring results based on whether the question has sub-questions
+          const plugin = QuestionPluginRegistry.getPlugin(question.type);
+          if (plugin?.config.hasSubQuestions) {
+            // If partial scoring, create per-sub-answer entries. Otherwise update main answer.
+            if (question.scoringStrategy === "partial" && subQuestionId) {
+              // Prefer to update an existing stored sub-answer entry instead of creating new keys.
+              // Possible existing locations:
+              // - answerKey (if the stored entry is already the sub-entry)
+              // - subQuestionId (renderer may have stored under the sub id)
+              let targetKey: string | undefined;
+
+              // If answerKey points to an existing sub-entry for this subQuestionId
+              if (
+                updatedAnswers[answerKey] &&
+                (updatedAnswers[answerKey] as UserAnswer).subQuestionId === subQuestionId &&
+                (updatedAnswers[answerKey] as UserAnswer).parentQuestionId === question.id
+              ) {
+                targetKey = answerKey;
+              } else if (updatedAnswers[subQuestionId]) {
+                // Direct sub-question key
+                targetKey = subQuestionId;
+              } else {
+                // Fallback to main answer key (update the main record) to avoid creating a new key
+                targetKey = answerKey;
+              }
+
+              const subAnswer = (answer as Record<string, string>)[subQuestionId];
+
+              // Update the chosen target entry
+              updatedAnswers[targetKey] = {
+                ...(updatedAnswers[targetKey] || {}),
+                questionId: question.id,
+                answer: subAnswer,
+                isCorrect: scoringResult.isCorrect,
+                score: scoringResult.score,
+                maxScore: scoringResult.maxScore,
+                subQuestionId,
+                sectionId: updatedAnswers[answerKey]?.sectionId || "",
+                questionType: question.type,
+                questionIndex: question.index || 0,
+                parentQuestionId: question.id,
+                feedback: scoringResult.feedback || "",
+              };
+            } else {
+              // All-or-nothing: update the main stored answer
+              updatedAnswers[answerKey] = {
+                ...updatedAnswers[answerKey],
+                isCorrect: scoringResult.isCorrect,
+                score: scoringResult.score,
+                maxScore: scoringResult.maxScore,
+                feedback: scoringResult.feedback || "",
+              };
+            }
+          } else {
+            // Non-sub-question: update the main answer entry
+            updatedAnswers[answerKey] = {
+              ...updatedAnswers[answerKey],
+              isCorrect: scoringResult.isCorrect,
+              score: scoringResult.score,
+              maxScore: scoringResult.maxScore,
+              feedback: scoringResult.feedback || "",
+            };
+          }
+        } catch (error) {
+          console.error("Scoring error:", error);
+
+          // Keep existing answer but ensure it has score information
+          const plugin = QuestionPluginRegistry.getPlugin(question.type);
+          if (plugin?.config.scoreOnCompletion) {
+            // For scoreOnCompletion questions, update the main answer entry
+            updatedAnswers[answerKey] = {
+              ...updatedAnswers[answerKey],
+              isCorrect: false,
+              score: 0,
+              maxScore: question.points || 0,
+              feedback: `Scoring error: ${error instanceof Error ? error.message : String(error)}`,
+            };
+          } else {
+            // For immediate scoring questions (not scoreOnCompletion), handle as before
+            if (subQuestionId) {
+              let targetKey: string | undefined;
+
+              if (
+                updatedAnswers[answerKey] &&
+                (updatedAnswers[answerKey] as UserAnswer).subQuestionId === subQuestionId &&
+                (updatedAnswers[answerKey] as UserAnswer).parentQuestionId === question.id
+              ) {
+                targetKey = answerKey;
+              } else if (updatedAnswers[subQuestionId]) {
+                targetKey = subQuestionId;
+              } else {
+                targetKey = answerKey;
+              }
+
+              const subAnswer = (answer as Record<string, string>)[subQuestionId];
+
+              updatedAnswers[targetKey] = {
+                ...(updatedAnswers[targetKey] || {}),
+                questionId: question.id,
+                answer: subAnswer,
+                isCorrect: false,
+                score: 0,
+                maxScore: question.points || 0,
+                subQuestionId,
+                sectionId: updatedAnswers[answerKey]?.sectionId || "",
+                questionType: question.type,
+                questionIndex: question.index || 0,
+                parentQuestionId: question.id,
+                feedback: `Scoring error: ${error instanceof Error ? error.message : String(error)}`,
+              };
+            } else {
+              updatedAnswers[answerKey] = {
+                ...updatedAnswers[answerKey],
+                isCorrect: false,
+                score: 0,
+                maxScore: question.points || 0,
+                feedback: `Scoring error: ${error instanceof Error ? error.message : String(error)}`,
+              };
+            }
+          }
+        }
+      }
+
+      // Calculate total score after scoring
+      const totalScore = Object.values(updatedAnswers).reduce(
+        (sum, answer) => sum + ((answer as UserAnswer).score || 0),
+        0,
+      );
+
+      set({
+        progress: {
+          ...progress,
+          answers: updatedAnswers,
+          completed: true,
+          completedAt: new Date().toISOString(),
+          score: totalScore,
+        },
+      });
+    },
+
+    handleTimeEnd: () => {
+      const { progress } = get();
+      if (!progress || progress.completed) return;
+
+      // Update time to 0 and complete the test
+      set({
+        progress: {
+          ...progress,
+          timeRemaining: 0,
+          completed: true,
+          completedAt: new Date().toISOString(),
+        },
+      });
+    },
+
+    resetTest: () => {
+      set({
+        currentTest: null,
+        progress: null,
+        sectionResults: null,
+        realTestMode: false,
+        customMode: {
+          enabled: false,
+          includedSections: [],
+          includedQuestionTypes: [],
+        },
+      });
+    },
+
+    updateTimeRemaining: (time: number) => {
+      const { progress } = get();
+      if (!progress) return;
+
+      set({
+        progress: {
+          ...progress,
+          timeRemaining: time,
+        },
+      });
+    },
+    updatePassageContent: (sectionId: string, content: string) => {
+      const { currentTest } = get();
+      if (!currentTest) return;
+
+      const updatedSections = currentTest.sections.map((section) => {
+        if (section.id === sectionId && section.readingPassage) {
           return {
-            ...question,
-            text: content,
+            ...section,
+            readingPassage: {
+              ...section.readingPassage,
+              content: content,
+            },
           };
         }
+        return section;
+      });
+
+      set({
+        currentTest: {
+          ...currentTest,
+          sections: updatedSections,
+        },
+      });
+    },
+
+    updateQuestionContent: (questionId: string, content: string) => {
+      const { currentTest } = get();
+      if (!currentTest) return;
+
+      const updatedSections = currentTest.sections.map((section) => ({
+        ...section,
+        questions: section.questions.map((question) => {
+          if (question.id === questionId) {
+            return {
+              ...question,
+              text: content,
+            };
+          }
+          return question;
+        }),
+      }));
+
+      set({
+        currentTest: {
+          ...currentTest,
+          sections: updatedSections,
+        },
+      });
+    },
+
+    questionById(id: string, subId?: string): Question | null {
+      const { currentTest, progress } = get();
+      if (!currentTest || !progress) return null;
+
+      const currentSection = currentTest.sections[progress.currentSectionIndex];
+      const question = currentSection.questions.find((q) => q.id === id);
+
+      if (question && subId) {
+        // For sub-questions, we still return the main question
+        // The plugin system will handle sub-question logic
         return question;
-      }),
-    }));
+      }
 
-    set({
-      currentTest: {
-        ...currentTest,
-        sections: updatedSections,
-      },
-    });
-  },
+      return question || null;
+    },
 
-  questionById(id, subId) {
-    const { currentTest, progress } = get();
-    if (!currentTest || !progress) return null;
+    currentSection: () => {
+      const { currentTest, progress } = get();
+      if (!currentTest || !progress) return null;
 
-    const currentSection = currentTest.sections[progress.currentSectionIndex];
-    const question = currentSection.questions.find((q) => q.id === id);
-
-    if (question && subId) {
-      return question.subQuestions?.find((sq) => sq.subId === subId);
-    }
-
-    return question;
-  },
-
-  currentSection: () => {
-    const { currentTest, progress } = get();
-    if (!currentTest || !progress) return null;
-
-    return currentTest.sections[progress.currentSectionIndex];
-  },
-}));
+      return currentTest.sections[progress.currentSectionIndex];
+    },
+  };
+});

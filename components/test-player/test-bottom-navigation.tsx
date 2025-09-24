@@ -1,12 +1,25 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { Button } from "@testComponents/components/ui/button";
 import type { Test, TestProgress, UserAnswer } from "@testComponents/lib/types";
 import NavigationButtons from "./navigation-buttons";
 import TestTimer from "./test-timer";
 import TimeUpDialog from "./time-up-dialog";
 import { getSectionStats } from "@testComponents/lib/test-utils";
+
+interface SectionStatsCache {
+  [sectionId: string]: {
+    sectionAnswers: UserAnswer[];
+    sectionScore: number;
+    sectionTotalScore: number;
+    sectionPercentage: number;
+    sectionTotalQuestions: number;
+    sectionUnansweredQuestions: number;
+    sectionCorrectAnswers: number;
+    sectionIncorrectAnswers: number;
+  };
+}
 
 interface TestBottomNavigationProps {
   test: Test;
@@ -40,6 +53,38 @@ export default function TestBottomNavigation({
   answers = {},
 }: TestBottomNavigationProps) {
   const [isTimeUpDialogOpen, setIsTimeUpDialogOpen] = useState(false);
+  const [sectionStatsCache, setSectionStatsCache] = useState<SectionStatsCache>({});
+
+  // Update section stats when answers change
+  useEffect(() => {
+    const updateSectionStats = () => {
+      const newCache: SectionStatsCache = {};
+      
+      for (const section of test.sections) {
+        try {
+          const stats = getSectionStats(section, answers);
+          newCache[section.id] = stats;
+        } catch (error) {
+          console.error(`Failed to calculate stats for section ${section.id}:`, error);
+          // Provide fallback values
+          newCache[section.id] = {
+            sectionAnswers: [],
+            sectionScore: 0,
+            sectionTotalScore: 0,
+            sectionPercentage: 0,
+            sectionTotalQuestions: 0,
+            sectionUnansweredQuestions: 0,
+            sectionCorrectAnswers: 0,
+            sectionIncorrectAnswers: 0,
+          };
+        }
+      }
+      
+      setSectionStatsCache(newCache);
+    };
+
+    updateSectionStats();
+  }, [test.sections, answers]);
 
   const handleTimeEnd = useCallback(() => {
     setIsTimeUpDialogOpen(true);
@@ -82,8 +127,8 @@ export default function TestBottomNavigation({
               <span className="text-xs text-muted-foreground shrink-0">
                 {(() => {
                   const fullSection = test.sections[currentSectionIndex];
-                  const sectionStatus = getSectionStats(fullSection, answers);
-                  return sectionStatus.sectionAnswers.length;
+                  const sectionStats = sectionStatsCache[fullSection.id];
+                  return sectionStats ? sectionStats.sectionAnswers.length : 0;
                 })()} / {currentSection.questions.length}
               </span>
             </div>
@@ -108,8 +153,8 @@ export default function TestBottomNavigation({
                 const endIndex =
                   lastQuestion?.partialEndingIndex || lastQuestion?.index || 0;
                 const questionCount = endIndex - startIndex + 1;
-                const sectionStatus = getSectionStats(section, answers);
-                const answeredQuestionsCount = sectionStatus.sectionAnswers.length;
+                const sectionStats = sectionStatsCache[section.id];
+                const answeredQuestionsCount = sectionStats ? sectionStats.sectionAnswers.length : 0;
                 const isComplete = answeredQuestionsCount === questionCount;
                 const isCurrent = index === currentSectionIndex;
 
@@ -142,7 +187,7 @@ export default function TestBottomNavigation({
                   disabled={isSubmitting || readOnly}
                   className="px-2 py-1 shrink-0 bg-green-600 hover:bg-green-700"
                 >
-                  ✓
+                  {isSubmitting ? "⏳" : "✓"}
                 </Button>
               ) : (
                 <Button
@@ -171,8 +216,8 @@ export default function TestBottomNavigation({
                 <span className="text-xs text-muted-foreground">
                   {(() => {
                     const fullSection = test.sections[currentSectionIndex];
-                    const sectionStatus = getSectionStats(fullSection, answers);
-                    return sectionStatus.sectionAnswers.length;
+                    const sectionStats = sectionStatsCache[fullSection.id];
+                    return sectionStats ? sectionStats.sectionAnswers.length : 0;
                   })()} / {currentSection.questions.length}
                 </span>
               </div>
@@ -189,11 +234,10 @@ export default function TestBottomNavigation({
                   lastQuestion?.partialEndingIndex || lastQuestion?.index || 0;
 
                 const questionCount = endIndex - startIndex + 1;
-                const sectionStatus = getSectionStats(section, answers);
+                const sectionStats = sectionStatsCache[section.id];
 
                 // Count answered questions
-                const answeredQuestionsCount =
-                  sectionStatus.sectionAnswers.length;
+                const answeredQuestionsCount = sectionStats ? sectionStats.sectionAnswers.length : 0;
                 const isComplete = answeredQuestionsCount === questionCount;
                 const isCurrent = index === currentSectionIndex;
 

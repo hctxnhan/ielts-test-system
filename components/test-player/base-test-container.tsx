@@ -4,10 +4,13 @@ import React from "react";
 import { Alert, AlertDescription } from "@testComponents/components/ui/alert";
 import { Button } from "@testComponents/components/ui/button";
 import { Card, CardContent } from "@testComponents/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@testComponents/components/ui/popover";
+import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
 import { ScrollArea } from "@testComponents/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@testComponents/components/ui/tabs";
 import type { Test, TestProgress } from "@testComponents/lib/types";
 import { useTestStore } from "@testComponents/store/test-store";
-import { SplitSquareVertical } from "lucide-react";
+import { SplitSquareVertical, HelpCircle, Lightbulb, BookOpenCheck } from "lucide-react";
 import { useRef, useState } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -168,6 +171,80 @@ export default function BaseTestContainer({
             </div>
           </div>{" "}
         </div>
+
+        {/* Floating Help Button */}
+        {(test.tips || test.vocabulary) && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                size="icon"
+                className="fixed bottom-20 right-6 z-50 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-blue-600 hover:bg-blue-700"
+              >
+                <HelpCircle className="h-6 w-6" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent 
+              className="w-120 max-w-96  p-0 shadow-xl border-0 bg-white rounded-xl overflow-hidden" 
+              side="top" 
+              align="end"
+              sideOffset={8}
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
+                <h3 className="font-semibold text-white text-sm flex items-center gap-2">
+                  <HelpCircle className="h-4 w-4" />
+                  Help & Resources
+                </h3>
+              </div>
+
+              {/* Content */}
+              <div className="max-h-96">
+                <Tabs defaultValue={test.tips ? "tips" : "vocabulary"} className="w-full">
+                  <TabsList className={`grid w-full bg-gray-50 m-0 h-10 rounded-none border-b ${
+                    test.tips && test.vocabulary ? 'grid-cols-2' : 'grid-cols-1'
+                  }`}>
+                    {test.tips && (
+                      <TabsTrigger 
+                        value="tips" 
+                        className="flex items-center gap-1.5 text-xs h-full rounded-none data-[state=active]:bg-white data-[state=active]:shadow-none"
+                      >
+                        <Lightbulb className="w-3.5 h-3.5" />
+                        Tips
+                      </TabsTrigger>
+                    )}
+                    {test.vocabulary && (
+                      <TabsTrigger 
+                        value="vocabulary" 
+                        className="flex items-center gap-1.5 text-xs h-full rounded-none data-[state=active]:bg-white data-[state=active]:shadow-none"
+                      >
+                        <BookOpenCheck className="w-3.5 h-3.5" />
+                        Vocabulary
+                      </TabsTrigger>
+                    )}
+                  </TabsList>
+
+                  {test.tips && (
+                    <TabsContent value="tips" className="m-0 p-4 max-h-80 overflow-y-auto">
+                      <RichTextContent
+                        content={test.tips}
+                        className="text-sm leading-relaxed prose prose-sm max-w-none"
+                      />
+                    </TabsContent>
+                  )}
+
+                  {test.vocabulary && (
+                    <TabsContent value="vocabulary" className="m-0 p-4 max-h-80 overflow-y-auto">
+                      <RichTextContent
+                        content={test.vocabulary}
+                        className="text-sm leading-relaxed prose prose-sm max-w-none"
+                      />
+                    </TabsContent>
+                  )}
+                </Tabs>
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
 
         {/* Fixed Bottom Navigation Bar */}
         <TestBottomNavigation

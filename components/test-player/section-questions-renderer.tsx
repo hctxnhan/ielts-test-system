@@ -31,8 +31,8 @@ const SectionQuestionsRenderer: React.FC<SectionQuestionsRendererProps> = ({
               question.partialEndingIndex !== question.index
                 ? `Question ${question.index + 1} - ${
                     question.partialEndingIndex + 1
-                  }`
-                : `Question ${question.index + 1}`}
+                  }. `
+                : `Question ${question.index + 1}. `}
             </p>
             <p>{question.type?.split("-").join(" ")}</p>
           </span>

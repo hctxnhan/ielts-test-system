@@ -6,8 +6,10 @@ import {
   MultipleChoiceQuestion,
   PickFromAListQuestion,
   Question,
+  SentenceTranslationQuestion,
   ShortAnswerQuestion,
   TrueFalseNotGivenQuestion,
+  WordFormQuestion,
   WritingTask1Question,
   WritingTask2Question,
 } from "./types";
@@ -26,7 +28,7 @@ import {
   StandardSubQuestionMeta,
   StandardTrueFalseNotGivenQuestion,
   StandardWritingTask1Question,
-  StandardWritingTask2Question,
+  StandardWritingTask2Question
 } from "./standardized-types";
 
 // Type guards for question types
@@ -84,6 +86,18 @@ function isWritingTask2Question(
   question: Question,
 ): question is WritingTask2Question {
   return question.type === "writing-task2";
+}
+
+function isSentenceTranslationQuestion(
+  question: Question,
+): question is SentenceTranslationQuestion {
+  return question.type === "sentence-translation";
+}
+
+function isWordFormQuestion(
+  question: Question,
+): question is WordFormQuestion {
+  return question.type === "word-form";
 }
 
 // Transform functions for each question type
@@ -381,6 +395,5 @@ export function transformToStandardQuestion(
     return transformWritingTask(question);
   }
 
-  const type = (question as Question).type;
-  // throw new Error(`Unsupported question type: ${type}`);
+  throw new Error(`Unsupported question type: ${question.type}`);
 }

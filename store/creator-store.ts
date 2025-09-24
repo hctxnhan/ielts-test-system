@@ -7,6 +7,7 @@ import type {
   QuestionType,
   ReadingVariant,
 } from "@testComponents/lib/types";
+import { QuestionPluginRegistry } from "@testComponents/lib/question-plugin-system";
 import { v4 as uuidv4 } from "uuid";
 
 interface CreatorState {
@@ -59,6 +60,7 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
     const newTest: Test = {
       title,
       type,
+      skill: type, // Set skill to be the same as type
       description: "",
       sections: [],
       totalDuration: 0,
@@ -78,6 +80,9 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
     } else if (type === "reading") {
       newTest.instructions =
         "You should spend about 20 minutes on each section. Read the passages and answer the questions. There is no extra time to transfer your answers, so write your answers directly on the answer sheet.";
+    } else if (type === "grammar") {
+      newTest.instructions =
+        "Complete the grammar exercises below. Pay attention to sentence structure, tenses, and language patterns. For translation questions, provide accurate and natural-sounding translations.";
     }
 
     set({ currentTest: newTest });
@@ -121,6 +126,9 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
         hasImages: false,
         imageUrls: [],
       };
+    } else if (currentTest.type === "grammar") {
+      // Grammar tests don't need special section properties
+      // Questions will handle their own specific properties
     }
 
     set({
@@ -177,246 +185,26 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
 
     if (sectionIndex === -1) return;
 
-    let newQuestion: Question;
+    // Use plugin system to create question
+    try {
+      const newQuestion = QuestionPluginRegistry.createQuestion(
+        type, 
+        currentTest.sections[sectionIndex].questions.length
+      );
+      
+      const updatedSections = [...currentTest.sections];
+      updatedSections[sectionIndex].questions.push(newQuestion);
 
-    switch (type) {
-      case "multiple-choice":
-        newQuestion = {
-          id: uuidv4(),
-          type: "multiple-choice" as const,
-          text: "",
-          points: 1,
-          scoringStrategy: "all-or-nothing",
-          index: currentTest.sections[sectionIndex].questions.length + 1,
-          options: [
-            { id: uuidv4(), text: "", isCorrect: true },
-            { id: uuidv4(), text: "", isCorrect: false },
-            { id: uuidv4(), text: "", isCorrect: false },
-            { id: uuidv4(), text: "", isCorrect: false },
-          ],
-        };
-        break;
-      case "completion":
-        newQuestion = {
-          id: uuidv4(),
-          type: "completion" as const,
-          text: "",
-          points: 1,
-          scoringStrategy: "partial",
-          index: currentTest.sections[sectionIndex].questions.length + 1,
-          blanks: 1,
-          subQuestions: [
-            {
-              subId: uuidv4(),
-              correctAnswer: "",
-              points: 1,
-            },
-          ],
-        };
-        break;
-      case "matching":
-        const itemIds = [uuidv4(), uuidv4()];
-        const optionIds = [uuidv4(), uuidv4()];
-        newQuestion = {
-          id: uuidv4(),
-          type: "matching" as const,
-          text: "",
-          points: 1,
-          scoringStrategy: "partial",
-          index: currentTest.sections[sectionIndex].questions.length + 1,
-          items: itemIds.map((id) => ({ id, text: "" })),
-          options: optionIds.map((id) => ({ id, text: "" })),
-          subQuestions: [
-            {
-              subId: uuidv4(),
-              item: itemIds[0],
-              correctAnswer: optionIds[0],
-              points: 1,
-            },
-            {
-              subId: uuidv4(),
-              item: itemIds[1],
-              correctAnswer: optionIds[1],
-              points: 1,
-            },
-          ],
-        };
-        break;
-      case "labeling":
-        const labelIds = [uuidv4(), uuidv4()];
-        const optionIdsForLabeling = [uuidv4(), uuidv4()];
-
-        newQuestion = {
-          id: uuidv4(),
-          type: "labeling" as const,
-          text: "",
-          points: 1,
-          scoringStrategy: "partial",
-          index: currentTest.sections[sectionIndex].questions.length + 1,
-          partialEndingIndex: 0,
-          imageUrl: "",
-          labels: labelIds.map((id) => ({ id, text: "" })),
-          options: optionIdsForLabeling.map((id) => ({
-            id,
-            text: "",
-          })),
-          subQuestions: labelIds.map((id, i) => ({
-            subId: uuidv4(),
-            item: id,
-            correctAnswer: optionIdsForLabeling[i],
-            points: 1,
-          })),
-        };
-        break;
-      case "pick-from-a-list":
-        const itemsForPick = [
-          { id: uuidv4(), text: "" },
-          { id: uuidv4(), text: "" },
-          { id: uuidv4(), text: "" },
-          { id: uuidv4(), text: "" },
-        ];
-
-        newQuestion = {
-          id: uuidv4(),
-          type: "pick-from-a-list",
-          text: "",
-          points: 1,
-          scoringStrategy: "partial",
-          index: currentTest.sections[sectionIndex].questions.length + 1,
-          partialEndingIndex: 0,
-          items: itemsForPick,
-          // Options array is kept for type compliance but not used in the UI
-          subQuestions: [
-            {
-              subId: uuidv4(),
-              item: itemsForPick[0].id,
-              correctAnswer: "true", // Using "true" to indicate this item is correct
-              points: 1,
-            },
-          ],
-        };
-        break;
-      case "true-false-not-given":
-        const statements = [
-          { id: uuidv4(), text: "" },
-          { id: uuidv4(), text: "" },
-          { id: uuidv4(), text: "" },
-        ];
-
-        newQuestion = {
-          id: uuidv4(),
-          type: "true-false-not-given",
-          text: "",
-          points: 1,
-          scoringStrategy: "partial",
-          index: currentTest.sections[sectionIndex].questions.length + 1,
-          partialEndingIndex: 0,
-          statements: statements,
-          subQuestions: statements.map((stmt) => ({
-            subId: uuidv4(),
-            item: stmt.id,
-            correctAnswer: "true",
-            points: 1,
-          })),
-        };
-        break;
-      case "matching-headings":
-        const headings = [
-          { id: uuidv4(), text: "" },
-          { id: uuidv4(), text: "" },
-        ];
-        const paragraphs = [
-          { id: uuidv4(), text: "" },
-          { id: uuidv4(), text: "" },
-        ];
-
-        newQuestion = {
-          id: uuidv4(),
-          type: "matching-headings",
-          text: "",
-          points: 1,
-          scoringStrategy: "partial",
-          index: currentTest.sections[sectionIndex].questions.length + 1,
-          partialEndingIndex: 0,
-          paragraphs: paragraphs,
-          headings: headings,
-          subQuestions: paragraphs.map((para, i) => ({
-            subId: uuidv4(),
-            item: para.id,
-            correctAnswer: headings[i].id,
-            points: 1,
-          })),
-        };
-        break;
-      case "short-answer":
-        const questions = [
-          { id: uuidv4(), text: "" },
-          { id: uuidv4(), text: "" },
-        ];
-
-        newQuestion = {
-          id: uuidv4(),
-          type: "short-answer",
-          text: "",
-          points: 1,
-          scoringStrategy: "partial",
-          index: currentTest.sections[sectionIndex].questions.length + 1,
-          partialEndingIndex: 0,
-          questions: questions,
-          subQuestions: questions.map((q) => ({
-            subId: uuidv4(),
-            item: q.id,
-            acceptableAnswers: [],
-            points: 1,
-          })),
-          wordLimit: 3,
-        };
-        break;
-      case "writing-task1":
-        newQuestion = {
-          id: uuidv4(),
-          type: "writing-task1",
-          text: "Task 1",
-          points: 9,
-          scoringStrategy: "all-or-nothing", // Default for writing tasks
-          index: currentTest.sections[sectionIndex].questions.length + 1,
-          partialEndingIndex: 0,
-          prompt: "",
-          wordLimit: 150,
-          imageUrl: "",
-          sampleAnswer: "",
-          scoringPrompt: "",
-        };
-        break;
-      case "writing-task2":
-        newQuestion = {
-          id: uuidv4(),
-          type: "writing-task2",
-          text: "Task 2",
-          points: 9,
-          scoringStrategy: "all-or-nothing", // Default for writing tasks
-          index: currentTest.sections[sectionIndex].questions.length + 1,
-          partialEndingIndex: 0,
-          prompt: "",
-          wordLimit: 250,
-          sampleAnswer: "",
-          scoringPrompt: "",
-        };
-        break;
-      default:
-        return;
+      set({
+        currentTest: {
+          ...currentTest,
+          sections: updatedSections,
+          totalQuestions: get().calculateTotalQuestions(),
+        },
+      });
+    } catch (error) {
+      console.error(`Failed to create question of type ${type}:`, error);
     }
-
-    const updatedSections = [...currentTest.sections];
-    updatedSections[sectionIndex].questions.push(newQuestion);
-
-    set({
-      currentTest: {
-        ...currentTest,
-        sections: updatedSections,
-        totalQuestions: get().calculateTotalQuestions(),
-      },
-    });
   },
 
   updateQuestion: (

@@ -8,6 +8,7 @@ import type {
   WritingTask1Question,
   WritingTask2Question,
   WritingTaskAnswer,
+  UserAnswer,
 } from "@testComponents/lib/types";
 import { cn } from "@testComponents/lib/utils";
 import { Award, Eye, EyeOff } from "lucide-react";
@@ -25,6 +26,7 @@ interface WritingTask1QuestionProps {
   readOnly?: boolean;
   showCorrectAnswer?: boolean;
   onQuestionHighlighted?: (questionId: string, content: string) => void;
+  answer?: UserAnswer;
 }
 
 interface ScoringResult {
@@ -41,32 +43,48 @@ export default function WritingTask1QuestionRenderer({
   readOnly = false,
   showCorrectAnswer = false,
   onQuestionHighlighted = () => {},
+  answer,
 }: WritingTask1QuestionProps) {
 
   const [currentEssay, setCurrentEssay] = useState<string | null>(
     value?.text ?? null
   );
-  const [aiScore, setAiScore] = useState<ScoringResult | null>(
-    value?.score !== undefined && value?.feedback !== undefined
-      ? { score: value.score, feedback: value.feedback }
-      : null
-  );
+  
+  // Extract AI score from value prop (during answering) or answer prop (during review)
+  const getAIScore = (): ScoringResult | null => {
+    // First try to get from value prop (during answering mode)
+    if (value?.score !== undefined && value?.feedback !== undefined) {
+      return { score: value.score, feedback: value.feedback };
+    }
+    // Then try to get from answer prop (during review mode)
+    if (answer?.score !== undefined && answer?.feedback !== undefined) {
+      return { score: answer.score, feedback: answer.feedback };
+    }
+    return null;
+  };
+  
+  const [aiScore, setAiScore] = useState<ScoringResult | null>(getAIScore());
   const [showFeedback, setShowFeedback] = useState(true);
   const [showSampleAnswer, setShowSampleAnswer] = useState(false);
 
-  // Update local state if the external value changes (e.g., loading from progress)
+  // Update local state if the external value or answer changes
   useEffect(() => {
-    setCurrentEssay(value?.text ?? null);
-    setAiScore(
-      value?.score !== undefined && value?.feedback !== undefined
-        ? { score: value.score, feedback: value.feedback }
-        : null
-    );
-    // Reset feedback visibility if score/feedback is cleared
-    if (value?.score === undefined || value?.feedback === undefined) {
+    // Update essay text from value prop (current input) or answer prop (review mode)
+    if (value?.text !== undefined) {
+      setCurrentEssay(value.text);
+    } else if (answer?.answer && typeof answer.answer === 'object' && (answer.answer as WritingTaskAnswer)?.text) {
+      setCurrentEssay((answer.answer as WritingTaskAnswer).text);
+    }
+    
+    // Update AI score
+    const newAiScore = getAIScore();
+    setAiScore(newAiScore);
+    
+    // Reset feedback visibility if no score/feedback
+    if (!newAiScore) {
       setShowFeedback(false);
     }
-  }, [value]);
+  }, [value, answer]);
 
   // Show sample answer automatically in review mode
   useEffect(() => {
