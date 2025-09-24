@@ -35,7 +35,7 @@ export default function WordFormQuestionRenderer({
   const [showFeedback, setShowFeedback] = useState<Record<string, boolean>>({});
   // Extract AI scores from the answer prop
   const aiScores = React.useMemo(() => {
-    const scores: Record<string, { score: number; feedback: string }> = {};
+    const scores: Record<string, { score: number; feedback: string; maxScore: number }> = {};
     
     // The answer prop is actually the entire answers object containing individual exercise results
     if (answer && typeof answer === 'object') {
@@ -45,11 +45,13 @@ export default function WordFormQuestionRenderer({
         subQuestionId?: string;
         score?: number;
         feedback?: string;
+        maxScore?: number;
       }) => {
-        if (answerEntry.questionId === question.id && answerEntry.subQuestionId) {
+        if (answerEntry?.questionId === question.id && answerEntry?.subQuestionId) {
           scores[answerEntry.subQuestionId] = {
             score: answerEntry.score || 0, // Score is already in decimal format (0-1)
-            feedback: answerEntry.feedback || ""
+            feedback: answerEntry.feedback || "",
+            maxScore: answerEntry.maxScore || 1
           };
         }
       });
@@ -173,33 +175,17 @@ export default function WordFormQuestionRenderer({
         {/* Word form exercises */}
         <div className="space-y-6">
           {exercises.map((exercise, index) => {
-            // Get user answer from value prop (during answering) or from answer prop (during review)
-            let userAnswer = "";
-            if (value && value[exercise.id]) {
-              // During answering mode
-              userAnswer = String(value[exercise.id]);
-            } else if (answer && typeof answer === 'object') {
-              // During review mode, find the answer entry for this exercise
-              const answerEntry = Object.values(answer).find((entry: {
-                questionId?: string;
-                subQuestionId?: string;
-                answer?: string;
-              }) => entry.questionId === question.id && entry.subQuestionId === exercise.id);
-              
-              if (answerEntry && answerEntry.answer) {
-                userAnswer = String(answerEntry.answer);
-              }
-            }
+            const userAnswer = value?.[exercise.id] || "";
             
             const aiScore = aiScores[exercise.id];
-            const { feedback, score } = aiScore || {};
+            const { feedback, score, maxScore } = aiScore || {};
             
             // Check if answer is correct based on exact match with correct form
             const isExactMatch = Boolean(showCorrectAnswer && userAnswer && 
               userAnswer.toLowerCase().trim() === exercise.correctForm.toLowerCase().trim());
             
             // Check if answer is correct based on AI score (80% or higher)
-            const isAICorrect = Boolean(showCorrectAnswer && score && score >= 0.8);
+            const isAICorrect = Boolean(showCorrectAnswer && score && (score / maxScore) >= 0.8);
             
             // Consider answer correct if either exact match or AI score is 80%+
             const isCorrect = isExactMatch || isAICorrect;
@@ -227,14 +213,14 @@ export default function WordFormQuestionRenderer({
                     </div>
 
                     {/* AI Score Display */}
-                    {score !== undefined && (
+                    {showCorrectAnswer && score !== undefined && (
                       <div className="mt-3">
                         <Card className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-200/50 dark:border-blue-800/50">
                           <div className="p-3">
                             <div className="flex items-center justify-between mb-2">
                               <h4 className="font-medium text-sm flex items-center text-blue-900 dark:text-blue-100">
                                 <Award className="mr-1 h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                AI Score: {(score * 100).toFixed(0)}%
+                                AI Score: {(score / maxScore * 100).toFixed(0)}%
                               </h4>
                               <Button
                                 variant="link"

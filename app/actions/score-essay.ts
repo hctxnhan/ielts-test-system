@@ -26,8 +26,8 @@ const schema = jsonSchema<AIScoreResponse>({
   properties: {
     score: {
       type: "number",
-      description: "The score given to the essay",
-      example: 7.5,
+      description: "The score given to the essay (0-1 scale)",
+      example: 0.4,
     },
     detailedBreakdown: {
       type: "string",

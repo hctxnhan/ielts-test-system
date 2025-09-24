@@ -296,7 +296,6 @@ class SentenceTranslationPlugin extends BaseQuestionPlugin<SentenceTranslationQu
       };
     }
 
-    // 1. Reference-based scoring (if available and no AI scorer)
     if (referenceTranslations.length > 0 && !aiScoringFn) {
       const isCorrect = referenceTranslations.some(
         (ref) => ref.trim().toLowerCase() === userAnswer.trim().toLowerCase(),

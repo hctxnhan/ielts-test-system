@@ -194,6 +194,9 @@ Be encouraging but precise in your feedback.`;
         scoringPrompt: prompt,
       });
 
+              console.log("AI scoring result:", aiResult);
+
+
       if (aiResult.ok) {
         const scaledScore = aiResult.score * maxScore;
         const result = {
