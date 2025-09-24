@@ -236,7 +236,7 @@ export default function TestInstructions({
       case "speaking":
         return "from-amber-500 to-orange-600";
       default:
-        return "from-primary to-primary-foreground";
+        return "from-primary to-primary";
     }
   };
 
