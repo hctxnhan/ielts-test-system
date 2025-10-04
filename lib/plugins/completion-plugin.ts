@@ -95,38 +95,15 @@ export class CompletionPlugin extends BaseQuestionPlugin<CompletionQuestion> {
     const answer = context.answer;
     const subQuestionId = context.subQuestionId;
 
-    // Console logging for testing completion question scoring
-    console.log('🔍 COMPLETION QUESTION SCORING DEBUG:');
-    console.log('├─ Question ID:', question.id);
-    console.log('├─ Question Type:', question.type);
-    console.log('├─ Answer provided:', answer);
-    console.log('├─ Answer type:', typeof answer);
-    console.log('├─ Answer is array:', Array.isArray(answer));
-    console.log('├─ Answer is null/undefined:', answer == null);
-    console.log('├─ Sub-question ID:', subQuestionId);
-    console.log('├─ Question points:', question.points);
-    console.log('├─ Sub-questions count:', question.subQuestions?.length || 0);
-
     const scoringStrategy = question.scoringStrategy || "partial";
-    console.log('├─ Scoring strategy:', scoringStrategy);
 
     if (scoringStrategy === "partial" && subQuestionId) {
-      console.log('📝 PARTIAL SCORING MODE:');
-      console.log('├─ Looking for sub-question:', subQuestionId);
-      
       // Partial scoring - score individual sub-question
       const subQuestion = question.subQuestions?.find(
         (sq) => sq.subId === subQuestionId,
       );
 
-      console.log('├─ Found sub-question:', subQuestion ? 'Yes' : 'No');
-      if (subQuestion) {
-        console.log('├─ Sub-question points:', subQuestion.points);
-        console.log('├─ Acceptable answers:', subQuestion.acceptableAnswers);
-      }
-
       if (!subQuestion) {
-        console.log('❌ Sub-question not found - returning error result');
         return {
           isCorrect: false,
           score: 0,
@@ -147,21 +124,16 @@ export class CompletionPlugin extends BaseQuestionPlugin<CompletionQuestion> {
         userAnswer = '';
       }
 
-      console.log('├─ Raw user answer:', userAnswer, '(type:', typeof userAnswer, ')');
-
       const normalizedAnswer = userAnswer?.toString().trim().toLowerCase().replace(/\s+/g, " ") || "";
-      console.log('├─ Normalized user answer:', `"${normalizedAnswer}"`);
       
       const isCorrect =
         subQuestion.acceptableAnswers?.some(
           (acceptableAnswer: string) => {
             const normalizedAcceptable = acceptableAnswer.trim().toLowerCase().replace(/\s+/g, " ");
-            console.log('├─ Comparing with acceptable answer:', `"${normalizedAcceptable}"`);
             return normalizedAcceptable === normalizedAnswer;
           }
         ) || false;
 
-      console.log('├─ Answer is correct:', isCorrect);
       const result = {
         isCorrect,
         score: isCorrect ? subQuestion.points : 0,
@@ -170,20 +142,14 @@ export class CompletionPlugin extends BaseQuestionPlugin<CompletionQuestion> {
           ? "Correct!"
           : `Incorrect. Acceptable answers: ${subQuestion.acceptableAnswers?.join(", ") || "None"}`,
       };
-      console.log('├─ Partial scoring result:', result);
-      console.log('└─ End partial scoring\n');
 
       return result;
     } else {
-      console.log('📋 ALL-OR-NOTHING SCORING MODE:');
       
       // All-or-nothing scoring - score entire question
       const totalSubQuestions = question.subQuestions?.length || 0;
       const answers = answer as Record<string, string>;
       
-      console.log('├─ Total sub-questions:', totalSubQuestions);
-      console.log('├─ User answers object:', answers);
-
       const correctCount = Object.entries(answers || {}).filter(
         ([key, value]) => {
           const foundSubQuestion = question.subQuestions?.some((sq) => {
@@ -196,19 +162,14 @@ export class CompletionPlugin extends BaseQuestionPlugin<CompletionQuestion> {
               .toLowerCase()
               .replace(/\s+/g, " ");
             
-            console.log(`├─ Checking answer for ${key}: "${normalizedValue}" (original type: ${typeof value})`);
-            console.log(`├─ Against acceptable answers:`, sq.acceptableAnswers);
-            
             const isAcceptable = sq.acceptableAnswers?.some((acceptableAnswer: string) => {
               const normalizedAcceptableAnswer = acceptableAnswer
                 .trim()
                 .toLowerCase()
                 .replace(/\s+/g, " ");
-              console.log(`  ├─ Comparing with: "${normalizedAcceptableAnswer}"`);
               return normalizedAcceptableAnswer === normalizedValue;
             });
             
-            console.log(`  └─ Is acceptable: ${isAcceptable}`);
             return isAcceptable;
           });
           
@@ -216,9 +177,7 @@ export class CompletionPlugin extends BaseQuestionPlugin<CompletionQuestion> {
         },
       ).length;
 
-      console.log('├─ Correct answers count:', correctCount);
       const isCorrect = correctCount === totalSubQuestions;
-      console.log('├─ All answers correct:', isCorrect);
 
       const result = {
         isCorrect,
@@ -229,9 +188,6 @@ export class CompletionPlugin extends BaseQuestionPlugin<CompletionQuestion> {
           : `${correctCount}/${totalSubQuestions} answers correct`,
       };
       
-      console.log('├─ All-or-nothing result:', result);
-      console.log('└─ End all-or-nothing scoring\n');
-
       return result;
     }
   }

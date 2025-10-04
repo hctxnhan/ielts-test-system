@@ -272,16 +272,6 @@ export const useTestStore = create<TestState>()((set, get) => {
 
       if (!question || !currentSection) return;
 
-      // Console logging for completion questions
-      if (question.type === 'completion') {
-        console.log('📤 SUBMIT ANSWER - COMPLETION QUESTION:');
-        console.log('├─ Question ID:', questionId);
-        console.log('├─ Answer:', answer);
-        console.log('├─ Sub-question ID:', subQuestionId);
-        console.log('├─ Question type:', question.type);
-        console.log('├─ Question scoring strategy:', question.scoringStrategy);
-      }
-
       // Always save the answer on submit and defer scoring until completeTest.
       const plugin = QuestionPluginRegistry.getPlugin(question.type);
 
@@ -446,15 +436,6 @@ export const useTestStore = create<TestState>()((set, get) => {
         subQuestionId,
         section,
       } of questionsToScore) {
-        // Console logging for completion questions during test completion scoring
-        if (question.type === 'completion') {
-          console.log('🏁 COMPLETE TEST - SCORING COMPLETION QUESTION:');
-          console.log('├─ Question ID:', question.id);
-          console.log('├─ Answer key:', answerKey);
-          console.log('├─ Answer:', answer);
-          console.log('├─ Sub-question ID:', subQuestionId);
-          console.log('├─ Section:', section.title);
-        }
         
         try {
           // Use the new scoring service
@@ -465,9 +446,6 @@ export const useTestStore = create<TestState>()((set, get) => {
             aiScoringFn: scoreEssayFn || undefined,
           });
 
-          if (question.type === 'completion') {
-            console.log('├─ Scoring result from service:', scoringResult);
-          }
 
           // Create properly structured UserAnswer using the scoring service
           const plugin = QuestionPluginRegistry.getPlugin(question.type);

@@ -148,10 +148,6 @@ export class TrueFalseNotGivenPlugin extends BaseQuestionPlugin<TrueFalseNotGive
       const normalizedCorrectAnswer = normalizeAnswer(subQuestion.correctAnswer);
       const isCorrect = normalizedCorrectAnswer === normalizedUserAnswer;
       
-      console.log(`[TFNG Scoring] SubQuestion: ${subQuestionId}`);
-      console.log(`[TFNG Scoring] User answer: "${actualAnswer}" -> normalized: "${normalizedUserAnswer}"`);
-      console.log(`[TFNG Scoring] Correct answer: "${subQuestion.correctAnswer}" -> normalized: "${normalizedCorrectAnswer}"`);
-      console.log(`[TFNG Scoring] Is correct: ${isCorrect}`);
       
       return {
         isCorrect,

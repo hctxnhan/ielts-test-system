@@ -117,26 +117,12 @@ export class ScoringService {
     const timestamp = Date.now();
     const scoringId = context.scoringId || `score_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Console logging for debugging completion questions specifically
-    if (context.question.type === 'completion') {
-      console.log('🎯 SCORING SERVICE - COMPLETION QUESTION:');
-      console.log('├─ Scoring ID:', scoringId);
-      console.log('├─ Question ID:', context.question.id);
-      console.log('├─ Answer:', context.answer);
-      console.log('├─ Sub-question ID:', context.subQuestionId);
-      console.log('├─ Scoring context keys:', Object.keys(context));
-    }
-
     try {
       // Validate inputs
       this.validateScoringContext(context);
 
       // Use plugin system to score
       const pluginResult = await QuestionPluginRegistry.scoreQuestion(context);
-
-      if (context.question.type === 'completion') {
-        console.log('├─ Plugin result:', pluginResult);
-      }
 
       // Enhance result with service metadata
       const serviceResult: ServiceScoringResult = {
@@ -146,11 +132,6 @@ export class ScoringService {
         aiScored: pluginResult.aiScored || false,
         manualScored: context.manualScoringContext ? true : false,
       };
-
-      if (context.question.type === 'completion') {
-        console.log('├─ Enhanced service result:', serviceResult);
-        console.log('└─ End scoring service for completion\n');
-      }
 
       return serviceResult;
     } catch (error) {
