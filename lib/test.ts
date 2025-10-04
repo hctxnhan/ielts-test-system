@@ -21,10 +21,26 @@ export function updateQuestionIndexes(test: Test): Test {
       let endQuestionIndex: number;
 
       if (standardizedQuestion.scoringStrategy === "partial") {
+        console.log(
+          "Partial scoring used, calculating endQuestionIndex based on subQuestions length",
+          question.type,
+        );
+        console.log(
+          "standardizedQuestion.subQuestions?.length",
+          standardizedQuestion.subQuestions?.length,
+        );
         endQuestionIndex =
-          startQuestionIndex + (standardizedQuestion.subQuestions?.length || 1) - 1;
+          startQuestionIndex +
+          (standardizedQuestion.subQuestions?.length || 1) -
+          1;
+        console.log("endQuestionIndex", endQuestionIndex);
       } else {
+        console.log(
+          "Partial scoring not used, setting endQuestionIndex to startQuestionIndex",
+        );
+        console.log("startQuestionIndex", startQuestionIndex);
         endQuestionIndex = startQuestionIndex;
+        console.log("endQuestionIndex", endQuestionIndex);
       }
 
       currentIndex = endQuestionIndex + 1;

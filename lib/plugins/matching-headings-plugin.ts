@@ -16,6 +16,7 @@ export class MatchingHeadingsPlugin extends BaseQuestionPlugin<MatchingHeadingsQ
     icon: "🔗",
     category: ["reading" as const],
     supportsPartialScoring: true,
+    hasSubQuestions: true,
     supportsAIScoring: false,
     defaultPoints: 1
   };
@@ -124,7 +125,6 @@ export class MatchingHeadingsPlugin extends BaseQuestionPlugin<MatchingHeadingsQ
       items: standardItems,
       options: standardOptions,
       subQuestions: standardSubQuestions,
-      scoringStrategy: "partial",
     };
   }
 
@@ -148,7 +148,18 @@ export class MatchingHeadingsPlugin extends BaseQuestionPlugin<MatchingHeadingsQ
         };
       }
 
-      const isCorrect = subQuestion.correctAnswer === answer;
+      // Extract the actual answer value
+      // If answer is an object, get the value for this subQuestionId
+      // If answer is a string, use it directly
+      let actualAnswer: string;
+      if (typeof answer === 'object' && answer !== null) {
+        const answerObj = answer as Record<string, string>;
+        actualAnswer = answerObj[subQuestionId] || '';
+      } else {
+        actualAnswer = answer as string;
+      }
+
+      const isCorrect = subQuestion.correctAnswer === actualAnswer;
       
       return {
         isCorrect,
@@ -156,7 +167,7 @@ export class MatchingHeadingsPlugin extends BaseQuestionPlugin<MatchingHeadingsQ
         maxScore: subQuestion.points,
         feedback: isCorrect 
           ? "Correct heading match!" 
-          : "Incorrect heading match"
+          : `Incorrect heading match. Expected: ${subQuestion.correctAnswer}, Got: ${actualAnswer}`
       };
     } else {
       // All-or-nothing scoring - score entire question

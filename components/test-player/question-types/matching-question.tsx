@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import type { MatchingQuestion } from "@testComponents/lib/types";
 import { DraggableItem, DroppableZone } from "./shared/dnd-components";
 import { Label } from "@testComponents/components/ui/label";
-import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
 import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 import { cn } from "@testComponents/lib/utils";
 

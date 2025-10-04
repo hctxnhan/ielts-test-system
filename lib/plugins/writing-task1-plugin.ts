@@ -75,7 +75,6 @@ class WritingTask1Plugin extends BaseQuestionPlugin<WritingTask1Question> {
 
     return {
       ...question,
-      scoringStrategy: "partial",
       subQuestions: standardSubQuestions,
     } as StandardQuestion;
   }
@@ -102,7 +101,9 @@ class WritingTask1Plugin extends BaseQuestionPlugin<WritingTask1Question> {
     const writingQuestion = question as WritingTask1Question;
     const userAnswer = answer as WritingTaskAnswer;
 
-    if (!userAnswer?.text || userAnswer.text.trim().length < 20) {
+    // Safely check if userAnswer.text exists and convert to string before trim()
+    const userText = userAnswer?.text?.toString() || "";
+    if (!userText || userText.trim().length < 20) {
       return { isCorrect: false, score: 0, maxScore: writingQuestion.points, feedback: "Answer is too short to be scored." };
     }
 
@@ -115,7 +116,7 @@ class WritingTask1Plugin extends BaseQuestionPlugin<WritingTask1Question> {
       const aiResult = await aiScoringFn({
         text: writingQuestion.text,
         prompt: writingQuestion.prompt,
-        essay: userAnswer.text,
+        essay: userText,
         scoringPrompt: writingQuestion.scoringPrompt || `You are an expert Vietnamese IELTS examiner. Your task is to evaluate this IELTS Writing Task 1 response based on the official scoring criteria.
 
 Provide a score between 1 and 9 (can include decimals like 7.5) and detailed feedback in Vietnamese.

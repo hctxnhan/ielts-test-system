@@ -287,7 +287,9 @@ class SentenceTranslationPlugin extends BaseQuestionPlugin<SentenceTranslationQu
       aiScoringFn,
     } = params;
 
-    if (!userAnswer.trim()) {
+    // Safely convert to string before calling trim()
+    const userAnswerString = (userAnswer || "").toString();
+    if (!userAnswerString.trim()) {
       return {
         isCorrect: false,
         score: 0,
@@ -298,7 +300,7 @@ class SentenceTranslationPlugin extends BaseQuestionPlugin<SentenceTranslationQu
 
     if (referenceTranslations.length > 0 && !aiScoringFn) {
       const isCorrect = referenceTranslations.some(
-        (ref) => ref.trim().toLowerCase() === userAnswer.trim().toLowerCase(),
+        (ref) => ref.trim().toLowerCase() === userAnswerString.trim().toLowerCase(),
       );
 
       return {
@@ -321,7 +323,7 @@ class SentenceTranslationPlugin extends BaseQuestionPlugin<SentenceTranslationQu
 Evaluate this translation from ${sourceLanguage} to ${targetLanguage}:
 
 Source: "${sourceText}"
-Student Translation: "${userAnswer}"
+Student Translation: "${userAnswerString}"
 
 ${referenceTranslations.length > 0 ? `Reference translations:\n${referenceTranslations.join("\n")}\n` : ""}
 
@@ -340,9 +342,9 @@ Provide specific, constructive feedback focusing on:
 Be encouraging but precise in your feedback.`;
 
         const aiResult = await aiScoringFn({
-          text: userAnswer,
+          text: userAnswerString,
           prompt: sourceText,
-          essay: userAnswer,
+          essay: userAnswerString,
           scoringPrompt: prompt,
         });
 

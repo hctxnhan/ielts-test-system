@@ -142,7 +142,9 @@ class WordFormPlugin extends BaseQuestionPlugin<WordFormQuestion> {
 
 
     // 1. Simple string comparison scoring
-    const isCorrectSimple = userAnswer.trim().toLowerCase() === exercise.correctForm.trim().toLowerCase();
+    // Safely convert to string before calling trim()
+    const userAnswerString = (userAnswer || "").toString();
+    const isCorrectSimple = userAnswerString.trim().toLowerCase() === exercise.correctForm.trim().toLowerCase();
 
     if (!aiScoringFn) {
       return {
@@ -154,7 +156,7 @@ class WordFormPlugin extends BaseQuestionPlugin<WordFormQuestion> {
     }
 
     // 2. AI-based scoring (if available) for more nuanced feedback
-    if (!userAnswer.trim()) {
+    if (!userAnswerString.trim()) {
       return {
         isCorrect: false,
         score: 0,
@@ -193,8 +195,6 @@ Be encouraging but precise in your feedback.`;
         essay: userAnswer,
         scoringPrompt: prompt,
       });
-
-              console.log("AI scoring result:", aiResult);
 
 
       if (aiResult.ok) {

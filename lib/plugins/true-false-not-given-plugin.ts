@@ -58,19 +58,19 @@ export class TrueFalseNotGivenPlugin extends BaseQuestionPlugin<TrueFalseNotGive
         {
           subId: uuidv4(),
           item: statementIds[0],
-          correctAnswer: "TRUE",
+          correctAnswer: "true",
           points: this.config.defaultPoints / 3,
         },
         {
           subId: uuidv4(),
           item: statementIds[1],
-          correctAnswer: "FALSE",
+          correctAnswer: "false",
           points: this.config.defaultPoints / 3,
         },
         {
           subId: uuidv4(),
           item: statementIds[2],
-          correctAnswer: "NOT_GIVEN",
+          correctAnswer: "not-given",
           points: this.config.defaultPoints / 3,
         },
       ],
@@ -97,7 +97,6 @@ export class TrueFalseNotGivenPlugin extends BaseQuestionPlugin<TrueFalseNotGive
       ...question,
       items: standardItems,
       subQuestions: standardSubQuestions,
-      scoringStrategy: "partial",
     };
   }
 
@@ -107,6 +106,19 @@ export class TrueFalseNotGivenPlugin extends BaseQuestionPlugin<TrueFalseNotGive
     const subQuestionId = context.subQuestionId;
     
     const scoringStrategy = question.scoringStrategy || "partial";
+
+    // Helper function to normalize answers for comparison
+    const normalizeAnswer = (value: unknown): string => {
+      if (!value) return "";
+      const stringValue = (value || "").toString().trim().toLowerCase();
+      
+      // Normalize common variations to standard format
+      if (stringValue === "true" || stringValue === "t") return "true";
+      if (stringValue === "false" || stringValue === "f") return "false";
+      if (stringValue === "not-given" || stringValue === "not_given" || stringValue === "ng" || stringValue === "n") return "not-given";
+      
+      return stringValue;
+    };
 
     if (scoringStrategy === "partial" && subQuestionId) {
       // Partial scoring - score individual sub-question
@@ -121,7 +133,25 @@ export class TrueFalseNotGivenPlugin extends BaseQuestionPlugin<TrueFalseNotGive
         };
       }
 
-      const isCorrect = subQuestion.correctAnswer === answer;
+      // Extract the actual answer value
+      // If answer is an object, get the value for this subQuestionId
+      // If answer is a string, use it directly
+      let actualAnswer: unknown;
+      if (typeof answer === 'object' && answer !== null) {
+        const answerObj = answer as Record<string, unknown>;
+        actualAnswer = answerObj[subQuestionId];
+      } else {
+        actualAnswer = answer;
+      }
+
+      const normalizedUserAnswer = normalizeAnswer(actualAnswer);
+      const normalizedCorrectAnswer = normalizeAnswer(subQuestion.correctAnswer);
+      const isCorrect = normalizedCorrectAnswer === normalizedUserAnswer;
+      
+      console.log(`[TFNG Scoring] SubQuestion: ${subQuestionId}`);
+      console.log(`[TFNG Scoring] User answer: "${actualAnswer}" -> normalized: "${normalizedUserAnswer}"`);
+      console.log(`[TFNG Scoring] Correct answer: "${subQuestion.correctAnswer}" -> normalized: "${normalizedCorrectAnswer}"`);
+      console.log(`[TFNG Scoring] Is correct: ${isCorrect}`);
       
       return {
         isCorrect,
@@ -136,11 +166,14 @@ export class TrueFalseNotGivenPlugin extends BaseQuestionPlugin<TrueFalseNotGive
       const totalSubQuestions = question.subQuestions?.length || 0;
       const answers = answer as Record<string, string>;
       
-      const correctCount = Object.entries(answers || {}).filter(([key, value]) =>
-        question.subQuestions?.some(sq => 
-          sq.subId === key && sq.correctAnswer === value
-        )
-      ).length;
+      const correctCount = Object.entries(answers || {}).filter(([key, value]) => {
+        const subQuestion = question.subQuestions?.find(sq => sq.subId === key);
+        if (!subQuestion) return false;
+        
+        const normalizedUserAnswer = normalizeAnswer(value);
+        const normalizedCorrectAnswer = normalizeAnswer(subQuestion.correctAnswer);
+        return normalizedCorrectAnswer === normalizedUserAnswer;
+      }).length;
 
       const isCorrect = correctCount === totalSubQuestions;
       
@@ -183,13 +216,13 @@ export class TrueFalseNotGivenPlugin extends BaseQuestionPlugin<TrueFalseNotGive
       errors.push("All sub-questions must have correct answers");
     }
 
-    // Check for valid answer values
-    const validAnswers = ["TRUE", "FALSE", "NOT_GIVEN"];
+    // Check for valid answer values (lowercase only)
+    const validAnswers = ["true", "false", "not-given"];
     const invalidAnswers = question.subQuestions?.filter(subQ => 
-      subQ.correctAnswer && !validAnswers.includes(subQ.correctAnswer)
+      subQ.correctAnswer && !validAnswers.includes(subQ.correctAnswer?.toLowerCase())
     ) || [];
     if (invalidAnswers.length > 0) {
-      errors.push("All correct answers must be TRUE, FALSE, or NOT_GIVEN");
+      errors.push("All correct answers must be 'true', 'false', or 'not-given' (lowercase)");
     }
 
     // Check if statement count matches sub-question count

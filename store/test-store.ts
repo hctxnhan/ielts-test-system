@@ -1,5 +1,7 @@
 import { getSectionStats, getTestStats } from "@testComponents/lib/test-utils";
 import { QuestionPluginRegistry } from "@testComponents/lib/question-plugin-system";
+import { scoringService } from "@testComponents/lib/scoring-service";
+import { createDefaultUserAnswer, validateUserAnswer, ScoringErrorHandler } from "@testComponents/lib/scoring-utils";
 import type {
   Question,
   Section,
@@ -270,6 +272,16 @@ export const useTestStore = create<TestState>()((set, get) => {
 
       if (!question || !currentSection) return;
 
+      // Console logging for completion questions
+      if (question.type === 'completion') {
+        console.log('📤 SUBMIT ANSWER - COMPLETION QUESTION:');
+        console.log('├─ Question ID:', questionId);
+        console.log('├─ Answer:', answer);
+        console.log('├─ Sub-question ID:', subQuestionId);
+        console.log('├─ Question type:', question.type);
+        console.log('├─ Question scoring strategy:', question.scoringStrategy);
+      }
+
       // Always save the answer on submit and defer scoring until completeTest.
       const plugin = QuestionPluginRegistry.getPlugin(question.type);
 
@@ -280,35 +292,49 @@ export const useTestStore = create<TestState>()((set, get) => {
       ) {
         // Store the whole sub-answers object under the main question ID
         const userAnswer: UserAnswer = {
-          questionId,
-          answer,
+          ...createDefaultUserAnswer(
+            questionId,
+            answer,
+            currentSection.id,
+            question.type,
+            question.index || 0
+          ),
           isCorrect: false,
           score: 0,
           maxScore: question.points || 0,
-          subQuestionId: undefined,
-          sectionId: currentSection.id,
-          questionType: question.type,
-          questionIndex: question.index || 0,
-          parentQuestionId: undefined,
           feedback: "",
         };
+
+        // Validate the answer structure
+        const validation = validateUserAnswer(userAnswer);
+        if (!validation.isValid) {
+          console.warn(`Invalid UserAnswer structure for question ${questionId}:`, validation.errors);
+        }
 
         updateProgressWithAnswer(userAnswer, questionId);
       } else {
         // Non-sub-question or individual sub-answer: store under subQuestionId or questionId
         const userAnswer: UserAnswer = {
-          questionId,
-          answer,
+          ...createDefaultUserAnswer(
+            questionId,
+            answer,
+            currentSection.id,
+            question.type,
+            question.index || 0,
+            subQuestionId,
+            subQuestionId ? questionId : undefined
+          ),
           isCorrect: false,
           score: 0,
           maxScore: question.points || 0,
-          subQuestionId,
-          sectionId: currentSection.id,
-          questionType: question.type,
-          questionIndex: question.index || 0,
-          parentQuestionId: subQuestionId ? questionId : undefined,
           feedback: "",
         };
+
+        // Validate the answer structure
+        const validation = validateUserAnswer(userAnswer);
+        if (!validation.isValid) {
+          console.warn(`Invalid UserAnswer structure for question ${questionId}, sub ${subQuestionId}:`, validation.errors);
+        }
 
         updateProgressWithAnswer(userAnswer, subQuestionId || questionId);
       }
@@ -418,16 +444,32 @@ export const useTestStore = create<TestState>()((set, get) => {
         answerKey,
         answer,
         subQuestionId,
+        section,
       } of questionsToScore) {
+        // Console logging for completion questions during test completion scoring
+        if (question.type === 'completion') {
+          console.log('🏁 COMPLETE TEST - SCORING COMPLETION QUESTION:');
+          console.log('├─ Question ID:', question.id);
+          console.log('├─ Answer key:', answerKey);
+          console.log('├─ Answer:', answer);
+          console.log('├─ Sub-question ID:', subQuestionId);
+          console.log('├─ Section:', section.title);
+        }
+        
         try {
-          const scoringResult = await QuestionPluginRegistry.scoreQuestion({
+          // Use the new scoring service
+          const scoringResult = await scoringService.scoreQuestion({
             question,
             answer,
             subQuestionId,
             aiScoringFn: scoreEssayFn || undefined,
           });
 
-          // Decide how to apply scoring results based on whether the question has sub-questions
+          if (question.type === 'completion') {
+            console.log('├─ Scoring result from service:', scoringResult);
+          }
+
+          // Create properly structured UserAnswer using the scoring service
           const plugin = QuestionPluginRegistry.getPlugin(question.type);
           if (plugin?.config.hasSubQuestions) {
             // If partial scoring, create per-sub-answer entries. Otherwise update main answer.
@@ -455,97 +497,101 @@ export const useTestStore = create<TestState>()((set, get) => {
 
               const subAnswer = (answer as Record<string, string>)[subQuestionId];
 
-              // Update the chosen target entry
-              updatedAnswers[targetKey] = {
-                ...(updatedAnswers[targetKey] || {}),
-                questionId: question.id,
-                answer: subAnswer,
-                isCorrect: scoringResult.isCorrect,
-                score: scoringResult.score,
-                maxScore: scoringResult.maxScore,
+              // Update the chosen target entry using scoring service
+              updatedAnswers[targetKey] = scoringService.createUserAnswer(
+                question.id,
+                subAnswer,
+                scoringResult,
+                section.id,
+                question.type,
+                question.index || 0,
                 subQuestionId,
-                sectionId: updatedAnswers[answerKey]?.sectionId || "",
-                questionType: question.type,
-                questionIndex: question.index || 0,
-                parentQuestionId: question.id,
-                feedback: scoringResult.feedback || "",
-              };
+                question.id
+              );
             } else {
               // All-or-nothing: update the main stored answer
-              updatedAnswers[answerKey] = {
-                ...updatedAnswers[answerKey],
-                isCorrect: scoringResult.isCorrect,
-                score: scoringResult.score,
-                maxScore: scoringResult.maxScore,
-                feedback: scoringResult.feedback || "",
-              };
+              updatedAnswers[answerKey] = scoringService.createUserAnswer(
+                question.id,
+                answer,
+                scoringResult,
+                section.id,
+                question.type,
+                question.index || 0
+              );
             }
           } else {
             // Non-sub-question: update the main answer entry
-            updatedAnswers[answerKey] = {
-              ...updatedAnswers[answerKey],
-              isCorrect: scoringResult.isCorrect,
-              score: scoringResult.score,
-              maxScore: scoringResult.maxScore,
-              feedback: scoringResult.feedback || "",
-            };
+            updatedAnswers[answerKey] = scoringService.createUserAnswer(
+              question.id,
+              answer,
+              scoringResult,
+              section.id,
+              question.type,
+              question.index || 0
+            );
           }
         } catch (error) {
-          console.error("Scoring error:", error);
+          ScoringErrorHandler.logScoringError(error as Error, {
+            questionId: question.id,
+            questionType: question.type,
+            subQuestionId,
+          });
 
-          // Keep existing answer but ensure it has score information
+          // Create error result using scoring utilities
+          const errorResult = ScoringErrorHandler.createErrorResult(
+            error as Error,
+            question.points || 0,
+            question.id
+          );
+
+          // Keep existing answer structure but add error information
           const plugin = QuestionPluginRegistry.getPlugin(question.type);
-          if (plugin?.config.scoreOnCompletion) {
-            // For scoreOnCompletion questions, update the main answer entry
-            updatedAnswers[answerKey] = {
-              ...updatedAnswers[answerKey],
-              isCorrect: false,
-              score: 0,
-              maxScore: question.points || 0,
-              feedback: `Scoring error: ${error instanceof Error ? error.message : String(error)}`,
+          if (plugin?.config.hasSubQuestions && subQuestionId) {
+            let targetKey: string | undefined;
+
+            if (
+              updatedAnswers[answerKey] &&
+              (updatedAnswers[answerKey] as UserAnswer).subQuestionId === subQuestionId &&
+              (updatedAnswers[answerKey] as UserAnswer).parentQuestionId === question.id
+            ) {
+              targetKey = answerKey;
+            } else if (updatedAnswers[subQuestionId]) {
+              targetKey = subQuestionId;
+            } else {
+              targetKey = answerKey;
+            }
+
+            const subAnswer = (answer as Record<string, string>)[subQuestionId];
+
+            updatedAnswers[targetKey] = {
+              ...createDefaultUserAnswer(
+                question.id,
+                subAnswer,
+                section.id,
+                question.type,
+                question.index || 0,
+                subQuestionId,
+                question.id
+              ),
+              isCorrect: errorResult.isCorrect,
+              score: errorResult.score,
+              maxScore: errorResult.maxScore,
+              feedback: errorResult.feedback,
             };
           } else {
-            // For immediate scoring questions (not scoreOnCompletion), handle as before
-            if (subQuestionId) {
-              let targetKey: string | undefined;
-
-              if (
-                updatedAnswers[answerKey] &&
-                (updatedAnswers[answerKey] as UserAnswer).subQuestionId === subQuestionId &&
-                (updatedAnswers[answerKey] as UserAnswer).parentQuestionId === question.id
-              ) {
-                targetKey = answerKey;
-              } else if (updatedAnswers[subQuestionId]) {
-                targetKey = subQuestionId;
-              } else {
-                targetKey = answerKey;
-              }
-
-              const subAnswer = (answer as Record<string, string>)[subQuestionId];
-
-              updatedAnswers[targetKey] = {
-                ...(updatedAnswers[targetKey] || {}),
-                questionId: question.id,
-                answer: subAnswer,
-                isCorrect: false,
-                score: 0,
-                maxScore: question.points || 0,
-                subQuestionId,
-                sectionId: updatedAnswers[answerKey]?.sectionId || "",
-                questionType: question.type,
-                questionIndex: question.index || 0,
-                parentQuestionId: question.id,
-                feedback: `Scoring error: ${error instanceof Error ? error.message : String(error)}`,
-              };
-            } else {
-              updatedAnswers[answerKey] = {
-                ...updatedAnswers[answerKey],
-                isCorrect: false,
-                score: 0,
-                maxScore: question.points || 0,
-                feedback: `Scoring error: ${error instanceof Error ? error.message : String(error)}`,
-              };
-            }
+            updatedAnswers[answerKey] = {
+              ...createDefaultUserAnswer(
+                question.id,
+                answer,
+                section.id,
+                question.type,
+                question.index || 0
+              ),
+              isCorrect: errorResult.isCorrect,
+              score: errorResult.score,
+              maxScore: errorResult.maxScore,
+              feedback: errorResult.feedback,
+            };
           }
         }
       }

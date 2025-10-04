@@ -25,6 +25,17 @@ export interface ScoringContext {
     ok: boolean;
     error?: string;
   }>;
+  /** Additional context for enhanced scoring */
+  scoringOptions?: {
+    /** Unique identifier for this scoring attempt */
+    scoringId?: string;
+    /** Whether to prioritize speed over accuracy */
+    fastScoring?: boolean;
+    /** Whether to include detailed explanations */
+    includeExplanations?: boolean;
+    /** Custom scoring parameters */
+    customParams?: Record<string, unknown>;
+  };
 }
 
 export interface ScoringResult {
@@ -34,6 +45,7 @@ export interface ScoringResult {
   feedback?: string;
   requiresManualReview?: boolean;
   aiScored?: boolean;
+  /** Enhanced metadata for detailed feedback and analysis */
   metadata?: {
     selectedAnswer?: {
       id?: string;
@@ -43,7 +55,31 @@ export interface ScoringResult {
       id?: string;
       text?: string;
     };
+    /** Confidence level of the scoring (0-1) */
+    confidence?: number;
+    /** Time taken to score in milliseconds */
+    scoringTime?: number;
+    /** Alternative valid answers that would also be correct */
+    alternativeAnswers?: Array<{
+      answer: string;
+      explanation: string;
+    }>;
+    /** Detailed explanation of why the answer is correct/incorrect */
+    explanation?: string;
+    /** Partial credit breakdown for complex answers */
+    partialCreditBreakdown?: Array<{
+      component: string;
+      score: number;
+      maxScore: number;
+      feedback: string;
+    }>;
     [key: string]: unknown; // Allow additional metadata
+  };
+  /** Error information if scoring encountered issues */
+  error?: {
+    code: string;
+    message: string;
+    recoverable: boolean;
   };
 }
 
@@ -73,6 +109,24 @@ export interface QuestionPluginConfig {
   defaultPoints: number;
   scoreOnCompletion?: boolean; // If true, scoring happens when test is completed instead of immediately after each answer is submitted
   hasSubQuestions?: boolean; // If true, the question has sub-questions with complex answer structure
+  
+  /** Enhanced scoring configuration */
+  scoringConfig?: {
+    /** Maximum time allowed for scoring in milliseconds */
+    maxScoringTime?: number;
+    /** Whether this question type supports confidence scoring */
+    supportsConfidenceScoring?: boolean;
+    /** Whether this question type can provide alternative correct answers */
+    supportsAlternativeAnswers?: boolean;
+    /** Whether this question type supports partial credit breakdown */
+    supportsPartialCreditBreakdown?: boolean;
+    /** Default confidence level for deterministic scoring */
+    defaultConfidence?: number;
+    /** Whether scoring results should be cached */
+    cacheScoringResults?: boolean;
+    /** Priority level for scoring (higher = process first) */
+    scoringPriority?: number;
+  };
 }
 
 export interface QuestionPlugin<T extends Question = Question> {
@@ -160,40 +214,111 @@ export class QuestionPluginRegistry {
   }
   
   static async scoreQuestion(context: ScoringContext): Promise<ScoringResult> {
+    const startTime = Date.now();
     const plugin = this.getPlugin(context.question.type);
+    
     if (!plugin) {
       return {
         isCorrect: false,
         score: 0,
         maxScore: context.question.points,
         feedback: `No plugin registered for question type: ${context.question.type}`,
+        error: {
+          code: 'PLUGIN_NOT_FOUND',
+          message: `No plugin registered for question type: ${context.question.type}`,
+          recoverable: false,
+        },
       };
     }
     
     try {
-      const result = plugin.score(context);
-      return result instanceof Promise ? await result : result;
+      // Check if scoring should be limited by time
+      const maxScoringTime = plugin.config.scoringConfig?.maxScoringTime;
+      let scoringPromise = plugin.score(context);
+      
+      if (!(scoringPromise instanceof Promise)) {
+        scoringPromise = Promise.resolve(scoringPromise);
+      }
+      
+      // Apply timeout if configured
+      if (maxScoringTime) {
+        scoringPromise = Promise.race([
+          scoringPromise,
+          new Promise<ScoringResult>((_, reject) => 
+            setTimeout(() => reject(new Error('Scoring timeout')), maxScoringTime)
+          )
+        ]);
+      }
+      
+      const result = await scoringPromise;
+      const scoringTime = Date.now() - startTime;
+      
+      // Enhance result with timing and confidence information
+      return {
+        ...result,
+        metadata: {
+          ...result.metadata,
+          scoringTime,
+          confidence: result.metadata?.confidence ?? plugin.config.scoringConfig?.defaultConfidence ?? 1.0,
+        },
+      };
+      
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error(`Error scoring question ${context.question.type}:`, error);
+      
       return {
         isCorrect: false,
         score: 0,
-        maxScore: context.question.points,
-        feedback: `Error occurred while scoring: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        maxScore: context.question.points || 0,
+        feedback: `Error occurred while scoring: ${errorMessage}`,
+        error: {
+          code: error instanceof Error && error.message === 'Scoring timeout' ? 'SCORING_TIMEOUT' : 'SCORING_ERROR',
+          message: errorMessage,
+          recoverable: true,
+        },
+        metadata: {
+          scoringTime: Date.now() - startTime,
+        },
       };
     }
   }
   
-  // Helper function to check if a question type supports partial scoring
+  // Enhanced helper functions
   static supportsPartialScoring(type: QuestionType): boolean {
     const plugin = this.getPlugin(type);
     return plugin?.config.supportsPartialScoring ?? false;
   }
   
-  // Helper function to check if a question type has sub-questions
   static hasSubQuestions(type: QuestionType): boolean {
     const plugin = this.getPlugin(type);
     return plugin?.config.hasSubQuestions ?? false;
+  }
+  
+  static supportsAIScoring(type: QuestionType): boolean {
+    const plugin = this.getPlugin(type);
+    return plugin?.config.supportsAIScoring ?? false;
+  }
+  
+  static getScoringPriority(type: QuestionType): number {
+    const plugin = this.getPlugin(type);
+    return plugin?.config.scoringConfig?.scoringPriority ?? 0;
+  }
+  
+  static getMaxScoringTime(type: QuestionType): number | undefined {
+    const plugin = this.getPlugin(type);
+    return plugin?.config.scoringConfig?.maxScoringTime;
+  }
+  
+  // Get plugins sorted by scoring priority
+  static getPluginsByPriority(): Array<{ type: QuestionType; plugin: QuestionPlugin; priority: number }> {
+    return Array.from(this.plugins.entries())
+      .map(([type, plugin]) => ({
+        type,
+        plugin,
+        priority: plugin.config.scoringConfig?.scoringPriority ?? 0,
+      }))
+      .sort((a, b) => b.priority - a.priority);
   }
   
 

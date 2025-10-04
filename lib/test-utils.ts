@@ -1,63 +1,27 @@
 import { Question, UserAnswer } from "./types";
+import { scoringService, ScoreCalculationOptions } from "./scoring-service";
+import { 
+  determineQuestionStatus, 
+  normalizeScore,
+  ScoreAggregationUtils 
+} from "./scoring-utils";
 
 /**
  * Get the status of a question or sub-question (completed, partial, untouched)
+ * @deprecated Use determineQuestionStatus from scoring-utils instead
  */
 export function getQuestionStatus(
   questionId: string,
   answers: Record<string, UserAnswer>,
   question: Question,
 ): "completed" | "partial" | "untouched" {
-  const answer = answers[questionId];
-
-  if (!answer) return "untouched";
-
-  // For all-or-nothing questions, if there's an answer object, it's completed
-  // (the scoring logic has already determined if it's correct/incorrect)
-  if (question.scoringStrategy === "all-or-nothing") {
-    // Check if the answer has any content
-    if (typeof answer.answer === "object" && answer.answer !== null && !Array.isArray(answer.answer)) {
-      const hasContent = Object.values(answer.answer).some(v => Boolean(v) && (typeof v === "string" ? v.trim() !== "" : true));
-      return hasContent ? "completed" : "untouched";
-    }
-    if (typeof answer.answer === "string") {
-      return answer.answer.trim() !== "" ? "completed" : "untouched";
-    }
-    // For other types of answers, if it exists, it's completed
-    return Boolean(answer.answer) ? "completed" : "untouched";
-  }
-
-  // For partial scoring questions with sub-questions, check how many are answered
-  if (question.subQuestions && question.subQuestions.length > 0 && question.scoringStrategy === "partial") {
-    if (typeof answer.answer === "object" && answer.answer !== null && !Array.isArray(answer.answer)) {
-      const answeredCount = Object.values(answer.answer).filter(
-        (v) => Boolean(v) && (typeof v === "string" ? v.trim() !== "" : true),
-      ).length;
-
-      if (answeredCount >= question.subQuestions.length) {
-        return "completed";
-      }
-      if (answeredCount > 0) {
-        return "partial";
-      }
-      return "untouched";
-    }
-  }
-
-  // For simple questions without sub-questions
-  if (
-    (typeof answer.answer === "object" &&
-      Object.values(answer.answer).filter((v) => Boolean(v)).length === 0) ||
-    (typeof answer.answer === "string" &&
-      (answer.answer as string).trim() === "")
-  ) {
-    return "untouched";
-  }
-
-  return "completed";
+  // Use the new utility function for consistency
+  return determineQuestionStatus(question, answers);
 }
 
 export function countSectionQuestion(questions: Question[]): number {
+
+
   const startQuestionIndex = questions[0].index || 0;
   const endQuestionIndex =
     questions[questions.length - 1].partialEndingIndex ||
@@ -69,6 +33,7 @@ export function countSectionQuestion(questions: Question[]): number {
 
 /**
  * Get the score for a question based on its scoring strategy and answers
+ * Synchronous version for backwards compatibility
  */
 export function getQuestionScore(
   question: Question,
@@ -76,27 +41,26 @@ export function getQuestionScore(
 ): { score: number; maxScore: number } {
   // For questions with sub-questions and partial scoring, sum up sub-question scores
   if (question.subQuestions?.length && question.scoringStrategy === "partial") {
-    let totalScore = 0;
-    let totalMaxScore = 0;
-    
+    const { totalScore, maxPossibleScore } = ScoreAggregationUtils.calculateTotalScore(
+      question.subQuestions.map(subQ => answers[subQ.subId]).filter(Boolean)
+    );
+
+    // Add remaining max scores for unanswered sub-questions
+    let totalMaxScore = maxPossibleScore;
     question.subQuestions.forEach((subQ) => {
-      const answer = answers[subQ.subId];
-      if (answer) {
-        totalScore += answer.score || 0;
-        totalMaxScore += answer.maxScore || subQ.points || 0;
-      } else {
-        // No answer submitted for this sub-question
+      if (!answers[subQ.subId]) {
         totalMaxScore += subQ.points || 0;
       }
     });
-    
+
     return {
-      score: totalScore,
+      score: normalizeScore(totalScore, totalMaxScore),
       maxScore: totalMaxScore,
     };
   } else {
     // For single questions, use the answer's pre-calculated score
     const answer = answers[question.id];
+
     if (answer) {
       return {
         score: answer.score || 0,
@@ -109,6 +73,28 @@ export function getQuestionScore(
         maxScore: question.points || 0,
       };
     }
+  }
+}
+
+/**
+ * Get the score for a question with advanced options (async version)
+ * This version supports recalculation and AI scoring
+ */
+export async function getQuestionScoreAdvanced(
+  question: Question,
+  answers: Record<string, UserAnswer>,
+  options: ScoreCalculationOptions = {}
+): Promise<{ score: number; maxScore: number }> {
+  try {
+    const result = await scoringService.calculateQuestionScore(question, answers, options);
+    return {
+      score: normalizeScore(result.score, result.maxScore),
+      maxScore: result.maxScore,
+    };
+  } catch (error) {
+    console.error(`Error calculating advanced score for question ${question.id}:`, error);
+    // Fallback to synchronous version
+    return getQuestionScore(question, answers);
   }
 }
 

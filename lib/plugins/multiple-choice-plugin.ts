@@ -83,7 +83,6 @@ export class MultipleChoicePlugin extends BaseQuestionPlugin<MultipleChoiceQuest
 
     return {
       ...question,
-      scoringStrategy: "partial",
       items: standardItems,
       subQuestions: [subQuestion],
     } as StandardMultipleChoiceQuestion;

@@ -4,7 +4,6 @@ import React from "react";
 import { useState, useEffect } from "react";
 import { DraggableItem, DroppableZone } from "./shared/dnd-components";
 import { Label } from "@testComponents/components/ui/label";
-import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
 import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 import { cn } from "@testComponents/lib/utils";
 import type { StandardMatchingHeadingsQuestion } from "@testComponents/lib/standardized-types";
@@ -72,13 +71,13 @@ export default function MatchingHeadingsQuestionRenderer({
           <div className="space-y-3">
             <p className="text-base font-semibold text-gray-700">Headings</p>
             <div className="space-y-2">
-              {question.items.map((option, optionIndex) => (
+              {question.options.map((option, optionIndex) => (
                 <DraggableItem
                   key={option.id}
                   text={option.text}
                   index={option.id}
                   itemType={ITEM_TYPE}
-                  // prefix={String.fromCharCode(65 + optionIndex) + "."}
+                  prefix={String.fromCharCode(65 + optionIndex) + "."}
                   disabled={readOnly}
                   className="hover:shadow-md transition-shadow duration-200"
                 />
@@ -90,7 +89,7 @@ export default function MatchingHeadingsQuestionRenderer({
         <div className="space-y-3">
           <p className="text-base font-semibold text-gray-700">Paragraphs</p>
           <div className="space-y-4">
-            {question.options.map((item, index) => {
+            {question.items.map((item, index) => {
               const subQuestion = question.subQuestions?.find(
                 (sq) => sq.item === item.id,
               );
@@ -100,7 +99,7 @@ export default function MatchingHeadingsQuestionRenderer({
                 return null;
               }
 
-              const matchedHeading = question.items.find(
+              const matchedHeading = question.options.find(
                 (h) => h.id === matches[subQuestion.subId],
               );
 
@@ -113,7 +112,7 @@ export default function MatchingHeadingsQuestionRenderer({
                 (!matchedHeading ||
                   matchedHeading.id !== subQuestion.correctAnswer);
 
-              const correctHeading = question.items.find(
+              const correctHeading = question.options.find(
                 (h) => h.id === subQuestion.correctAnswer,
               );
 
@@ -141,16 +140,6 @@ export default function MatchingHeadingsQuestionRenderer({
                         subQuestionId={subQuestion.subId}
                         matchedId={matches[subQuestion.subId]}
                         matchedText={matchedHeading?.text}
-                        // prefix={
-                        //   matchedHeading
-                        //     ? String.fromCharCode(
-                        //         65 +
-                        //           question.items.findIndex(
-                        //             (h) => h.id === matchedHeading.id,
-                        //           ),
-                        //       ) + "."
-                        //     : ""
-                        // }
                         onDrop={handleDrop}
                         itemType={ITEM_TYPE}
                         placeholder={
@@ -170,7 +159,7 @@ export default function MatchingHeadingsQuestionRenderer({
                           ✓{" "}
                           {String.fromCharCode(
                             65 +
-                              question.items.findIndex(
+                              question.options.findIndex(
                                 (h) => h.id === correctHeading.id,
                               ),
                           )}

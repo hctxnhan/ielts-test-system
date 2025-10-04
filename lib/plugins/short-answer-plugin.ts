@@ -29,6 +29,7 @@ class ShortAnswerPlugin extends BaseQuestionPlugin<ShortAnswerQuestion> {
     category: ["reading", "listening", "grammar"],
     supportsPartialScoring: true,
     supportsAIScoring: false,
+    hasSubQuestions: true,
     defaultPoints: 1,
   };
 
@@ -151,7 +152,9 @@ class ShortAnswerPlugin extends BaseQuestionPlugin<ShortAnswerQuestion> {
         typeof answer === "object" && answer && subQuestionId
           ? (answer as Record<string, string>)[subQuestionId]
           : "";
+      // Safely convert to string before calling trim()
       const normalizedAnswer = (userAnswer || "")
+        .toString()
         .trim()
         .toLowerCase()
         .replace(/\s+/g, " ");
@@ -175,7 +178,9 @@ class ShortAnswerPlugin extends BaseQuestionPlugin<ShortAnswerQuestion> {
 
       shortAnswerQuestion.subQuestions.forEach((sq) => {
         const userAnswer = userAnswers[sq.subId] || "";
-        const normalizedAnswer = userAnswer
+        // Safely convert to string before calling trim()
+        const normalizedAnswer = (userAnswer || "")
+          .toString()
           .trim()
           .toLowerCase()
           .replace(/\s+/g, " ");

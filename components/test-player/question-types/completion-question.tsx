@@ -1,11 +1,10 @@
 "use client";
-import React from "react";
-import parse, { Element, Text, domToReact } from "html-react-parser";
-import styleToObject from "style-to-object";
 import { Input } from "@testComponents/components/ui/input";
-import { Label } from "@testComponents/components/ui/label";
 import type { CompletionQuestion } from "@testComponents/lib/types";
 import { cn } from "@testComponents/lib/utils";
+import parse, { domToReact } from "html-react-parser";
+import React from "react";
+import styleToObject from "style-to-object";
 
 interface CompletionQuestionProps {
   question: CompletionQuestion;

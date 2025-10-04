@@ -40,18 +40,24 @@ export default function TrueFalseNotGivenEditor({
 
   const handleAnswerChange = (
     index: number,
-    value: "true" | "false" | "not-given",
+      value: string,
   ) => {
-    const updatedSubQuestions = [...(question.subQuestions || [])];
-    updatedSubQuestions[index] = {
-      subId: generateSubId(),
-      item: question.statements[index].id,
-      correctAnswer: value,
-      points: 1,
-    };
-    onUpdateQuestion(sectionId, question.id, {
-      subQuestions: updatedSubQuestions,
-    });
+      // Only allow valid answers
+      const validAnswers = ["true", "false", "not-given"];
+      if (!validAnswers.includes(value)) {
+        console.warn(`Invalid answer value attempted: ${value}`);
+        return;
+      }
+      const updatedSubQuestions = [...(question.subQuestions || [])];
+      updatedSubQuestions[index] = {
+        subId: generateSubId(),
+        item: question.statements[index].id,
+        correctAnswer: value as "true" | "false" | "not-given",
+        points: 1,
+      };
+      onUpdateQuestion(sectionId, question.id, {
+        subQuestions: updatedSubQuestions,
+      });
   };
 
   const handleRemoveStatement = (index: number) => {

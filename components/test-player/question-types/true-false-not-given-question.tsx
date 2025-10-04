@@ -46,10 +46,14 @@ export default function TrueFalseNotGivenQuestion({
 
           if (!subQuestion) return null;
 
+
+          const validAnswers = ["true", "false", "not-given"];
           const userAnswer = value?.[subQuestion.subId];
+          // Only allow valid answers for display and scoring
+          const isValidUserAnswer = validAnswers.includes(userAnswer || "");
           const isCorrect =
-            showCorrectAnswer && userAnswer === subQuestion.correctAnswer;
-          const isIncorrect = showCorrectAnswer && !isCorrect;
+            showCorrectAnswer && isValidUserAnswer && userAnswer === subQuestion.correctAnswer;
+          const isIncorrect = showCorrectAnswer && isValidUserAnswer && !isCorrect;
 
           return (
             <div key={statement.id} className="space-y-1.5 text-sm">
@@ -60,12 +64,16 @@ export default function TrueFalseNotGivenQuestion({
                 {statement.text}
               </p>
               <RadioGroup
-                value={userAnswer}
+                value={isValidUserAnswer ? userAnswer : undefined}
                 onValueChange={(val) => {
                   if (!readOnly) {
+                    // Only allow valid answers
+                    if (!validAnswers.includes(val)) {
+                      console.warn(`Invalid answer value attempted: ${val}`);
+                      return;
+                    }
                     const newAnswers = { ...(value || {}) };
                     newAnswers[subQuestion.subId] = val;
-
                     if (question.scoringStrategy === "partial") {
                       onChange(newAnswers, subQuestion.subId);
                     } else {
