@@ -23,8 +23,8 @@ import WritingTask1QuestionRenderer from "@testComponents/components/test-player
 
 class WritingTask1Plugin extends BaseQuestionPlugin<WritingTask1Question> {
   config: QuestionPlugin<WritingTask1Question>["config"] = {
-    type: "writing-task2",
-    displayName: "Writing Task 2",
+    type: "writing-task1",
+    displayName: "Writing Task 1",
     description: "Users write a response to a visual prompt (graph, chart, etc.).",
     icon: "bar-chart-2",
     category: ["writing"],
