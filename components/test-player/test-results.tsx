@@ -9,7 +9,7 @@ import {
 } from '@testComponents/components/ui/card';
 import { Progress } from '@testComponents/components/ui/progress';
 import { SectionResult, Test, TestResult } from '@testComponents/lib/types';
-import { BarChart3, Clock, Search } from 'lucide-react';
+import { ArrowLeft, BarChart3, Clock, Search } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import TestReview from './test-review-container';
 
@@ -125,9 +125,10 @@ const SectionPerformance = ({ section, skill }: { section: SectionResult, skill:
 export interface TestResultsProps {
   currentTest: Test;
   testResults: TestResult;
+  isExercise: boolean
 }
 
-export default function TestResults({ currentTest, testResults }: TestResultsProps) {
+export default function TestResults({ currentTest, testResults, isExercise = false }: TestResultsProps) {
   const [showReview, setShowReview] = useState(false);
   if (!currentTest) {
     return (
@@ -185,7 +186,7 @@ export default function TestResults({ currentTest, testResults }: TestResultsPro
                 title="Thời gian làm bài"
                 value={`${timeTakenMinutes}m ${remainingSeconds}s`}
               />
-              {currentTest.type?.toLowerCase() !== 'writing' && (
+              {currentTest.type?.toLowerCase() !== 'writing' && !isExercise && (
                 <MetricCard
                   icon={BarChart3}
                   title="Band Ước Tính"

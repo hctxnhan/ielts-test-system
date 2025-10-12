@@ -194,14 +194,17 @@ export class QuestionPluginRegistry {
   }
   
   static transformQuestion(question: Question): StandardQuestion {
+    console.log("=== 1",question, question.type)
     const plugin = this.getPlugin(question.type);
     if (!plugin) {
       throw new Error(`No plugin registered for question type: ${question.type}`);
     }
+    // if (plugin) 
     return plugin.transform(question);
   }
   
   static validateQuestion(question: Question): ValidationResult {
+     console.log("=== 2",question, question.type)
     const plugin = this.getPlugin(question.type);
     if (!plugin) {
       return {
@@ -363,53 +366,107 @@ export abstract class BaseQuestionPlugin<T extends Question> implements Question
 }
 
 // Plugin initialization helper
-export function initializeQuestionPlugins(): void {
-  // This will be called to register all plugins
-  // Import and register plugins
-  import("./plugins/multiple-choice-plugin").then(({ MultipleChoicePlugin }) => {
-    QuestionPluginRegistry.register(new MultipleChoicePlugin());
-  }).catch(console.error);
+// export function initializeQuestionPlugins(): void {
+//   // This will be called to register all plugins
+//   // Import and register plugins
+//   import("./plugins/multiple-choice-plugin").then(({ MultipleChoicePlugin }) => {
+//     QuestionPluginRegistry.register(new MultipleChoicePlugin());
+//   }).catch(console.error);
   
-  import("./plugins/completion-plugin").then(({ CompletionPlugin }) => {
-    QuestionPluginRegistry.register(new CompletionPlugin());
-  }).catch(console.error);
+//   import("./plugins/completion-plugin").then(({ CompletionPlugin }) => {
+//     QuestionPluginRegistry.register(new CompletionPlugin());
+//   }).catch(console.error);
   
-  import("./plugins/matching-plugin").then(({ MatchingPlugin }) => {
-    QuestionPluginRegistry.register(new MatchingPlugin());
-  }).catch(console.error);
+//   import("./plugins/matching-plugin").then(({ MatchingPlugin }) => {
+//     QuestionPluginRegistry.register(new MatchingPlugin());
+//   }).catch(console.error);
   
-  import("./plugins/pick-from-list-plugin").then(({ PickFromListPlugin }) => {
-    QuestionPluginRegistry.register(new PickFromListPlugin());
-  }).catch(console.error);
+//   import("./plugins/pick-from-list-plugin").then(({ PickFromListPlugin }) => {
+//     QuestionPluginRegistry.register(new PickFromListPlugin());
+//   }).catch(console.error);
   
-  import("./plugins/true-false-not-given-plugin").then(({ TrueFalseNotGivenPlugin }) => {
-    QuestionPluginRegistry.register(new TrueFalseNotGivenPlugin());
-  }).catch(console.error);
+//   import("./plugins/true-false-not-given-plugin").then(({ TrueFalseNotGivenPlugin }) => {
+//     QuestionPluginRegistry.register(new TrueFalseNotGivenPlugin());
+//   }).catch(console.error);
   
-  import("./plugins/labeling-plugin").then(({ LabelingPlugin }) => {
-    QuestionPluginRegistry.register(new LabelingPlugin());
-  }).catch(console.error);
+//   import("./plugins/labeling-plugin").then(({ LabelingPlugin }) => {
+//     QuestionPluginRegistry.register(new LabelingPlugin());
+//   }).catch(console.error);
   
-  import("./plugins/matching-headings-plugin").then(({ MatchingHeadingsPlugin }) => {
-    QuestionPluginRegistry.register(new MatchingHeadingsPlugin());
-  }).catch(console.error);
+//   import("./plugins/matching-headings-plugin").then(({ MatchingHeadingsPlugin }) => {
+//     QuestionPluginRegistry.register(new MatchingHeadingsPlugin());
+//   }).catch(console.error);
   
-  import("./plugins/short-answer-plugin").then(({ shortAnswerPlugin }) => {
-    QuestionPluginRegistry.register(shortAnswerPlugin);
-  }).catch(console.error);
+//   import("./plugins/short-answer-plugin").then(({ shortAnswerPlugin }) => {
+//     QuestionPluginRegistry.register(shortAnswerPlugin);
+//   }).catch(console.error);
   
-  import("./plugins/writing-task1-plugin").then(({ writingTask1Plugin }) => {
-    QuestionPluginRegistry.register(writingTask1Plugin);
-  }).catch(console.error);
+//   import("./plugins/writing-task1-plugin").then(({ writingTask1Plugin }) => {
+//     QuestionPluginRegistry.register(writingTask1Plugin);
+//   }).catch(console.error);
   
-  import("./plugins/sentence-translation-plugin").then(({ sentenceTranslationPlugin }) => {
-    QuestionPluginRegistry.register(sentenceTranslationPlugin);
-  }).catch(console.error);
+//   import("./plugins/sentence-translation-plugin").then(({ sentenceTranslationPlugin }) => {
+//     QuestionPluginRegistry.register(sentenceTranslationPlugin);
+//   }).catch(console.error);
   
-  import("./plugins/word-form-plugin").then(({ wordFormPlugin }) => {
-    QuestionPluginRegistry.register(wordFormPlugin);
-  }).catch(console.error);
+//   import("./plugins/word-form-plugin").then(({ wordFormPlugin }) => {
+//     QuestionPluginRegistry.register(wordFormPlugin);
+//   }).catch(console.error);
+// }
+
+export async function initializeQuestionPlugins(): Promise<void> {
+  const imports = [
+    import("./plugins/multiple-choice-plugin").then(({ MultipleChoicePlugin }) =>
+      QuestionPluginRegistry.register(new MultipleChoicePlugin())
+    ),
+
+    import("./plugins/completion-plugin").then(({ CompletionPlugin }) =>
+      QuestionPluginRegistry.register(new CompletionPlugin())
+    ),
+
+    import("./plugins/matching-plugin").then(({ MatchingPlugin }) =>
+      QuestionPluginRegistry.register(new MatchingPlugin())
+    ),
+
+    import("./plugins/pick-from-list-plugin").then(({ PickFromListPlugin }) =>
+      QuestionPluginRegistry.register(new PickFromListPlugin())
+    ),
+
+    import("./plugins/true-false-not-given-plugin").then(({ TrueFalseNotGivenPlugin }) =>
+      QuestionPluginRegistry.register(new TrueFalseNotGivenPlugin())
+    ),
+
+    import("./plugins/labeling-plugin").then(({ LabelingPlugin }) =>
+      QuestionPluginRegistry.register(new LabelingPlugin())
+    ),
+
+    import("./plugins/matching-headings-plugin").then(({ MatchingHeadingsPlugin }) =>
+      QuestionPluginRegistry.register(new MatchingHeadingsPlugin())
+    ),
+
+    import("./plugins/short-answer-plugin").then(({ shortAnswerPlugin }) =>
+      QuestionPluginRegistry.register(shortAnswerPlugin)
+    ),
+
+    import("./plugins/writing-task1-plugin").then(({ writingTask1Plugin }) =>
+      QuestionPluginRegistry.register(writingTask1Plugin)
+    ),
+
+    import("./plugins/sentence-translation-plugin").then(({ sentenceTranslationPlugin }) =>
+      QuestionPluginRegistry.register(sentenceTranslationPlugin)
+    ),
+
+    import("./plugins/word-form-plugin").then(({ wordFormPlugin }) =>
+      QuestionPluginRegistry.register(wordFormPlugin)
+    ),
+  ];
+
+  // Wait for all plugins to be imported and registered
+  await Promise.all(imports);
 }
 
-// Auto-initialize plugins when this module is imported
-initializeQuestionPlugins();
+async function main() {
+  await initializeQuestionPlugins(); // ensures all plugins are loaded
+  // Now you can safely call transformQuestion(), scoreQuestion(), etc.
+}
+main();

@@ -216,7 +216,9 @@ export interface Test {
   skillLevel?: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
   audioUrl?: string; // Added for listening tests
   tips?: string; // Tips for test takers
-  vocabulary?: string; // Vocabulary help for test takers
+  vocabulary?: string; // Vocabulary help for test takers,
+  isFree: boolean,
+  isExercise: boolean
 }
 
 export interface UserAnswer {

@@ -6,8 +6,11 @@ import TestPlayerContainer from "./test-player-container";
 interface TestPlayerProps {
   test: Test;
   onBack?: () => void;
+  params?: {
+    id: string
+  }
 }
 
-export default function TestPlayer({ test, onBack }: TestPlayerProps) {
-  return <TestPlayerContainer test={test} onBack={onBack} />;
+export default function TestPlayer({ params, test, onBack }: TestPlayerProps) {
+  return <TestPlayerContainer params = {params} test={test} onBack={onBack} />;
 }
