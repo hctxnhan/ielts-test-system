@@ -202,7 +202,6 @@ export class QuestionPluginRegistry {
   }
 
   static transformQuestion(question: Question): StandardQuestion {
-    console.log("=== 1",question, question.type)
     const plugin = this.getPlugin(question.type);
     if (!plugin) {
       throw new Error(
@@ -214,7 +213,6 @@ export class QuestionPluginRegistry {
   }
 
   static validateQuestion(question: Question): ValidationResult {
-     console.log("=== 2",question, question.type)
     const plugin = this.getPlugin(question.type);
     if (!plugin) {
       return {

@@ -89,7 +89,6 @@ export default function TestPlayer({ params, test, onBack }: TestPlayerProps) {
             console.error("Error during test completion:", `Class ID not found ${test.isExercise}`);
             return
           }
-          console.log("==> params.id", params.id)
           await useTestStore.getState().submitTestResults(test.id, Number(params.id));
         } else await useTestStore.getState().submitTestResults(test.id);
       } catch (error) {
@@ -181,7 +180,7 @@ export default function TestPlayer({ params, test, onBack }: TestPlayerProps) {
   if (showResults && progress?.completed && sectionResults) {
     return (
       <div className="mx-auto p-4">
-        <TestResults currentTest={currentTest} testResults={sectionResults} />
+        <TestResults currentTest={currentTest} testResults={sectionResults} isExercise={currentTest.isExercise}/>
       </div>
     );
   }
