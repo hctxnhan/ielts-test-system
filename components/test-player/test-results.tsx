@@ -108,7 +108,7 @@ const SectionPerformance = ({ section, skill }: { section: SectionResult, skill:
         <div className="flex justify-between items-center text-xs text-muted-foreground">
           {
             skill !== 'writing' && <div>
-              {section.totalScore?.toFixed(2)}/{section.maxScore} điểm
+              {section.totalScore?.toFixed(2)}/{Math.round(section.maxScore)} điểm
             </div>
           }
 
@@ -153,7 +153,9 @@ export default function TestResults({ currentTest, testResults }: TestResultsPro
 
 
   const estimatedBandScore = useMemo(() => {
-    return Math.min(9, Math.max(1, Math.round(scorePercentage / 11.1)));
+    const band = scorePercentage / 11.1;
+    const roundedBand = Math.round(band * 10) / 10;
+    return Math.min(9, Math.max(0, roundedBand));
   }, [scorePercentage]);
 
 

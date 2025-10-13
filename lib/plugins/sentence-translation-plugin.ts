@@ -349,7 +349,8 @@ Be encouraging but precise in your feedback.`;
         });
 
         if (aiResult.ok) {
-          const scaledScore = aiResult.score * maxScore;
+          const scaledScore = aiResult.score * maxScore / 9;
+          console.log("💡 AI scoring result:", {aiResult, maxScore, scaledScore});
           return {
             isCorrect: scaledScore >= maxScore * 0.5,
             score: scaledScore,
