@@ -447,8 +447,8 @@ export function initializeQuestionPlugins(): void {
     .catch(console.error);
 
   import("./plugins/writing-task2-plugin")
-    .then(({ writingTask1Plugin }) => {
-      QuestionPluginRegistry.register(writingTask1Plugin);
+    .then(({ writingTask2Plugin }) => {
+      QuestionPluginRegistry.register(writingTask2Plugin);
     })
     .catch(console.error);
 

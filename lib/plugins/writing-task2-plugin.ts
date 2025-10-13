@@ -9,7 +9,7 @@ import {
   ValidationResult,
 } from "../question-plugin-system";
 import type {
-  WritingTask1Question,
+  WritingTask2Question,
   Question,
   WritingTaskAnswer,
 } from "@testComponents/lib/types";
@@ -21,10 +21,10 @@ import { v4 as uuidv4 } from "uuid";
 import WritingTask1Editor from "@testComponents/components/creator/question-editors/writing-task1-editor";
 import WritingTask1QuestionRenderer from "@testComponents/components/test-player/question-types/writing-task1-question";
 
-class WritingTask1Plugin extends BaseQuestionPlugin<WritingTask1Question> {
-  config: QuestionPlugin<WritingTask1Question>["config"] = {
-    type: "writing-task1",
-    displayName: "Writing Task 1",
+class WritingTask2Plugin extends BaseQuestionPlugin<WritingTask2Question> {
+  config: QuestionPlugin<WritingTask2Question>["config"] = {
+    type: "writing-task2",
+    displayName: "Writing Task 2",
     description: "Users write a response to a visual prompt (graph, chart, etc.).",
     icon: "bar-chart-2",
     category: ["writing"],
@@ -34,36 +34,36 @@ class WritingTask1Plugin extends BaseQuestionPlugin<WritingTask1Question> {
     scoreOnCompletion: true,
   };
 
-  createDefault(index: number): WritingTask1Question {
+  createDefault(index: number): WritingTask2Question {
     return {
       id: uuidv4(),
-      type: "writing-task1",
+      type: "writing-task2",
       text: "You should spend about 20 minutes on this task. The chart below shows information about...",
       points: 9,
       scoringStrategy: "all-or-nothing",
       index,
       partialEndingIndex: 0,
       prompt: "Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
-      wordLimit: 150,
+      wordLimit: 250,
       imageUrl: "",
       sampleAnswer: "",
       scoringPrompt: "",
     };
   }
 
-  createRenderer(): React.ComponentType<QuestionRendererProps<WritingTask1Question>> {
+  createRenderer(): React.ComponentType<QuestionRendererProps<WritingTask2Question>> {
     return WritingTask1QuestionRenderer as unknown as React.ComponentType<
-      QuestionRendererProps<WritingTask1Question>
+      QuestionRendererProps<WritingTask2Question>
     >;
   }
 
-  createEditor(): React.ComponentType<QuestionEditorProps<WritingTask1Question>> {
+  createEditor(): React.ComponentType<QuestionEditorProps<WritingTask2Question>> {
     return WritingTask1Editor as unknown as React.ComponentType<
-      QuestionEditorProps<WritingTask1Question>
+      QuestionEditorProps<WritingTask2Question>
     >;
   }
 
-  transform(question: WritingTask1Question): StandardQuestion {
+  transform(question: WritingTask2Question): StandardQuestion {
     const standardSubQuestions = [
       {
         subId: question.id,
@@ -79,7 +79,7 @@ class WritingTask1Plugin extends BaseQuestionPlugin<WritingTask1Question> {
     } as StandardQuestion;
   }
 
-  validate(question: WritingTask1Question): ValidationResult {
+  validate(question: WritingTask2Question): ValidationResult {
     const result = super.validate(question);
 
     if (!question.text?.trim()) {
@@ -98,7 +98,7 @@ class WritingTask1Plugin extends BaseQuestionPlugin<WritingTask1Question> {
 
   async score(context: ScoringContext): Promise<ScoringResult> {
     const { question, answer, aiScoringFn } = context;
-    const writingQuestion = question as WritingTask1Question;
+    const writingQuestion = question as WritingTask2Question;
     const userAnswer = answer as WritingTaskAnswer;
 
     // Safely check if userAnswer.text exists and convert to string before trim()
@@ -156,9 +156,9 @@ Provide specific, constructive feedback in Vietnamese focusing on:
     }
   }
 
-  isQuestionOfType(question: Question): question is WritingTask1Question {
-    return question.type === "writing-task1";
+  isQuestionOfType(question: Question): question is WritingTask2Question {
+    return question.type === "writing-task2";
   }
 }
 
-export const writingTask1Plugin = new WritingTask1Plugin();
+export const writingTask2Plugin = new WritingTask2Plugin();
