@@ -198,7 +198,7 @@ Be encouraging but precise in your feedback.`;
 
 
       if (aiResult.ok) {
-        const scaledScore = aiResult.score * maxScore;
+        const scaledScore = aiResult.score * maxScore / 9;
         const result = {
           isCorrect: scaledScore >= maxScore * 0.8, // High threshold for correctness
           score: scaledScore,
