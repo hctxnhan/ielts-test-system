@@ -9,9 +9,16 @@ import {
 } from '@testComponents/components/ui/card';
 import { Progress } from '@testComponents/components/ui/progress';
 import { SectionResult, Test, TestResult } from '@testComponents/lib/types';
-import { BarChart3, Clock, Search } from 'lucide-react';
+import { BarChart3, ChevronLeft, Clock, Eye, EyeOff, Search } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import TestReview from './test-review-container';
+import { RichTextEditor } from '../ui/rich-text-editor';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import rehypeHighlight from 'rehype-highlight';
+import { useParams } from 'next/navigation';
+import { ProgressLink } from '../ui/progress-link';
 
 // Helper function to determine color based on percentage score
 const getScoreColorClass = (percentage: number) => {
@@ -125,10 +132,16 @@ const SectionPerformance = ({ section, skill }: { section: SectionResult, skill:
 export interface TestResultsProps {
   currentTest: Test;
   testResults: TestResult;
+  isExercise?: boolean,
+  feedback?: string
 }
 
-export default function TestResults({ currentTest, testResults }: TestResultsProps) {
+export default function TestResults({ currentTest, testResults, isExercise = false, feedback }: TestResultsProps) {
   const [showReview, setShowReview] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const params = useParams();
+  console.log('params', params, isExercise);
+
   if (!currentTest) {
     return (
       <div className="flex justify-center items-center h-96">
@@ -162,6 +175,22 @@ export default function TestResults({ currentTest, testResults }: TestResultsPro
 
   return (
     <>
+      {isExercise && params.id &&
+        <div className='mb-4'>
+          <ProgressLink href={`/classes/${params.id}`} className="group">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-all duration-200"
+            >
+              <ChevronLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-1" />
+              <span>Back</span>
+            </Button>
+          </ProgressLink>
+
+        </div>
+
+      }
       <Card className="overflow-hidden border-2 shadow-md">
         <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 pb-4 px-4 sm:px-8 py-6 sm:py-8">
           <CardTitle className="text-xl sm:text-2xl lg:text-3xl flex items-center justify-center font-bold">
@@ -187,7 +216,7 @@ export default function TestResults({ currentTest, testResults }: TestResultsPro
                 title="Thời gian làm bài"
                 value={`${timeTakenMinutes}m ${remainingSeconds}s`}
               />
-              {currentTest.type?.toLowerCase() !== 'writing' && (
+              {currentTest.type?.toLowerCase() !== 'writing' && !isExercise && (
                 <MetricCard
                   icon={BarChart3}
                   title="Band Ước Tính"
@@ -208,8 +237,47 @@ export default function TestResults({ currentTest, testResults }: TestResultsPro
                 <SectionPerformance key={section.id} section={section} skill={currentTest.type} />
               ))}
             </div>
-          </div>
+            {feedback && feedback.trim() !== "" && (
+              <div className="mt-2">
+                <button
+                  onClick={() => setShowFeedback(!showFeedback)}
+                  className="p-1 text-[#4ab266] hover:text-[#4ab266] bg-transparent hover:bg-transparent focus:outline-none"
+                  title={showFeedback ? "Hide teacher feedback" : "View teacher feedback"}
+                >
+                  <div className='flex items-center justify-center'>
+                    {showFeedback ? (
+                      <EyeOff className="h-4 w-4 mr-2" />
+                    ) : (
+                      <Eye className="h-4 w-4 mr-2" />
+                    )}
+                    {showFeedback ? (
+                      <span>Hide teacher feedback</span>
+                    ) : (
+                      <span>View teacher feedback</span>
 
+                    )}
+
+                  </div>
+
+
+                </button>
+
+                {showFeedback && (
+                  <div className="mt-2 p-3 bg-white dark:bg-gray-800 rounded-md text-sm">
+                    <div className="prose prose-lg max-w-none">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw, rehypeHighlight]}
+                      >
+                        {feedback}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+          </div>
           {/* Question Review */}
           <div className="flex justify-center">
             <Button

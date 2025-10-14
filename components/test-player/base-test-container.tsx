@@ -10,7 +10,7 @@ import { ScrollArea } from "@testComponents/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@testComponents/components/ui/tabs";
 import type { Test, TestProgress } from "@testComponents/lib/types";
 import { useTestStore } from "@testComponents/store/test-store";
-import { SplitSquareVertical, HelpCircle, Lightbulb, BookOpenCheck } from "lucide-react";
+import { SplitSquareVertical, HelpCircle, Lightbulb, BookOpenCheck, ChevronLeft } from "lucide-react";
 import { useRef, useState } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -90,6 +90,17 @@ export default function BaseTestContainer({
     <DndProvider backend={HTML5Backend}>
       <div className="pb-10">
         {/* Add bottom padding for fixed navigation */}
+        {test.isExercise &&
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBack}
+            className="gap-1.5 mb-3 sm:mb-4"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span className="text-sm">Back</span>
+          </Button>
+        }
 
         <div className="mb-6">
           <h1 className="text-2xl font-bold">{test.title}</h1>
@@ -122,11 +133,10 @@ export default function BaseTestContainer({
           {isReadingTest && currentSection.readingPassage && (
             <div
               ref={passageContainerRef}
-              className={`lg:transition-all lg:duration-300 ${
-                showPassage
-                  ? "lg:w-1/2 min-w-[400px] opacity-100"
-                  : "lg:w-0 lg:opacity-0 lg:overflow-hidden"
-              }`}
+              className={`lg:transition-all lg:duration-300 ${showPassage
+                ? "lg:w-1/2 min-w-[400px] opacity-100"
+                : "lg:w-0 lg:opacity-0 lg:overflow-hidden"
+                }`}
             >
               <div className="sticky top-20 z-20 h-[calc(100vh-65px-85px-2rem)]">
                 <Card className="shadow-sm overflow-hidden h-full">
@@ -183,9 +193,9 @@ export default function BaseTestContainer({
                 <HelpCircle className="h-6 w-6" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent 
-              className="w-120 max-w-96  p-0 shadow-xl border-0 bg-white rounded-xl overflow-hidden" 
-              side="top" 
+            <PopoverContent
+              className="w-120 max-w-96  p-0 shadow-xl border-0 bg-white rounded-xl overflow-hidden"
+              side="top"
               align="end"
               sideOffset={8}
             >
@@ -200,12 +210,11 @@ export default function BaseTestContainer({
               {/* Content */}
               <div className="max-h-96">
                 <Tabs defaultValue={test.tips ? "tips" : "vocabulary"} className="w-full">
-                  <TabsList className={`grid w-full bg-gray-50 m-0 h-10 rounded-none border-b ${
-                    test.tips && test.vocabulary ? 'grid-cols-2' : 'grid-cols-1'
-                  }`}>
+                  <TabsList className={`grid w-full bg-gray-50 m-0 h-10 rounded-none border-b ${test.tips && test.vocabulary ? 'grid-cols-2' : 'grid-cols-1'
+                    }`}>
                     {test.tips && (
-                      <TabsTrigger 
-                        value="tips" 
+                      <TabsTrigger
+                        value="tips"
                         className="flex items-center gap-1.5 text-xs h-full rounded-none data-[state=active]:bg-white data-[state=active]:shadow-none"
                       >
                         <Lightbulb className="w-3.5 h-3.5" />
@@ -213,8 +222,8 @@ export default function BaseTestContainer({
                       </TabsTrigger>
                     )}
                     {test.vocabulary && (
-                      <TabsTrigger 
-                        value="vocabulary" 
+                      <TabsTrigger
+                        value="vocabulary"
                         className="flex items-center gap-1.5 text-xs h-full rounded-none data-[state=active]:bg-white data-[state=active]:shadow-none"
                       >
                         <BookOpenCheck className="w-3.5 h-3.5" />

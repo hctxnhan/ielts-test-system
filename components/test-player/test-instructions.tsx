@@ -435,7 +435,7 @@ export default function TestInstructions({
             </div>
 
             {/* Right side - Test Mode Configuration */}
-            <div className="space-y-4">
+            {!test.isExercise &&    <div className="space-y-4">
               <div className="bg-muted/10 rounded-lg border overflow-hidden shadow-sm">
                 <div className="bg-muted/30 py-2 px-3 sm:py-2.5 sm:px-4 border-b">
                   <h3 className="font-medium flex items-center gap-2 text-xs sm:text-sm">
@@ -735,7 +735,7 @@ export default function TestInstructions({
                 </div>
               </div>
             </div>
-
+            }
            {/* Start Button */}
             <Button
               className="w-full gap-2 py-2.5 text-sm font-medium relative overflow-hidden shadow-lg"

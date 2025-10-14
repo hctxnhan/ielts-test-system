@@ -208,6 +208,7 @@ export class QuestionPluginRegistry {
         `No plugin registered for question type: ${question.type}`
       );
     }
+    // if (plugin) 
     return plugin.transform(question);
   }
 
@@ -464,5 +465,8 @@ export function initializeQuestionPlugins(): void {
     .catch(console.error);
 }
 
-// Auto-initialize plugins when this module is imported
-initializeQuestionPlugins();
+async function main() {
+  await initializeQuestionPlugins(); // ensures all plugins are loaded
+  // Now you can safely call transformQuestion(), scoreQuestion(), etc.
+}
+main();

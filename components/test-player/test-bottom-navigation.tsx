@@ -102,12 +102,12 @@ export default function TestBottomNavigation({
   return (
     <>
       {/* Floating Timer - Only show in non-readonly mode */}
-      {!readOnly && (
+      {!readOnly && !test.isExercise && (
         <TestTimer initialTime={test.totalDuration} onTimeEnd={handleTimeEnd} />
       )}
 
       {/* Time Up Dialog - Only show in non-readonly mode */}
-      {!readOnly && (
+      {!readOnly && !test.isExercise && (
         <TimeUpDialog
           isOpen={isTimeUpDialogOpen}
           onSubmitTest={handleSubmitTest}

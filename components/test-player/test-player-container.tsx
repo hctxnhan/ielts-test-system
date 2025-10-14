@@ -11,9 +11,12 @@ import TestResults from "./test-results";
 interface TestPlayerProps {
   test: Test;
   onBack?: () => void;
+  params?: {
+    id: string
+  }
 }
 
-export default function TestPlayer({ test, onBack }: TestPlayerProps) {
+export default function TestPlayer({ params, test, onBack }: TestPlayerProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
 
@@ -78,9 +81,16 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
 
         // Complete test (this will score scoreOnSubmit questions like sentence-translation)
         await completeTest();
-        
+
         // Submit results after all scoring is complete
-        await useTestStore.getState().submitTestResults(test.id);
+        //handle exercise type 
+        if (test.isExercise) {
+          if (!params) {
+            console.error("Error during test completion:", `Class ID not found ${test.isExercise}`);
+            return
+          }
+          await useTestStore.getState().submitTestResults(test.id, Number(params.id));
+        } else await useTestStore.getState().submitTestResults(test.id);
       } catch (error) {
         console.error("Error during test completion:", error);
       } finally {
@@ -91,9 +101,9 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
 
   // Navigation between sections
   const handleNextSection = useCallback(() => {
-   
+
     if (!progress || !test) return;
-    
+
     const isLastSection =
       progress.currentSectionIndex === test.sections.length - 1;
     if (isLastSection) {
@@ -170,7 +180,7 @@ export default function TestPlayer({ test, onBack }: TestPlayerProps) {
   if (showResults && progress?.completed && sectionResults) {
     return (
       <div className="mx-auto p-4">
-        <TestResults currentTest={currentTest} testResults={sectionResults} />
+        <TestResults currentTest={currentTest} testResults={sectionResults} isExercise={currentTest.isExercise}/>
       </div>
     );
   }

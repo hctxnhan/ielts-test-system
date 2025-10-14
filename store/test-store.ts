@@ -63,7 +63,7 @@ interface TestState {
   updateTimeRemaining: (time: number) => void;
   handleTimeEnd: () => void;
   setSubmitResultFn: (fn: SubmitResultFn) => void;
-  submitTestResults: (testId: number) => Promise<boolean>;
+  submitTestResults: (testId: number, classId?: number) => Promise<boolean>;
   updatePassageContent: (sectionId: string, content: string) => void;
   updateQuestionContent: (questionId: string, content: string) => void;
   // Getters
@@ -184,7 +184,7 @@ export const useTestStore = create<TestState>()((set, get) => {
       set({ submitResultFn: fn });
     },
 
-    submitTestResults: async (testId: number): Promise<boolean> => {
+    submitTestResults: async (testId: number, classId?: number): Promise<boolean> => {
       const { currentTest, progress, submitResultFn, customMode } = get();
 
       if (!currentTest || !progress || !progress.answers || !submitResultFn) {
@@ -218,7 +218,10 @@ export const useTestStore = create<TestState>()((set, get) => {
           },
         );
 
-        const testResults = {
+
+
+
+        let testResults: any = {
           totalScore,
           maxPossibleScore,
           totalQuestions: testStats.totalQuestions,
@@ -230,6 +233,11 @@ export const useTestStore = create<TestState>()((set, get) => {
           startedAt: progress.startedAt,
           completedAt: new Date().toISOString(),
         };
+
+        if (classId) {
+          testResults.classId = classId
+          // testResults.curriculumSectionId = sessionId
+        }
 
         set({
           sectionResults: testResults,
@@ -436,7 +444,7 @@ export const useTestStore = create<TestState>()((set, get) => {
         subQuestionId,
         section,
       } of questionsToScore) {
-        
+
         try {
           // Use the new scoring service
           const scoringResult = await scoringService.scoreQuestion({
