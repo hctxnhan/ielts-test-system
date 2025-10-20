@@ -82,6 +82,7 @@ export default function BaseTestContainer({
       </div>
     );
   }
+  console.log("==> test", test)
 
   const isReadingTest = test.type === "reading" || test.skill === "reading";
   const isListeningTest =
@@ -106,11 +107,15 @@ export default function BaseTestContainer({
           <h1 className="text-2xl font-bold">{test.title}</h1>
         </div>
 
-        {isListeningTest && test.audioUrl && (
+        {isListeningTest && (test.audioUrl || currentSection.audioUrl) && (
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-2">Listening Section</h2>
             <AudioPlayer
-              src={realTestMode ? test.audioUrl : currentSection.audioUrl || ""}
+              src={
+                realTestMode
+                  ? test.audioUrl ?? ""
+                  : currentSection.audioUrl ?? ""
+              }
               onEnded={handleAudioEnded}
               realTestMode={realTestMode}
             />
@@ -124,6 +129,7 @@ export default function BaseTestContainer({
             )}
           </div>
         )}
+
 
         <div
           ref={contentContainerRef}
