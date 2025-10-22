@@ -77,9 +77,9 @@ export default function PickFromListQuestionRenderer({
       />
       
       <div className="space-y-4">
-        <p className="text-base font-semibold text-gray-700">
+        {/* <p className="text-base font-semibold text-gray-700">
           Which TWO options describe what the writer is doing in section two?
-        </p>
+        </p> */}
         
         <div className="space-y-3">
           {question.items.map((item, index) => {
