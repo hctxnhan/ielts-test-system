@@ -1,3 +1,4 @@
+import _ from "lodash";
 import { QuestionPluginRegistry } from "./question-plugin-system";
 import { Test, Question } from "./types";
 
@@ -10,41 +11,47 @@ export interface TestFilterConfig {
 export function updateQuestionIndexes(test: Test): Test {
   let currentIndex = 0;
 
-  const updatedSections = test.sections.map((section) => {
-    const updatedQuestions = section.questions.map((question) => {
-      const startQuestionIndex = currentIndex;
+  let updatedSections: any[] = []
 
-      const standardizedQuestion =
-        QuestionPluginRegistry.transformQuestion(question);
+  if (!_.isEmpty(test.sections)) {
+    updatedSections = test.sections.map((section) => {
+      const updatedQuestions = section.questions.map((question) => {
+        const startQuestionIndex = currentIndex;
 
-      // Calculate the endQuestionIndex based on scoring strategy
-      let endQuestionIndex: number;
+        const standardizedQuestion =
+          QuestionPluginRegistry.transformQuestion(question);
 
-      if (standardizedQuestion.scoringStrategy === "partial") {
-     
-        endQuestionIndex =
-          startQuestionIndex +
-          (standardizedQuestion.subQuestions?.length || 1) -
-          1;
-      } else {
-       
-        endQuestionIndex = startQuestionIndex;
-      }
+        // Calculate the endQuestionIndex based on scoring strategy
+        let endQuestionIndex: number;
 
-      currentIndex = endQuestionIndex + 1;
+        if (standardizedQuestion.scoringStrategy === "partial") {
+
+          endQuestionIndex =
+            startQuestionIndex +
+            (standardizedQuestion.subQuestions?.length || 1) -
+            1;
+        } else {
+
+          endQuestionIndex = startQuestionIndex;
+        }
+
+        currentIndex = endQuestionIndex + 1;
+
+        return {
+          ...(standardizedQuestion as unknown as Question),
+          index: startQuestionIndex,
+          partialEndingIndex: endQuestionIndex,
+        };
+      });
 
       return {
-        ...(standardizedQuestion as unknown as Question),
-        index: startQuestionIndex,
-        partialEndingIndex: endQuestionIndex,
+        ...section,
+        questions: updatedQuestions,
       };
     });
+  }
 
-    return {
-      ...section,
-      questions: updatedQuestions,
-    };
-  });
+
 
   return {
     ...test,
