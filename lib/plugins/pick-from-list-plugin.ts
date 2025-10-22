@@ -97,86 +97,57 @@ export class PickFromListPlugin extends BaseQuestionPlugin<PickFromAListQuestion
 
   score(context: ScoringContext): ScoringResult {
     const question = context.question as PickFromAListQuestion;
-    const answer = context.answer;
+    const answer = context.answer as Record<string, string> | null;
+    const subQuestionId = context.subQuestionId;
     
     const scoringStrategy = question.scoringStrategy || "partial";
-    
-    // Get all correct item IDs from subQuestions
-    const correctItems = question.subQuestions?.map(sq => sq.item) || [];
-    const totalCorrectAnswers = correctItems.length;
+    const totalSubQuestions = question.subQuestions?.length || 0;
 
-    if (scoringStrategy === "partial") {
-      // For partial scoring, each correct selection counts as points
-      // If we select N correct answers out of M total correct answers,
-      // we get (N / M) * totalPoints
-      
-      // Handle both single answer and multiple answers
-      let selectedItems: string[] = [];
-      
-      if (typeof answer === "string") {
-        // Single answer (item ID)
-        selectedItems = [answer];
-      } else if (Array.isArray(answer)) {
-        // Array of answers
-        selectedItems = answer;
-      } else if (typeof answer === "object" && answer !== null) {
-        // Object with answers (e.g., { "0": itemId1, "1": itemId2 })
-        selectedItems = Object.values(answer as Record<string, string>);
+    if (scoringStrategy === "partial" && subQuestionId) {
+      // For partial scoring with subQuestionId, score individual subquestion
+      const subQuestion = question.subQuestions?.find(sq => sq.subId === subQuestionId);
+      if (!subQuestion) {
+        return {
+          isCorrect: false,
+          score: 0,
+          maxScore: 1,
+          feedback: "Subquestion not found"
+        };
       }
       
-      // Count how many selected items are correct
-      const correctSelectionsCount = selectedItems.filter(item => 
-        correctItems.includes(item)
-      ).length;
-      
-      // Calculate score based on ratio of correct selections
-      const score = totalCorrectAnswers > 0 
-        ? (correctSelectionsCount / totalCorrectAnswers) * question.points
-        : 0;
-      
-      const isCorrect = correctSelectionsCount === totalCorrectAnswers && correctSelectionsCount > 0;
+      const points = subQuestion.points !== undefined ? subQuestion.points : 1;
+      const answerValue = answer ? (typeof answer === 'string' ? answer : answer[subQuestionId]) : null;
+      const isCorrect = answerValue === subQuestion.item;
       
       return {
         isCorrect,
-        score,
-        maxScore: question.points,
-        feedback: isCorrect 
-          ? "All selections correct!" 
-          : `${correctSelectionsCount}/${totalCorrectAnswers} selections correct`
+        score: isCorrect ? points : 0,
+        maxScore: points,
+        feedback: isCorrect ? "Correct!" : "Incorrect"
       };
     } else {
-      // All-or-nothing scoring
-      // Must select ALL correct answers and NO incorrect answers
+      // All-or-nothing scoring: must select all correct answers and only correct answers
+      const selectedItems = answer ? Object.values(answer) : [];
+      const correctItems = question.subQuestions?.map(sq => sq.item) || [];
       
-      let selectedItems: string[] = [];
+      // Check if the selected items match exactly with correct items (ignoring order)
+      const selectedSet = new Set(selectedItems);
+      const correctSet = new Set(correctItems);
       
-      if (typeof answer === "string") {
-        // Single answer (item ID)
-        selectedItems = [answer];
-      } else if (Array.isArray(answer)) {
-        // Array of answers
-        selectedItems = answer;
-      } else if (typeof answer === "object" && answer !== null) {
-        // Object with answers (e.g., { "0": itemId1, "1": itemId2 })
-        selectedItems = Object.values(answer as Record<string, string>);
-      }
-
-      // Check if selected items match exactly the correct items
-      const selectedItemsSet = new Set(selectedItems);
-      const correctItemsSet = new Set(correctItems);
-
-      // All correct items must be selected, and no extra items should be selected
-      const allCorrectSelected = correctItems.every(item => selectedItemsSet.has(item));
-      const noExtraSelected = selectedItems.every(item => correctItemsSet.has(item));
-      const isCorrect = allCorrectSelected && noExtraSelected && totalCorrectAnswers > 0;
-
+      // Check if sets are equal
+      const setsEqual = 
+        selectedSet.size === correctSet.size &&
+        Array.from(selectedSet).every(item => correctSet.has(item));
+      
+      const isCorrect = setsEqual && selectedItems.length === totalSubQuestions && totalSubQuestions > 0;
+      
       return {
         isCorrect,
         score: isCorrect ? question.points : 0,
         maxScore: question.points,
         feedback: isCorrect 
           ? "All selections correct!" 
-          : `Selected ${selectedItems.length} items, but ${totalCorrectAnswers} are required`
+          : `Selected ${selectedItems.length}, need exactly ${totalSubQuestions} correct selections`
       };
     }
   }

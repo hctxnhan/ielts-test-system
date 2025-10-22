@@ -140,7 +140,6 @@ export default function TestResults({ currentTest, testResults, isExercise = fal
   const [showReview, setShowReview] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const params = useParams();
-  console.log('params', params, isExercise);
 
   if (!currentTest) {
     return (

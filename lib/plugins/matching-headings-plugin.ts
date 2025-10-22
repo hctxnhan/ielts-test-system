@@ -76,26 +76,7 @@ export class MatchingHeadingsPlugin extends BaseQuestionPlugin<MatchingHeadingsQ
           text: "Heading E",
         },
       ],
-      subQuestions: [
-        {
-          subId: uuidv4(),
-          item: paragraphIds[0],
-          correctAnswer: "",
-          points: this.config.defaultPoints / 3,
-        },
-        {
-          subId: uuidv4(),
-          item: paragraphIds[1],
-          correctAnswer: "",
-          points: this.config.defaultPoints / 3,
-        },
-        {
-          subId: uuidv4(),
-          item: paragraphIds[2],
-          correctAnswer: "",
-          points: this.config.defaultPoints / 3,
-        },
-      ],
+      subQuestions: [],
     };
   }
 
@@ -159,18 +140,21 @@ export class MatchingHeadingsPlugin extends BaseQuestionPlugin<MatchingHeadingsQ
         actualAnswer = answer as string;
       }
 
+      // Use subQuestion.points if defined, otherwise default to 1
+      const points = subQuestion.points !== undefined ? subQuestion.points : 1;
+
       const isCorrect = subQuestion.correctAnswer === actualAnswer;
       
       return {
         isCorrect,
-        score: isCorrect ? subQuestion.points : 0,
-        maxScore: subQuestion.points,
+        score: isCorrect ? points : 0,
+        maxScore: points,
         feedback: isCorrect 
           ? "Correct heading match!" 
           : `Incorrect heading match. Expected: ${subQuestion.correctAnswer}, Got: ${actualAnswer}`
       };
     } else {
-      // All-or-nothing scoring - score entire question
+      // All-or-nothing scoring - use main question points
       const totalSubQuestions = question.subQuestions?.length || 0;
       const answers = answer as Record<string, string>;
       
@@ -180,7 +164,7 @@ export class MatchingHeadingsPlugin extends BaseQuestionPlugin<MatchingHeadingsQ
         )
       ).length;
 
-      const isCorrect = correctCount === totalSubQuestions;
+      const isCorrect = correctCount === totalSubQuestions && totalSubQuestions > 0;
       
       return {
         isCorrect,

@@ -82,7 +82,6 @@ export default function BaseTestContainer({
       </div>
     );
   }
-  console.log("==> test", test)
 
   const isReadingTest = test.type === "reading" || test.skill === "reading";
   const isListeningTest =

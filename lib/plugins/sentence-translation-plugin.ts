@@ -165,8 +165,17 @@ class SentenceTranslationPlugin extends BaseQuestionPlugin<SentenceTranslationQu
         }
 
         const userAnswer = userAnswers[sentence.id] || "";
-        const sentencesCount = translationQuestion.sentences.length;
-        const maxScore = translationQuestion.points / sentencesCount;
+        
+        // Find subquestion with its own points
+        const subQuestion = translationQuestion.subQuestions?.find(sq => sq.subId === subQuestionId);
+        
+        // Use subquestion points if available, otherwise default to 1
+        let maxScore: number;
+        if (subQuestion?.points !== undefined) {
+          maxScore = subQuestion.points;
+        } else {
+          maxScore = 1;  // Default to 1 point per subquestion
+        }
 
         return await this.scoreTranslation({
           sourceText: sentence.sourceText,
@@ -179,7 +188,7 @@ class SentenceTranslationPlugin extends BaseQuestionPlugin<SentenceTranslationQu
           aiScoringFn,
         });
       } else {
-        // All-or-nothing scoring - score entire question
+        // All-or-nothing scoring - use main question points
 
         const sentences = translationQuestion.sentences;
         const totalSentences = sentences.length;
@@ -189,6 +198,7 @@ class SentenceTranslationPlugin extends BaseQuestionPlugin<SentenceTranslationQu
         // Score all sentences
         for (const sentence of sentences) {
           const userAnswer = userAnswers[sentence.id] || "";
+          // For all-or-nothing, divide main score by total sentences
           const sentenceMaxScore = translationQuestion.points / totalSentences;
 
           const result = await this.scoreTranslation({
@@ -213,8 +223,8 @@ class SentenceTranslationPlugin extends BaseQuestionPlugin<SentenceTranslationQu
         }
 
         return {
-          isCorrect: allCorrect,
-          score: allCorrect ? translationQuestion.points : 0,
+          isCorrect: allCorrect && totalSentences > 0,
+          score: allCorrect && totalSentences > 0 ? translationQuestion.points : 0,
           maxScore: translationQuestion.points,
           feedback: allCorrect
             ? "All translations correct!"
@@ -350,7 +360,7 @@ Be encouraging but precise in your feedback.`;
 
         if (aiResult.ok) {
           const scaledScore = aiResult.score * maxScore / 9;
-          console.log("💡 AI scoring result:", {aiResult, maxScore, scaledScore});
+
           return {
             isCorrect: scaledScore >= maxScore * 0.5,
             score: scaledScore,

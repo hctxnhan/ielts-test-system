@@ -123,51 +123,61 @@ class WordFormPlugin extends BaseQuestionPlugin<WordFormQuestion> {
     // Expect answers in object format: Record<string, string>
     const userAnswers = (answer as Record<string, string>) || {};
 
-    // Find the specific exercise being scored
-    const exercise = wordFormQuestion.exercises.find(
-      (ex) => ex.id === subQuestionId,
-    );
-    
-    if (!exercise) {
-      return {
-        isCorrect: false,
-        score: 0,
-        maxScore: 0,
-        feedback: "Exercise not found.",
-      };
-    }
+    const scoringStrategy = wordFormQuestion.scoringStrategy || "partial";
 
-    const userAnswer = userAnswers[exercise.id] || "";
-    const maxScore = wordFormQuestion.points / (wordFormQuestion.exercises.length || 1);
+    if (scoringStrategy === "partial" && subQuestionId) {
+      // Partial scoring - find subquestion with its own points
+      const subQuestion = wordFormQuestion.subQuestions?.find(sq => sq.subId === subQuestionId);
+      
+      // Find the specific exercise being scored
+      const exercise = wordFormQuestion.exercises.find(
+        (ex) => ex.id === subQuestionId,
+      );
+      
+      if (!exercise) {
+        return {
+          isCorrect: false,
+          score: 0,
+          maxScore: 0,
+          feedback: "Exercise not found.",
+        };
+      }
 
+      // Use subquestion points if available, otherwise default to 1
+      let maxScore: number;
+      if (subQuestion?.points !== undefined) {
+        maxScore = subQuestion.points;
+      } else {
+        maxScore = 1;  // Default to 1 point per subquestion
+      }
 
-    // 1. Simple string comparison scoring
-    // Safely convert to string before calling trim()
-    const userAnswerString = (userAnswer || "").toString();
-    const isCorrectSimple = userAnswerString.trim().toLowerCase() === exercise.correctForm.trim().toLowerCase();
+      const userAnswer = userAnswers[exercise.id] || "";
 
-    if (!aiScoringFn) {
-      return {
-        isCorrect: isCorrectSimple,
-        score: isCorrectSimple ? maxScore : 0,
-        maxScore,
-        feedback: isCorrectSimple ? "Correct!" : `Incorrect. Expected: ${exercise.correctForm}`,
-      };
-    }
+      // 1. Simple string comparison scoring
+      const userAnswerString = (userAnswer || "").toString();
+      const isCorrectSimple = userAnswerString.trim().toLowerCase() === exercise.correctForm.trim().toLowerCase();
 
-    // 2. AI-based scoring (if available) for more nuanced feedback
-    if (!userAnswerString.trim()) {
-      return {
-        isCorrect: false,
-        score: 0,
-        maxScore,
-        feedback: "No answer provided.",
-      };
-    }
+      if (!aiScoringFn) {
+        return {
+          isCorrect: isCorrectSimple,
+          score: isCorrectSimple ? maxScore : 0,
+          maxScore,
+          feedback: isCorrectSimple ? "Correct!" : `Incorrect. Expected: ${exercise.correctForm}`,
+        };
+      }
 
-    
-    try {
-      const prompt = wordFormQuestion.scoringPrompt || `You are an expert grammar teacher specializing in word formation. Evaluate this word form transformation exercise:
+      // 2. AI-based scoring (if available)
+      if (!userAnswerString.trim()) {
+        return {
+          isCorrect: false,
+          score: 0,
+          maxScore,
+          feedback: "No answer provided.",
+        };
+      }
+
+      try {
+        const prompt = wordFormQuestion.scoringPrompt || `You are an expert grammar teacher specializing in word formation. Evaluate this word form transformation exercise:
 
 Base word: "${exercise.baseWord}"
 Student answer: "${userAnswer}"
@@ -189,34 +199,65 @@ Provide specific, constructive feedback focusing on:
 
 Be encouraging but precise in your feedback.`;
 
-      const aiResult = await aiScoringFn({
-        text: userAnswer,
-        prompt: exercise.sentence,
-        essay: userAnswer,
-        scoringPrompt: prompt,
-      });
+        const aiResult = await aiScoringFn({
+          text: userAnswer,
+          prompt: exercise.sentence,
+          essay: userAnswer,
+          scoringPrompt: prompt,
+        });
 
-
-      if (aiResult.ok) {
-        const scaledScore = aiResult.score * maxScore / 9;
-        const result = {
-          isCorrect: scaledScore >= maxScore * 0.8, // High threshold for correctness
-          score: scaledScore,
+        if (aiResult.ok) {
+          // Scale the AI score (0-1) to maxScore
+          const aiScore = Math.min(Math.max(parseFloat(aiResult.score.toString()) || 0, 0), 1);
+          const score = aiScore * maxScore;
+          
+          return {
+            isCorrect: score === maxScore,
+            score,
+            maxScore,
+            feedback: aiResult.feedback,
+            aiScored: true,
+          };
+        } else {
+          // Fallback to simple comparison
+          return {
+            isCorrect: isCorrectSimple,
+            score: isCorrectSimple ? maxScore : 0,
+            maxScore,
+            feedback: isCorrectSimple ? "Correct!" : `Incorrect. Expected: ${exercise.correctForm}`,
+          };
+        }
+      } catch (error) {
+        console.error("Error in AI scoring:", error);
+        // Fallback to simple scoring if AI fails
+        return {
+          isCorrect: isCorrectSimple,
+          score: isCorrectSimple ? maxScore : 0,
           maxScore,
-          feedback: aiResult.feedback,
+          feedback: `AI scoring failed. Simple check result: ${isCorrectSimple ? "Correct" : "Incorrect"}. Expected: ${exercise.correctForm}`,
         };
-        
-        return result;
-      } else {
-        throw new Error(aiResult.error || "Unknown AI scoring error");
       }
-    } catch (error) {
-      // Fallback to simple scoring if AI fails
+    } else {
+      // All-or-nothing scoring - use main question points
+      const totalExercises = wordFormQuestion.exercises.length || 0;
+      
+      let correctCount = 0;
+      for (const ex of wordFormQuestion.exercises) {
+        const userAnswer = userAnswers[ex.id] || "";
+        const userAnswerString = (userAnswer || "").toString();
+        const isCorrect = userAnswerString.trim().toLowerCase() === ex.correctForm.trim().toLowerCase();
+        if (isCorrect) correctCount++;
+      }
+
+      const isCorrect = correctCount === totalExercises && totalExercises > 0;
+      
       return {
-        isCorrect: isCorrectSimple,
-        score: isCorrectSimple ? maxScore : 0,
-        maxScore,
-        feedback: `AI scoring failed. Simple check result: ${isCorrectSimple ? "Correct" : "Incorrect"}. Expected: ${exercise.correctForm}`,
+        isCorrect,
+        score: isCorrect ? wordFormQuestion.points : 0,
+        maxScore: wordFormQuestion.points,
+        feedback: isCorrect
+          ? "All word forms correct!"
+          : `${correctCount}/${totalExercises} word forms correct`,
       };
     }
   }

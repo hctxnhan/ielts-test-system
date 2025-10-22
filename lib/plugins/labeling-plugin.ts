@@ -75,23 +75,7 @@ export class LabelingPlugin extends BaseQuestionPlugin<LabelingQuestion> {
           text: "Option E",
         },
       ],
-      subQuestions: [
-        {
-          subId: uuidv4(),
-          correctAnswer: "",
-          points: this.config.defaultPoints / 3,
-        },
-        {
-          subId: uuidv4(),
-          correctAnswer: "",
-          points: this.config.defaultPoints / 3,
-        },
-        {
-          subId: uuidv4(),
-          correctAnswer: "",
-          points: this.config.defaultPoints / 3,
-        },
-      ],
+      subQuestions: [],
     };
   }
 
@@ -137,7 +121,7 @@ export class LabelingPlugin extends BaseQuestionPlugin<LabelingQuestion> {
     const scoringStrategy = question.scoringStrategy || "partial";
 
     if (scoringStrategy === "partial" && subQuestionId) {
-      // Partial scoring - score individual sub-question
+      // Partial scoring - score individual sub-question using its own points
       const subQuestion = question.subQuestions?.find(sq => sq.subId === subQuestionId);
       
       if (!subQuestion) {
@@ -149,18 +133,21 @@ export class LabelingPlugin extends BaseQuestionPlugin<LabelingQuestion> {
         };
       }
 
+      // Use subQuestion.points if defined, otherwise default to 1
+      const points = subQuestion.points !== undefined ? subQuestion.points : 1;
+
       const isCorrect = subQuestion.correctAnswer === answer;
       
       return {
         isCorrect,
-        score: isCorrect ? subQuestion.points : 0,
-        maxScore: subQuestion.points,
+        score: isCorrect ? points : 0,
+        maxScore: points,
         feedback: isCorrect 
           ? "Correct label!" 
           : "Incorrect label"
       };
     } else {
-      // All-or-nothing scoring - score entire question
+      // All-or-nothing scoring - use main question points
       const totalSubQuestions = question.subQuestions?.length || 0;
       const answers = answer as Record<string, string>;
       
@@ -170,7 +157,7 @@ export class LabelingPlugin extends BaseQuestionPlugin<LabelingQuestion> {
         )
       ).length;
 
-      const isCorrect = correctCount === totalSubQuestions;
+      const isCorrect = correctCount === totalSubQuestions && totalSubQuestions > 0;
       
       return {
         isCorrect,
