@@ -15,7 +15,6 @@ export const questionsWithCorrectIndex = {
           text: "The customer wants to book a holiday in ___.",
           type: "completion",
           index: 1,
-          blanks: 1,
           points: 1,
           subQuestions: [
             {
@@ -61,7 +60,6 @@ export const questionsWithCorrectIndex = {
           text: "The customer's total budget for the holiday is ___ pounds.",
           type: "completion",
           index: 3,
-          blanks: 1,
           points: 1,
           subQuestions: [
             {
@@ -234,7 +232,6 @@ export const questionsWithCorrectIndex = {
           text: "The students must submit their final report by ___ December.",
           type: "completion",
           index: 7,
-          blanks: 1,
           points: 1,
           subQuestions: [
             {
@@ -343,7 +340,6 @@ export const questionsWithCorrectIndex = {
           text: "The lecturer mentions that sustainable buildings can reduce energy consumption by up to ___ percent compared to conventional buildings.",
           type: "completion",
           index: 10,
-          blanks: 1,
           points: 1,
           subQuestions: [
             {

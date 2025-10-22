@@ -47,7 +47,6 @@ export interface StandardMultipleChoiceQuestion extends StandardBaseQuestion {
 
 export interface StandardCompletionQuestion extends StandardBaseQuestion {
   type: "completion";
-  blanks: number;
   subQuestions: StandardSubQuestionMeta[];
 }
 

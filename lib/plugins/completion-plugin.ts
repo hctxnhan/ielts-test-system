@@ -54,7 +54,6 @@ export class CompletionPlugin extends BaseQuestionPlugin<CompletionQuestion> {
       scoringStrategy: "partial",
       index: index,
       partialEndingIndex: index,
-      blanks: 3,
       subQuestions: [],
     };
   }
@@ -186,17 +185,6 @@ export class CompletionPlugin extends BaseQuestionPlugin<CompletionQuestion> {
     // Completion specific validation
     if (!question.subQuestions || question.subQuestions.length === 0) {
       errors.push("Completion questions must have at least one blank");
-    }
-
-    if (question.blanks <= 0) {
-      errors.push("Number of blanks must be greater than 0");
-    }
-
-    if (
-      question.subQuestions &&
-      question.blanks !== question.subQuestions.length
-    ) {
-      warnings.push("Number of blanks doesn't match number of sub-questions");
     }
 
     // Check for empty acceptable answers

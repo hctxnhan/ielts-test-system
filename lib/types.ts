@@ -57,7 +57,6 @@ export interface MultipleChoiceQuestion extends BaseQuestion {
 
 export interface CompletionQuestion extends BaseQuestion {
   type: "completion";
-  blanks: number;
   subQuestions: (Omit<SubQuestionMeta, "correctAnswer"> & {
     acceptableAnswers: string[];
   })[];

@@ -188,7 +188,6 @@ export default function TestsPage() {
               points: 1,
               scoringStrategy: "partial",
               index: 2,
-              blanks: 1,
               subQuestions: [
                 {
                   subId: "747988a5-c06a-443a-9d95-b9c18db5d054",

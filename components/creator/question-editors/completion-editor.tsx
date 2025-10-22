@@ -1,10 +1,10 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@testComponents/components/ui/button";
 import { Input } from "@testComponents/components/ui/input";
 import { Label } from "@testComponents/components/ui/label";
 import type { CompletionQuestion } from "@testComponents/lib/types";
-import { CheckCircle, Hash, PlusCircle, X } from "lucide-react";
+import { CheckCircle, PlusCircle, X } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 
 interface CompletionEditorProps {
@@ -23,6 +23,33 @@ export default function CompletionEditor({
   onUpdateQuestion,
 }: CompletionEditorProps) {
   const length = question.text?.match(/_{3,}/g)?.length || 0;
+
+  // Detect when blanks are removed and remove corresponding subquestions
+  useEffect(() => {
+    const currentSubQuestionsCount = question.subQuestions?.length || 0;
+    
+    // If current blanks are fewer than subquestions, some blanks were removed
+    if (length < currentSubQuestionsCount) {
+      // Keep only subquestions that correspond to remaining blanks
+      const updatedSubQuestions = (question.subQuestions || []).slice(0, length);
+      onUpdateQuestion(sectionId, question.id, {
+        subQuestions: updatedSubQuestions,
+      });
+    } else if (length > currentSubQuestionsCount) {
+      // Blanks were added - create new subquestions for them
+      const newSubQuestions = [...(question.subQuestions || [])];
+      for (let i = currentSubQuestionsCount; i < length; i++) {
+        newSubQuestions.push({
+          subId: uuidv4(),
+          acceptableAnswers: ["Example"],
+          points: 1,
+        });
+      }
+      onUpdateQuestion(sectionId, question.id, {
+        subQuestions: newSubQuestions,
+      });
+    }
+  }, [length, question, sectionId, onUpdateQuestion]);
 
   if (length === 0) {
     return (

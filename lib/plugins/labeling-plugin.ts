@@ -136,7 +136,18 @@ export class LabelingPlugin extends BaseQuestionPlugin<LabelingQuestion> {
       // Use subQuestion.points if defined, otherwise default to 1
       const points = subQuestion.points !== undefined ? subQuestion.points : 1;
 
-      const isCorrect = subQuestion.correctAnswer === answer;
+      // Extract the actual answer value
+      // If answer is an object, get the value for this subQuestionId
+      // If answer is a string, use it directly
+      let actualAnswer: string;
+      if (typeof answer === 'object' && answer !== null) {
+        const answerObj = answer as Record<string, string>;
+        actualAnswer = answerObj[subQuestionId] || '';
+      } else {
+        actualAnswer = answer as string;
+      }
+
+      const isCorrect = subQuestion.correctAnswer === actualAnswer;
       
       return {
         isCorrect,
