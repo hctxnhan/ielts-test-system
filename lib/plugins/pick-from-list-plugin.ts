@@ -117,7 +117,10 @@ export class PickFromListPlugin extends BaseQuestionPlugin<PickFromAListQuestion
       
       const points = subQuestion.points !== undefined ? subQuestion.points : 1;
       const answerValue = answer ? (typeof answer === 'string' ? answer : answer[subQuestionId]) : null;
-      const isCorrect = answerValue === subQuestion.item;
+      
+      // The answer is one of the correct choices for this question
+      const correctItems = question.subQuestions?.map(sq => sq.item) || [];
+      const isCorrect = answerValue !== null && correctItems.includes(answerValue);
       
       return {
         isCorrect,
