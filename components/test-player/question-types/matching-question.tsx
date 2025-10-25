@@ -60,12 +60,10 @@ export default function MatchingQuestionRenderer({
         )}
         minHeight={20}
       />
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(250px,1fr)_minmax(250px,1fr)] gap-6">
-        
-
+      {/* <div className="grid grid-cols-1 md:grid-cols-[minmax(250px,1fr)_minmax(250px,1fr)] gap-6"> */}
+      <div className="  grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start">
         <div className="space-y-3">
-          <p className="text-base font-semibold text-gray-700">Items</p>
-          <div className="space-y-4">
+          <div className="space-y-4 bold">
             {question.items.map((item, index) => {
               const subQuestion = question.subQuestions?.find(
                 (sq) => sq.item === item.id,
@@ -96,9 +94,10 @@ export default function MatchingQuestionRenderer({
               return (
                 <div
                   key={item.id}
-                  className="flex flex-col justify-center gap-3"
+                  className="flex flex-col gap-2 p-3 rounded-lg border bg-white shadow-sm hover:shadow transition-all"
+
                 >
-                  <Label className="min-w-[180px] text-gray-700">
+                  <Label className="min-w-[180px] text-gray-900 bold">
                     {question.scoringStrategy === "partial" && subQuestion
                       ? `Question ${question.index + index + 1}.`
                       : `${index + 1}.`}{" "}
@@ -134,7 +133,7 @@ export default function MatchingQuestionRenderer({
                         }
                         disabled={readOnly}
                         className={cn(
-                          "border shadow-sm hover:shadow transition-shadow duration-200",
+                          "w-full h-11 flex items-center px-3 rounded-md border border-gray-300 bg-white text-sm hover:shadow-sm hover:border-gray-400",
                           isCorrect && "border-green-500",
                           isIncorrect && "border-red-500",
                         )}
@@ -162,7 +161,6 @@ export default function MatchingQuestionRenderer({
         </div>
 
         <div className="space-y-3">
-          <p className="text-base font-semibold text-gray-700">Options</p>
           <div className="space-y-2">
             {question.options.map((option, optionIndex) => (
               <DraggableItem
@@ -172,7 +170,7 @@ export default function MatchingQuestionRenderer({
                 itemType={ITEM_TYPE}
                 prefix={String.fromCharCode(65 + optionIndex) + "."}
                 disabled={readOnly}
-                className="hover:shadow-md transition-shadow duration-200"
+                className=" border rounded-lg bg-gray-50 p-3 shadow-sm hover:shadow-md hover:bg-gray-100 transition-all text-sm"
               />
             ))}
           </div>
