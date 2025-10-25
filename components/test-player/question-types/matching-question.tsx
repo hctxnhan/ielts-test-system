@@ -49,131 +49,128 @@ export default function MatchingQuestionRenderer({
       return updatedMatches;
     });
   };
+
   return (
     <div className="mx-auto space-y-6">
       <RichTextEditor
         value={question.text || ""}
         onChange={(content) => onQuestionHighlighted(question.id, content)}
         readonly={true}
-        className={cn(
-          "leading-relaxed w-full h-full",
-        )}
+        className="leading-relaxed w-full h-full"
         minHeight={20}
       />
-      {/* <div className="grid grid-cols-1 md:grid-cols-[minmax(250px,1fr)_minmax(250px,1fr)] gap-6"> */}
-      <div className="  grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start">
-        <div className="space-y-3">
-          <div className="space-y-4 bold">
-            {question.items.map((item, index) => {
-              const subQuestion = question.subQuestions?.find(
-                (sq) => sq.item === item.id,
-              );
 
-              if (!subQuestion) {
-                console.error("No subQuestion found for item:", item.id);
-                return null;
-              }
+      {/* Aligning questions and options side-by-side */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start md:items-stretch">
+        {/* Left column: Questions */}
+        <div className="space-y-5">
+          {question.items.map((item, index) => {
+            const subQuestion = question.subQuestions?.find(
+              (sq) => sq.item === item.id,
+            );
 
-              const matchedOption = question.options.find(
-                (opt) => opt.id === matches[subQuestion.subId],
-              );
+            if (!subQuestion) {
+              console.error("No subQuestion found for item:", item.id);
+              return null;
+            }
 
-              const isCorrect =
-                showCorrectAnswer &&
-                matchedOption?.id === subQuestion.correctAnswer;
+            const matchedOption = question.options.find(
+              (opt) => opt.id === matches[subQuestion.subId],
+            );
 
-              const isIncorrect =
-                showCorrectAnswer &&
-                (!matchedOption ||
-                  matchedOption.id !== subQuestion.correctAnswer);
+            const isCorrect =
+              showCorrectAnswer &&
+              matchedOption?.id === subQuestion.correctAnswer;
 
-              const correctOption = question.options.find(
-                (opt) => opt.id === subQuestion.correctAnswer,
-              );
+            const isIncorrect =
+              showCorrectAnswer &&
+              (!matchedOption ||
+                matchedOption.id !== subQuestion.correctAnswer);
 
-              return (
-                <div
-                  key={item.id}
-                  className="flex flex-col gap-2 p-3 rounded-lg border bg-white shadow-sm hover:shadow transition-all"
+            const correctOption = question.options.find(
+              (opt) => opt.id === subQuestion.correctAnswer,
+            );
 
-                >
-                  <Label className="min-w-[180px] text-gray-900 bold">
-                    {question.scoringStrategy === "partial" && subQuestion
-                      ? `Question ${question.index + index + 1}.`
-                      : `${index + 1}.`}{" "}
-                    {item.text}
-                  </Label>
-                  <div className="flex-1 flex flex-col gap-4">
-                    <div
+            return (
+              <div
+                key={item.id}
+                className="flex flex-col gap-2 p-4 rounded-lg bg-white border border-gray-200 shadow-sm hover:shadow transition-all"
+              >
+                <Label className="min-w-[180px] text-gray-900 font-semibold leading-snug">
+                  {question.scoringStrategy === "partial" && subQuestion
+                    ? `Question ${question.index + index + 1}.`
+                    : `${index + 1}.`}{" "}
+                  {item.text}
+                </Label>
+
+                <div className="flex-1 flex flex-col gap-3">
+                  <div
+                    className={cn(
+                      "w-full rounded-md transition-all duration-200",
+                      isCorrect && "border-green-500 bg-green-50",
+                      isIncorrect && "border-red-500 bg-red-50",
+                    )}
+                  >
+                    <DroppableZone
+                      key={subQuestion.subId}
+                      subQuestionId={subQuestion.subId}
+                      matchedId={matches[subQuestion.subId]}
+                      matchedText={matchedOption?.text}
+                      prefix={
+                        matchedOption
+                          ? String.fromCharCode(
+                              65 +
+                                question.options.findIndex(
+                                  (o) => o.id === matchedOption.id,
+                                ),
+                            ) + "."
+                          : ""
+                      }
+                      onDrop={handleDrop}
+                      itemType={ITEM_TYPE}
+                      placeholder={
+                        readOnly ? "Not answered" : "Drag an option here"
+                      }
+                      disabled={readOnly}
                       className={cn(
-                        "flex-1 rounded-lg transition-colors duration-200",
+                        "w-full h-11 flex items-center px-3 rounded-md border border-gray-300 bg-white text-sm hover:border-gray-400 hover:shadow-sm transition-all",
                         isCorrect && "border-green-500 bg-green-50",
                         isIncorrect && "border-red-500 bg-red-50",
                       )}
-                    >
-                      <DroppableZone
-                        key={subQuestion.subId}
-                        subQuestionId={subQuestion.subId}
-                        matchedId={matches[subQuestion.subId]}
-                        matchedText={matchedOption?.text}
-                        prefix={
-                          matchedOption
-                            ? String.fromCharCode(
-                                65 +
-                                  question.options.findIndex(
-                                    (o) => o.id === matchedOption.id,
-                                  ),
-                              ) + "."
-                            : ""
-                        }
-                        onDrop={handleDrop}
-                        itemType={ITEM_TYPE}
-                        placeholder={
-                          readOnly ? "Not answered" : "Drag an option here"
-                        }
-                        disabled={readOnly}
-                        className={cn(
-                          "w-full h-11 flex items-center px-3 rounded-md border border-gray-300 bg-white text-sm hover:shadow-sm hover:border-gray-400",
-                          isCorrect && "border-green-500",
-                          isIncorrect && "border-red-500",
-                        )}
-                      />
-                    </div>
-                    {isIncorrect && showCorrectAnswer && correctOption && (
-                      <div className="text-sm flex items-center space-x-2">
-                        <span className="text-green-600 whitespace-nowrap">
-                          ✓{" "}
-                          {String.fromCharCode(
-                            65 +
-                              question.options.findIndex(
-                                (o) => o.id === correctOption.id,
-                              ),
-                          )}
-                          . {correctOption.text}
-                        </span>
-                      </div>
-                    )}
+                    />
                   </div>
+
+                  {isIncorrect && showCorrectAnswer && correctOption && (
+                    <div className="text-sm flex items-center gap-1 text-green-600">
+                      ✓{" "}
+                      {String.fromCharCode(
+                        65 +
+                          question.options.findIndex(
+                            (o) => o.id === correctOption.id,
+                          ),
+                      )}
+                      . {correctOption.text}
+                    </div>
+                  )}
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
 
+        {/* Right column: Options */}
         <div className="space-y-3">
-          <div className="space-y-2">
-            {question.options.map((option, optionIndex) => (
-              <DraggableItem
-                key={option.id}
-                text={option.text}
-                index={option.id}
-                itemType={ITEM_TYPE}
-                prefix={String.fromCharCode(65 + optionIndex) + "."}
-                disabled={readOnly}
-                className=" border rounded-lg bg-gray-50 p-3 shadow-sm hover:shadow-md hover:bg-gray-100 transition-all text-sm"
-              />
-            ))}
-          </div>
+          {question.options.map((option, optionIndex) => (
+            <DraggableItem
+              key={option.id}
+              text={option.text}
+              index={option.id}
+              itemType={ITEM_TYPE}
+              prefix={String.fromCharCode(65 + optionIndex) + "."}
+              disabled={readOnly}
+              className="w-full border border-gray-300 rounded-lg bg-gray-50 p-3 shadow-sm hover:shadow-md hover:bg-gray-100 transition-all text-sm text-gray-900"
+            />
+          ))}
         </div>
       </div>
     </div>
