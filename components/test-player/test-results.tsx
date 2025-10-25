@@ -19,6 +19,8 @@ import rehypeRaw from 'rehype-raw';
 import rehypeHighlight from 'rehype-highlight';
 import { useParams } from 'next/navigation';
 import { ProgressLink } from '../ui/progress-link';
+import { getIeltsBandScore } from '@testComponents/utils/calculatingBandScore';
+import _ from 'lodash';
 
 // Helper function to determine color based on percentage score
 const getScoreColorClass = (percentage: number) => {
@@ -164,13 +166,19 @@ export default function TestResults({ currentTest, testResults, isExercise = fal
   } = testResults;
 
 
-  const estimatedBandScore = useMemo(() => {
-    const band = scorePercentage / 11.1;
-    const roundedBand = Math.round(band * 10) / 10;
-    return Math.min(9, Math.max(0, roundedBand));
+  // const estimatedBandScore = useMemo(() => {
+  //   const band = scorePercentage / 11.1;
+  //   const roundedBand = Math.round(band * 10) / 10;
+  //   return Math.min(9, Math.max(0, roundedBand));
+  // }, [scorePercentage]);
+
+  let estimatedBandScore = useMemo(() => {
+    let type: string = _.toLower(currentTest.type) || _.toLower(currentTest.skill)
+    if (type != 'reading' && type != 'listening') return null
+    if (type = 'reading') type = 'academic_reading'
+    const band = getIeltsBandScore(type, correctAnswers)
+    return band
   }, [scorePercentage]);
-
-
 
   return (
     <>
@@ -215,7 +223,7 @@ export default function TestResults({ currentTest, testResults, isExercise = fal
                 title="Thời gian làm bài"
                 value={`${timeTakenMinutes}m ${remainingSeconds}s`}
               />
-              {currentTest.type?.toLowerCase() !== 'writing' && !isExercise && (
+              {estimatedBandScore && currentTest.type?.toLowerCase() !== 'writing' && !isExercise && (
                 <MetricCard
                   icon={BarChart3}
                   title="Band Ước Tính"
