@@ -89,7 +89,7 @@ export interface QuestionRendererProps<T extends Question = Question> {
   onChange: (value: unknown, subQuestionId?: string) => void;
   readOnly?: boolean;
   showCorrectAnswer?: boolean;
-  onQuestionHighlighted?: (questionId: string, content: string) => void;
+  onQuestionHighlighted?: (questionId: string, content: string, field?: string) => void;
 }
 
 export interface QuestionEditorProps<T extends Question = Question> {
