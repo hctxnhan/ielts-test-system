@@ -720,6 +720,23 @@ export const useTestStore = create<TestState>()((set, get) => {
               };
             }
 
+            if ((question.type == 'pick-from-list' || question.type == 'pick-from-a-list')  &&  ("items" in question && Array.isArray(question.items))) {
+              const updatedOptions = question.items.map((item) => {
+                if (item.id === field) {
+                  return {
+                    ...item,
+                    text: content,
+                  };
+                }
+                return item;
+              });
+
+              return {
+                ...question,
+                items: updatedOptions,
+              };
+            }
+
 
             if ("subQuestions" in question && Array.isArray(question.subQuestions)) {
               const updatedOptions = question.subQuestions.map((sub) => {

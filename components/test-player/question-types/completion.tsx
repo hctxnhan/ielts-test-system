@@ -221,7 +221,7 @@ export default function Completion({
   };
 
   return (
-    <div className="relative">
+    <div className="relative outline-none">
       <EditorContent editor={editor} />
 
       {popoverPos && !readOnly && (
@@ -268,6 +268,10 @@ export default function Completion({
           font-size: 10px;
           padding: 0 4px;
           cursor: pointer;
+        }
+        .cursor-default .ProseMirror:focus,
+        .cursor-default .ProseMirror:focus-visible {
+          outline: none !important;
         }
       `}</style>
     </div>
