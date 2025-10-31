@@ -5,6 +5,7 @@ import { cn } from "@testComponents/lib/utils";
 import parse, { domToReact } from "html-react-parser";
 import React from "react";
 import styleToObject from "style-to-object";
+import Completion from "./completion";
 
 interface CompletionQuestionProps {
   question: CompletionQuestion;
@@ -21,16 +22,14 @@ export default function CompletionQuestionRenderer({
   onChange,
   readOnly = false,
   showCorrectAnswer = false,
+  onQuestionHighlighted
 }: CompletionQuestionProps) {
-  // Parse HTML and replace underscores with inputs
   const parseHtmlWithInputs = React.useCallback((htmlContent: string) => {
     let blankCounter = 0;
 
     const replaceNode = (domNode: any): any => {
       if (domNode.type === "text") {
         const text = domNode.data;
-        
-        // Find sequences of 3 or more underscores
         const underscoreRegex = /_{3,}/g;
         const parts = text.split(underscoreRegex);
         const matches = text.match(underscoreRegex);
@@ -163,15 +162,21 @@ export default function CompletionQuestionRenderer({
       return undefined; // Return original node
     };
 
-    return parse(htmlContent, { replace: replaceNode });
-  }, [question.subQuestions, value, onChange, readOnly, showCorrectAnswer, question.scoringStrategy]);
+    const questionText = question.text.replaceAll('regax', '<input/>')
 
+
+
+
+    return parse(htmlContent, { replace: replaceNode });
+
+  }, [question.subQuestions, value, onChange, readOnly, showCorrectAnswer, question.scoringStrategy]);
+  
   return (
     <div className="space-y-4">
       <div className="prose dark:prose-invert max-w-none text-sm rich-text-content">
-        {parseHtmlWithInputs(question.text || "")}
+        {/* {parseHtmlWithInputs(question.text || "")} */}
+        <Completion value={value} onChange={onChange} readOnly={readOnly} showCorrectAnswer={showCorrectAnswer} question={question} onQuestionHighlighted={onQuestionHighlighted} />
       </div>
-
       {/* Fallback: Show traditional input fields if no blanks were found in the text
       {question.subQuestions.length > 0 && !question.text?.match(/_{3,}/) && (
         <div className="space-y-2 border-t pt-4">

@@ -65,7 +65,7 @@ interface TestState {
   setSubmitResultFn: (fn: SubmitResultFn) => void;
   submitTestResults: (testId: number, classId?: number) => Promise<boolean>;
   updatePassageContent: (sectionId: string, content: string) => void;
-  updateQuestionContent: (questionId: string, content: string) => void;
+  updateQuestionContent: (questionId: string, content: string, field?: string) => void;
   // Getters
   questionById: (id: string, subId?: string) => Question | null;
   // Computed
@@ -664,19 +664,98 @@ export const useTestStore = create<TestState>()((set, get) => {
       });
     },
 
-    updateQuestionContent: (questionId: string, content: string) => {
+    // updateQuestionContent: (questionId: string, content: string) => {
+    //   const { currentTest } = get();
+    //   if (!currentTest) return;
+
+    //   const updatedSections = currentTest.sections.map((section) => ({
+    //     ...section,
+    //     questions: section.questions.map((question) => {
+    //       if (question.id === questionId) {
+    //         return {
+    //           ...question,
+    //           text: content,
+    //         };
+    //       }
+    //       return question;
+    //     }),
+    //   }));
+
+    //   set({
+    //     currentTest: {
+    //       ...currentTest,
+    //       sections: updatedSections,
+    //     },
+    //   });
+    // },
+    updateQuestionContent: (questionId: string, content: string, field?: "text" | string) => {
       const { currentTest } = get();
       if (!currentTest) return;
-
       const updatedSections = currentTest.sections.map((section) => ({
         ...section,
         questions: section.questions.map((question) => {
           if (question.id === questionId) {
-            return {
-              ...question,
-              text: content,
-            };
+
+            if (!field || field === "text") {
+              return {
+                ...question,
+                text: content,
+              };
+            }
+
+            if ("options" in question && Array.isArray(question.options)) {
+              const updatedOptions = question.options.map((option) => {
+                if (option.id === field) {
+                  return {
+                    ...option,
+                    text: content,
+                  };
+                }
+                return option;
+              });
+
+              return {
+                ...question,
+                options: updatedOptions,
+              };
+            }
+
+            if ((question.type == 'pick-from-list' || question.type == 'pick-from-a-list')  &&  ("items" in question && Array.isArray(question.items))) {
+              const updatedOptions = question.items.map((item) => {
+                if (item.id === field) {
+                  return {
+                    ...item,
+                    text: content,
+                  };
+                }
+                return item;
+              });
+
+              return {
+                ...question,
+                items: updatedOptions,
+              };
+            }
+
+
+            if ("subQuestions" in question && Array.isArray(question.subQuestions)) {
+              const updatedOptions = question.subQuestions.map((sub) => {
+                if (sub.subId === field) {
+                  return {
+                    ...sub,
+                    questionText: content,
+                  };
+                }
+                return sub;
+              });
+
+              return {
+                ...question,
+                subQuestions: updatedOptions,
+              };
+            }
           }
+
           return question;
         }),
       }));
@@ -688,7 +767,6 @@ export const useTestStore = create<TestState>()((set, get) => {
         },
       });
     },
-
     questionById(id: string, subId?: string): Question | null {
       const { currentTest, progress } = get();
       if (!currentTest || !progress) return null;

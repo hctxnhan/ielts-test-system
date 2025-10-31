@@ -18,6 +18,7 @@ import {
 import CompletionQuestionComponent from "../../components/test-player/question-types/completion-question";
 import CompletionEditor from "../../components/creator/question-editors/completion-editor";
 
+
 export class CompletionPlugin extends BaseQuestionPlugin<CompletionQuestion> {
   config = {
     type: "completion" as const,

@@ -13,7 +13,8 @@ import TextStyle from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
 import { Editor, EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { Extension } from "@tiptap/core";
+import { Extension, Node} from "@tiptap/core";
+
 import {
   AlignCenter,
   AlignJustify,
@@ -51,6 +52,8 @@ interface RichTextEditorProps {
   readonly?: boolean;
   overflow?: boolean;
 }
+
+
 
 // Custom extension to allow style attributes on all nodes
 const CustomTextAlign = Extension.create({
