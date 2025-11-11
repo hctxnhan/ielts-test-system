@@ -211,7 +211,7 @@ export default function SectionEditor({
                       </Label>
                       <Input
                         id={`passage-title-${index}`}
-                        value={section.readingPassage?.title || ""}                        onChange={(e) => {
+                        value={section.readingPassage?.title || ""} onChange={(e) => {
                           // Create default passage if none exists
                           const defaultPassage: ReadingPassage = {
                             id: uuidv4(),
@@ -220,12 +220,12 @@ export default function SectionEditor({
                             hasImages: false,
                             imageUrls: [],
                           };
-                          
+
                           const updatedPassage: ReadingPassage = {
                             ...(section.readingPassage || defaultPassage),
                             title: e.target.value,
                           };
-                          
+
                           onUpdateSection(section.id, {
                             readingPassage: updatedPassage,
                           });
@@ -244,7 +244,7 @@ export default function SectionEditor({
                       </Label>
                       <Input
                         id={`passage-source-${index}`}
-                        value={section.readingPassage?.source || ""}                        onChange={(e) => {
+                        value={section.readingPassage?.source || ""} onChange={(e) => {
                           // Create default passage if none exists
                           const defaultPassage: ReadingPassage = {
                             id: uuidv4(),
@@ -253,12 +253,12 @@ export default function SectionEditor({
                             hasImages: false,
                             imageUrls: [],
                           };
-                          
+
                           const updatedPassage: ReadingPassage = {
                             ...(section.readingPassage || defaultPassage),
                             source: e.target.value,
                           };
-                          
+
                           onUpdateSection(section.id, {
                             readingPassage: updatedPassage,
                           });
@@ -277,7 +277,7 @@ export default function SectionEditor({
                     </Label>
                     <RichTextEditor
                       id={`passage-content-${index}`}
-                      value={section.readingPassage?.content || ""}                      onChange={(content) => {
+                      value={section.readingPassage?.content || ""} onChange={(content) => {
                         // Create default passage if none exists
                         const defaultPassage: ReadingPassage = {
                           id: uuidv4(),
@@ -286,12 +286,12 @@ export default function SectionEditor({
                           hasImages: false,
                           imageUrls: [],
                         };
-                        
+
                         const updatedPassage: ReadingPassage = {
                           ...(section.readingPassage || defaultPassage),
                           content: content,
                         };
-                        
+
                         onUpdateSection(section.id, {
                           readingPassage: updatedPassage,
                         });
@@ -305,7 +305,7 @@ export default function SectionEditor({
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id={`passage-has-images-${index}`}
-                      checked={section.readingPassage?.hasImages || false}                      onCheckedChange={(checked) => {
+                      checked={section.readingPassage?.hasImages || false} onCheckedChange={(checked) => {
                         // Create default passage if none exists
                         const defaultPassage: ReadingPassage = {
                           id: uuidv4(),
@@ -314,12 +314,12 @@ export default function SectionEditor({
                           hasImages: false,
                           imageUrls: [],
                         };
-                        
+
                         const updatedPassage: ReadingPassage = {
                           ...(section.readingPassage || defaultPassage),
                           hasImages: !!checked,
                         };
-                        
+
                         onUpdateSection(section.id, {
                           readingPassage: updatedPassage,
                         });
@@ -364,10 +364,11 @@ export default function SectionEditor({
                                 variant="ghost"
                                 size="icon"
                                 className="h-6 w-6 mr-1"
-                                onClick={() => {                                  const newUrls = (
+                                onClick={() => {
+                                  const newUrls = (
                                     section.readingPassage?.imageUrls || []
                                   ).filter((_, i) => i !== imgIndex);
-                                  
+
                                   if (section.readingPassage) {
                                     const updatedPassage: ReadingPassage = {
                                       ...section.readingPassage,
@@ -408,6 +409,23 @@ export default function SectionEditor({
                   fileType="audio"
                   onFileSelect={handleAudioSelect}
                   currentFileUrl={section.audioUrl || ""}
+                />
+                <Label
+                  htmlFor={`section-transcript-${index}`}
+                  className="text-xs font-medium"
+                >
+                  Transcript (Optional)
+                </Label>
+                <RichTextEditor
+                  id={`section-transcript-${index}`}
+                  value={section.transcript || ""}
+                  onChange={(content) =>
+                    onUpdateSection(section.id, { transcript: content })
+                  }
+                  placeholder="Add transcript for this section"
+                  minHeight={200}
+                  className="text-sm"
+                  maxHeight={200}
                 />
               </div>
             )}

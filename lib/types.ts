@@ -197,6 +197,7 @@ export interface Section {
   description: string;
   audioUrl?: string;
   readingPassage?: ReadingPassage;
+  transcript?: string;
   questions: Question[];
   duration: number;
 }
