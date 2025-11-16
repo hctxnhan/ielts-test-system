@@ -24,6 +24,7 @@ export default function CompletionQuestionRenderer({
   showCorrectAnswer = false,
   onQuestionHighlighted
 }: CompletionQuestionProps) {
+
   const parseHtmlWithInputs = React.useCallback((htmlContent: string) => {
     let blankCounter = 0;
 

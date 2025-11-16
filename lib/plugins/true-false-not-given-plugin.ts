@@ -60,18 +60,21 @@ export class TrueFalseNotGivenPlugin extends BaseQuestionPlugin<TrueFalseNotGive
           item: statementIds[0],
           correctAnswer: "true",
           points: this.config.defaultPoints / 3,
+          explanation: '',
         },
         {
           subId: uuidv4(),
           item: statementIds[1],
           correctAnswer: "false",
           points: this.config.defaultPoints / 3,
+           explanation: '',
         },
         {
           subId: uuidv4(),
           item: statementIds[2],
           correctAnswer: "not-given",
           points: this.config.defaultPoints / 3,
+          explanation: '',
         },
       ],
     };
@@ -91,6 +94,7 @@ export class TrueFalseNotGivenPlugin extends BaseQuestionPlugin<TrueFalseNotGive
       questionText: standardItems.find((item) => item.id === subQ.item)?.text,
       answerText: String(subQ.correctAnswer),
       subIndex: index,
+      explanation: subQ.explanation || ''
     }));
 
     return {

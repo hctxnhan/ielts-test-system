@@ -7,6 +7,9 @@ import {
 import type { MultipleChoiceQuestion } from "@testComponents/lib/types";
 import { cn } from "@testComponents/lib/utils";
 import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@radix-ui/react-accordion";
+import _ from "lodash";
+import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
 
 interface MultipleChoiceQuestionProps {
   question: MultipleChoiceQuestion;
@@ -17,7 +20,7 @@ interface MultipleChoiceQuestionProps {
   onQuestionHighlighted?: (
     questionId: string,
     content: string,
-    field: "text" | string 
+    field: "text" | string
   ) => void;
 }
 
@@ -27,7 +30,7 @@ export default function MultipleChoiceQuestion({
   onChange,
   readOnly = false,
   showCorrectAnswer = false,
-  onQuestionHighlighted = () => {},
+  onQuestionHighlighted = () => { },
 }: MultipleChoiceQuestionProps) {
   return (
     <div className="space-y-2">
@@ -51,7 +54,7 @@ export default function MultipleChoiceQuestion({
             const isCorrect = showCorrectAnswer && option.isCorrect;
             const isSelectedAndIncorrect =
               showCorrectAnswer && value === option.id && !option.isCorrect;
-            
+
             const radioId = `option-${option.id}`;
             const labelId = `label-${option.id}`;
 
@@ -71,7 +74,7 @@ export default function MultipleChoiceQuestion({
                   aria-labelledby={labelId}
                   className={cn("h-4 w-4")}
                 />
-                
+
                 <RichTextEditor
                   id={labelId}
                   value={option.text}
@@ -80,7 +83,7 @@ export default function MultipleChoiceQuestion({
                   }
                   readonly={true}
                   className={cn(
-                    "w-full h-full", 
+                    "w-full h-full",
                     "cursor-default",
                     "mcq-option-editor"
                   )}
@@ -91,6 +94,23 @@ export default function MultipleChoiceQuestion({
           })}
         </div>
       </RadioGroup>
+      {!_.isEmpty(question.explanation) && readOnly && (
+        <Accordion type="single" collapsible className="mt-4 border-0 outline-none">
+          <AccordionItem value="transcript">
+            <AccordionTrigger className={cn(
+              "text-sm font-bold underline flex items-center gap-2 py-2",
+              "hover:no-underline outline-none border-0 text-blue-600"
+            )}>
+              Giải thích đáp án
+            </AccordionTrigger>
+            <AccordionContent className="p-0 border-0 outline-none">
+
+              <RichTextContent content={question.explanation} />
+
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
       <style jsx global>{`
         .mcq-option-editor .ProseMirror {
           padding: 0 !important;;

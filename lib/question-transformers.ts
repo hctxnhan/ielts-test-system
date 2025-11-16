@@ -119,7 +119,7 @@ function transformMultipleChoice(
     item: question.id,
     questionText: question.text,
     answerText: correctOption?.text,
-    correctAnswer: correctOption?.id,
+    correctAnswer: correctOption?.id,s
   };
 
   return {
@@ -151,6 +151,7 @@ function transformMatching(
       item: sub.item,
       points: sub.points,
       correctAnswer: sub.correctAnswer,
+      exlanation: sub.explanation || '',
       questionText: standardItems.find((item) => item.id === sub.item)?.text,
       answerText: standardOptions.find((opt) => opt.id === sub.correctAnswer)
         ?.text,
@@ -187,6 +188,7 @@ function transformLabeling(
       item: sub.item,
       points: sub.points,
       correctAnswer: sub.correctAnswer,
+      exlanation: sub.explanation || '',
       questionText: standardItems.find((item) => item.id === sub.item)?.text,
       answerText: standardOptions.find((opt) => opt.id === sub.correctAnswer)
         ?.text,
@@ -209,6 +211,7 @@ function transformCompletion(
       points: sub.points,
       acceptableAnswers: sub.acceptableAnswers,
       questionText: question.text,
+      exlanation: sub.explanation || '',
     }));
 
   return {
