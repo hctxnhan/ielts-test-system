@@ -378,6 +378,7 @@ export default function CompletionEditor({
                   Explanation
                 </Label>
                 <RichTextEditor
+                  value={subQuestion.explanation || ""}
                   content={subQuestion.explanation || ""}
                   onChange={(val: string) => {
                     const updated = [...(question.subQuestions || [])];
