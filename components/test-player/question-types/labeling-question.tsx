@@ -7,6 +7,8 @@ import { Label } from "@testComponents/components/ui/label";
 import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
 import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 import { cn } from "@testComponents/lib/utils";
+import _ from "lodash";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@radix-ui/react-accordion";
 
 interface LabelingQuestionProps {
   question: LabelingQuestion;
@@ -25,7 +27,7 @@ export default function LabelingQuestionRenderer({
   onChange,
   readOnly = false,
   showCorrectAnswer = false,
-  onQuestionHighlighted = () => {},
+  onQuestionHighlighted = () => { },
 }: LabelingQuestionProps) {
   const [matches, setMatches] = useState<Record<string, string>>({});
 
@@ -164,12 +166,29 @@ export default function LabelingQuestionRenderer({
                         ✓{" "}
                         {String.fromCharCode(
                           65 +
-                            question.options.findIndex(
-                              (o) => o.id === correctOption.id,
-                            ),
+                          question.options.findIndex(
+                            (o) => o.id === correctOption.id,
+                          ),
                         )}
                         . {correctOption.text}
                       </div>
+                    )}
+                    {!_.isEmpty(subQuestion.explanation) && readOnly && (
+                      <Accordion type="single" collapsible className="mt-4 border-0 outline-none">
+                        <AccordionItem value="transcript">
+                          <AccordionTrigger className={cn(
+                            "text-sm font-bold underline flex items-center gap-2 py-2",
+                            "hover:no-underline outline-none border-0 text-blue-600"
+                          )}>
+                            Giải thích đáp án
+                          </AccordionTrigger>
+                          <AccordionContent className="p-0 border-0 outline-none">
+
+                            <RichTextContent content={subQuestion.explanation} />
+
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
                     )}
                   </div>
                 </div>

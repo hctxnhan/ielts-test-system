@@ -27,7 +27,7 @@
 
 //     const currentValues = value || {};
 //     let selectedItems = Object.values(currentValues);
-    
+
 //     if (checked) {
 //       // Add the item if not already selected
 //       if (!selectedItems.includes(itemId)) {
@@ -37,7 +37,7 @@
 //       // Remove the item
 //       selectedItems = selectedItems.filter(item => item !== itemId);
 //     }
-    
+
 //     // Map selected items to subquestion IDs in order
 //     const updated: Record<string, string> = {};
 
@@ -47,7 +47,7 @@
 //         updated[subQuestionId] = item;
 //       }
 //     });
-    
+
 //     if (question.scoringStrategy === "partial") {
 //       // Find which subquestionId this change affects
 //       const affectedSubQuestionIndex = selectedItems.indexOf(itemId);
@@ -75,23 +75,23 @@
 //         )}
 //         minHeight={20}
 //       />
-      
+
 //       <div className="space-y-4">
 //         {/* <p className="text-base font-semibold text-gray-700">
 //           Which TWO options describe what the writer is doing in section two?
 //         </p> */}
-        
+
 //         <div className="space-y-3">
 //           {question.items.map((item, index) => {
 //             const isSelected = value ? Object.values(value).includes(item.id) : false;
 //             const letter = String.fromCharCode(65 + index);
-            
+
 //             // Check if this item is correct
 //             const isCorrectItem = question.subQuestions.some((sq) => sq.item === item.id);
 //             const isCorrect = showCorrectAnswer && isSelected && isCorrectItem;
 //             const isIncorrect = showCorrectAnswer && isSelected && !isCorrectItem;
 //             const shouldShowAsCorrect = showCorrectAnswer && isCorrectItem && !isSelected;
-            
+
 //             // Check if this item should be grayed out (max selections reached and this item is not selected)
 //             const isGreyedOut = isMaxSelected && !isSelected && !readOnly && !showCorrectAnswer;
 
@@ -134,7 +134,7 @@
 //                 >
 //                   <span className="font-medium mr-2">{letter}.</span>
 //                   {item.text}
-                  
+
 //                 </Label>
 //               </div>
 //             );
@@ -146,10 +146,13 @@
 // }
 
 "use client";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@radix-ui/react-accordion";
 import { Checkbox } from "@testComponents/components/ui/checkbox";
+import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
 import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 import type { PickFromAListQuestion } from "@testComponents/lib/types";
 import { cn } from "@testComponents/lib/utils";
+import _ from "lodash";
 
 interface PickFromListQuestionProps {
   question: PickFromAListQuestion;
@@ -170,7 +173,7 @@ export default function PickFromListQuestionRenderer({
   onChange,
   readOnly = false,
   showCorrectAnswer = false,
-  onQuestionHighlighted = () => {},
+  onQuestionHighlighted = () => { },
 }: PickFromListQuestionProps) {
   const handleItemSelection = (itemId: string, checked: boolean) => {
     if (readOnly) return;
@@ -199,7 +202,7 @@ export default function PickFromListQuestionRenderer({
       const affectedSubQuestionIndex = selectedItems.indexOf(itemId);
       const affectedSubQuestionId =
         affectedSubQuestionIndex >= 0 &&
-        affectedSubQuestionIndex < question.subQuestions.length
+          affectedSubQuestionIndex < question.subQuestions.length
           ? question.subQuestions[affectedSubQuestionIndex].subId
           : undefined;
       onChange(updated, affectedSubQuestionId);
@@ -230,9 +233,6 @@ export default function PickFromListQuestionRenderer({
               : false;
             const letter = String.fromCharCode(65 + index);
             const labelId = `${item.id}-label`;
-
-            console.log("==> question", question)
-
             const isCorrectItem = question.subQuestions.some(
               (sq) => sq.item === item.id,
             );
@@ -255,10 +255,10 @@ export default function PickFromListQuestionRenderer({
                   shouldShowAsCorrect && "border-green-500 bg-green-50",
                   isGreyedOut && "border-gray-100 bg-gray-50",
                   !isCorrect &&
-                    !isIncorrect &&
-                    !shouldShowAsCorrect &&
-                    !isGreyedOut &&
-                    "border-gray-200 hover:border-gray-300",
+                  !isIncorrect &&
+                  !shouldShowAsCorrect &&
+                  !isGreyedOut &&
+                  "border-gray-200 hover:border-gray-300",
                 )}
               >
                 <Checkbox
@@ -272,9 +272,9 @@ export default function PickFromListQuestionRenderer({
                   className={cn(
                     "mt-0.5",
                     isCorrect &&
-                      "border-green-500 data-[state=checked]:bg-green-500",
+                    "border-green-500 data-[state=checked]:bg-green-500",
                     isIncorrect &&
-                      "border-red-500 data-[state=checked]:bg-red-500",
+                    "border-red-500 data-[state=checked]:bg-red-500",
                     shouldShowAsCorrect && "border-green-500",
                     isGreyedOut && "border-gray-300 opacity-50",
                   )}
@@ -310,6 +310,24 @@ export default function PickFromListQuestionRenderer({
           })}
         </div>
       </div>
+
+      {!_.isEmpty(question.explanation) && readOnly && (
+        <Accordion type="single" collapsible className="mt-4 border-0">
+          <AccordionItem value="transcript">
+            <AccordionTrigger className={cn(
+              "text-sm font-bold underline flex items-center gap-2 py-2",
+              "hover:no-underline outline-none border-0 text-blue-600"
+            )}>
+              Giải thích đáp án
+            </AccordionTrigger>
+            <AccordionContent className="p-0 border-0">
+
+              <RichTextContent content={question.explanation} />
+
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
 
       <style jsx global>{`
         .pfl-item-editor .ProseMirror {

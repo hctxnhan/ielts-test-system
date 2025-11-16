@@ -202,6 +202,7 @@ export interface Section {
   transcript?: string;
   questions: Question[];
   duration: number;
+  transcript?: string;
 }
 
 export interface Test {

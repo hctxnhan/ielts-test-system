@@ -66,6 +66,8 @@ export class CompletionPlugin extends BaseQuestionPlugin<CompletionQuestion> {
         points: sub.points,
         acceptableAnswers: sub.acceptableAnswers,
         questionText: question.text,
+        explanation: sub.explanation || '',
+        subIndex: sub.subIndex
       }));
 
     return {

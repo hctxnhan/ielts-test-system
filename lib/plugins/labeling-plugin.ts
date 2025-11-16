@@ -103,6 +103,7 @@ export class LabelingPlugin extends BaseQuestionPlugin<LabelingQuestion> {
         questionText: standardItems.find((item) => item.id === sub.item)?.text,
         answerText: standardOptions.find((opt) => opt.id === sub.correctAnswer)
           ?.text,
+        explanation: sub.explanation || ''
       }));
 
     return {

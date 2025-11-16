@@ -16,7 +16,9 @@ export interface StandardSubQuestionMeta {
   subIndex?: number;
   questionText?: string;
   answerText?: string;
-  acceptableAnswers?: string[]; // For short answer questions
+  acceptableAnswers?: string[];
+  explanation?: string
+   // For short answer questions
 }
 
 // Base interface for standardized questions
