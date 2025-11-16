@@ -51,6 +51,7 @@ interface RichTextEditorProps {
   maxHeight?: number;
   readonly?: boolean;
   overflow?: boolean;
+  enableHighlight?: boolean
 }
 
 
@@ -912,6 +913,7 @@ export function RichTextEditor({
   minHeight = 200,
   readonly = false,
   overflow = false,
+  enableHighlight = true
 }: RichTextEditorProps) {
   const [isMounted, setIsMounted] = useState(false);
   const editor = useEditor({
@@ -1162,7 +1164,9 @@ export function RichTextEditor({
       />
       {!readonly && <Toolbar editor={editor} />}
       {!readonly && <FloatingTableToolbar editor={editor} />}
+      {/* {enableHighlight && <FloatingHighlightToolbar editor={editor} readonly={readonly} />} */}
       <FloatingHighlightToolbar editor={editor} readonly={readonly} />
+     
       <EditorContent editor={editor} placeholder={placeholder} id={id} />
     </div>
   );

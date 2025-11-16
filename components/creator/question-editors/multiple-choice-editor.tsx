@@ -3,6 +3,7 @@
 import { Button } from "@testComponents/components/ui/button";
 import { Input } from "@testComponents/components/ui/input";
 import { Label } from "@testComponents/components/ui/label";
+import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 import { Switch } from "@testComponents/components/ui/switch";
 import type { MultipleChoiceQuestion } from "@testComponents/lib/types";
 import { List, X, PlusCircle } from "lucide-react";
@@ -23,6 +24,7 @@ export default function MultipleChoiceEditor({
   sectionId,
   onUpdateQuestion,
 }: MultipleChoiceEditorProps) {
+  console.log("===>> question", question)
   return (
     <div className="space-y-3">
       <div className="space-y-1.5">
@@ -109,6 +111,24 @@ export default function MultipleChoiceEditor({
           <PlusCircle className="mr-1 h-3.5 w-3.5" />
           Add Option
         </Button>
+      </div>
+      <div className="space-y-1.5 pt-4">
+        <Label className="text-xs font-medium">Explanation</Label>
+
+        <RichTextEditor
+          id={`question-explanation-${question.id}`}
+          value={question.explanation || ""}
+          onChange={(content) =>
+            onUpdateQuestion(sectionId, question.id, {
+              explanation: content,
+            })
+          }
+          placeholder="Add explanation for this question"
+          minHeight={150}
+          maxHeight={200}
+          className="text-sm"
+          enableHighlight={false}
+        />
       </div>
     </div>
   );

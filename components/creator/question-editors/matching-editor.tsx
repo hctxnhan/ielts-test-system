@@ -18,6 +18,7 @@ import type {
 } from "@testComponents/lib/types";
 import { ArrowRight, Check, Globe, List, PlusCircle, X } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
+import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 
 interface MatchingEditorProps {
   question: MatchingQuestion;
@@ -34,6 +35,7 @@ export default function MatchingEditor({
   sectionId,
   onUpdateQuestion,
 }: MatchingEditorProps) {
+  console.log("==> question", question)
   const [isUsingStructuredFormat, setIsUsingStructuredFormat] = useState(
     () =>
       Array.isArray(question.items) &&
@@ -84,6 +86,7 @@ export default function MatchingEditor({
           initializeOptions()[0]?.id ||
           "",
         points: 1,
+        explanation: existingSubQuestion?.explanation || "",
       };
     });
   }, [initializeItems, initializeOptions, question.id, question.subQuestions]);
@@ -107,6 +110,7 @@ export default function MatchingEditor({
         correctAnswer:
           existingSubQuestion?.correctAnswer || options[0]?.id || "",
         points: existingSubQuestion?.points || 1,
+        explanation: existingSubQuestion?.explanation || "",
       };
     });
 
@@ -130,6 +134,7 @@ export default function MatchingEditor({
         item: newItemId,
         correctAnswer: options[0]?.id || "",
         points: 1,
+        explanation: "",
       },
     ]);
   }, [items.length, options, question.id]);
@@ -342,6 +347,37 @@ export default function MatchingEditor({
             );
           })}
         </div>
+      </div>
+       <div className="space-y-3 pt-4">
+        <Label className="text-xs font-medium">Explanation for Each Item</Label>
+
+        {subQuestions.map((sq, idx) => (
+          <div key={sq.subId} className="p-2 rounded-md border bg-muted/10 space-y-2">
+            <div className="flex items-center gap-2 text-xs font-medium">
+              <div className="h-5 w-5 flex items-center justify-center rounded-full bg-muted/50">
+                {idx + 1}
+              </div>
+              Explanation for Item {idx + 1}
+            </div>
+
+            <RichTextEditor
+              id={`subq-expl-${sq.subId}`}
+              value={sq.explanation || ""}
+              onChange={(content) => {
+                setSubQuestions((prev) =>
+                  prev.map((s) =>
+                    s.subId === sq.subId ? { ...s, explanation: content } : s
+                  )
+                );
+              }}
+              placeholder="Add explanation"
+              minHeight={120}
+              maxHeight={200}
+              className="text-sm"
+              enableHighlight={false}
+            />
+          </div>
+        ))}
       </div>
     </div>
   );

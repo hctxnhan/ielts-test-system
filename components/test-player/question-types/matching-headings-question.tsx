@@ -30,6 +30,7 @@ export default function MatchingHeadingsQuestionRenderer({
   onQuestionHighlighted = () => { },
 }: MatchingHeadingsQuestionProps) {
   const [matches, setMatches] = useState<Record<string, string>>({});
+
   useEffect(() => {
     if (value) {
       setMatches(value);

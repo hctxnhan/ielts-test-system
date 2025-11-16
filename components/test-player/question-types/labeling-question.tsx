@@ -31,6 +31,8 @@ export default function LabelingQuestionRenderer({
 }: LabelingQuestionProps) {
   const [matches, setMatches] = useState<Record<string, string>>({});
 
+ 
+
   useEffect(() => {
     if (value) {
       setMatches(value);
