@@ -30,6 +30,7 @@ export interface SubQuestionMeta {
   subIndex?: number;
   questionText?: string; // The actual text of the question (item, statement, etc.)
   answerText?: string; // The actual text of the answer (option, heading, etc.)
+  explanation?: string
 }
 
 export interface MultipleChoiceOption {
@@ -48,6 +49,7 @@ export interface BaseQuestion {
   imageUrl?: string;
   index: number;
   partialEndingIndex: number;
+  explanation?: string
 }
 
 export interface MultipleChoiceQuestion extends BaseQuestion {
