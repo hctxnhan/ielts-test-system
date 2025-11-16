@@ -6,6 +6,7 @@ import { Label } from "@testComponents/components/ui/label";
 import { Checkbox } from "@testComponents/components/ui/checkbox";
 import { List, X, PlusCircle } from "lucide-react";
 import { PickFromAListQuestion } from "@testComponents/lib/types";
+import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 
 interface PickFromListEditorProps {
   question: PickFromAListQuestion;
@@ -127,6 +128,24 @@ export default function PickFromListEditor({
           <PlusCircle className="mr-1 h-3.5 w-3.5" />
           Add Item
         </Button>
+      </div>
+      <div className="space-y-1.5 pt-4">
+        <Label className="text-xs font-medium">Explanation</Label>
+
+        <RichTextEditor
+          id={`question-explanation-${question.id}`}
+          value={question.explanation || ""}
+          onChange={(content) =>
+            onUpdateQuestion(sectionId, question.id, {
+              explanation: content,
+            })
+          }
+          placeholder="Add explanation for this question"
+          minHeight={150}
+          maxHeight={200}
+          className="text-sm"
+          enableHighlight={false}
+        />
       </div>
     </div>
   );

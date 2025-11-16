@@ -9,6 +9,7 @@ import type {
   SubQuestionMeta,
 } from "@testComponents/lib/types";
 import { v4 as uuidv4 } from "uuid";
+import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 
 interface ShortAnswerEditorProps {
   question: ShortAnswerQuestion;
@@ -25,6 +26,7 @@ export default function ShortAnswerEditor({
   sectionId,
   onUpdateQuestion,
 }: ShortAnswerEditorProps) {
+  console.log("==> questions", question)
   return (
     <div className="space-y-3">
       <div className="space-y-1.5">
@@ -184,6 +186,33 @@ export default function ShortAnswerEditor({
                   Answer
                 </Button>
               </div>
+              <div className="pl-6 space-y-1 mt-3">
+                <Label className="text-xs text-muted-foreground">
+                  Explanation
+                </Label>
+
+                <RichTextEditor
+                  id={`subq-explanation-${subQuestion.subId}`}
+                  value={subQuestion.explanation || ""}
+                  onChange={(content) => {
+                    const newSubQuestions = [
+                      ...(question.subQuestions || []),
+                    ];
+                    if (!newSubQuestions[qIndex]) {
+                      newSubQuestions[qIndex] = { ...subQuestion };
+                    }
+                    newSubQuestions[qIndex].explanation = content;
+
+                    onUpdateQuestion(sectionId, question.id, {
+                      subQuestions: newSubQuestions,
+                    });
+                  }}
+                  placeholder="Add explanation for this sub-question"
+                  minHeight={120}
+                  maxHeight={200}
+                  className="text-sm"
+                />
+              </div>
             </div>
           );
         })}
@@ -203,7 +232,7 @@ export default function ShortAnswerEditor({
               {
                 subIndex: newIndex + 1,
                 subId: uuidv4(),
-                item: questionId, 
+                item: questionId,
                 points: 1,
                 acceptableAnswers: [""],
               },
@@ -218,6 +247,7 @@ export default function ShortAnswerEditor({
           <PlusCircle className="mr-1.5 h-3.5 w-3.5" /> Add Question
         </Button>
       </div>
+
     </div>
   );
 }

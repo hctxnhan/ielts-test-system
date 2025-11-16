@@ -149,7 +149,7 @@ export function CurriculumEditor({ courseId: _courseId, courseName, onSave }: Cu
                     </div>
                   </div>
                 </CardHeader>
-                {/* <CardContent className="py-3 px-4 min-h-96"> */}
+                {/* <CardContent className="py-3 px-4 min-h-96">  */}
                 <CardContent className="py-3 px-4  max-h-[600px] overflow-y-auto">
                   <SessionList />
                 </CardContent>

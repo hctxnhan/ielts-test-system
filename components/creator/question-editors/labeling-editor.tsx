@@ -1,3 +1,293 @@
+// "use client";
+// import React from "react";
+// import { Button } from "@testComponents/components/ui/button";
+// import { Input } from "@testComponents/components/ui/input";
+// import { Label } from "@testComponents/components/ui/label";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@testComponents/components/ui/select";
+// import type { LabelingQuestion } from "@testComponents/lib/types";
+// import {
+//   Image,
+//   BookOpen,
+//   List,
+//   X,
+//   PlusCircle,
+//   CheckCircle,
+//   ArrowRight,
+// } from "lucide-react";
+// import FilePicker from "@testComponents/components/file-picker";
+// import type { FileObject } from "@testComponents/lib/supabase-storage";
+// import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
+
+// interface LabelingEditorProps {
+//   question: LabelingQuestion;
+//   sectionId: string;
+//   onUpdateQuestion: (
+//     sectionId: string,
+//     questionId: string,
+//     updates: Partial<LabelingQuestion>
+//   ) => void;
+// }
+
+// export default function LabelingEditor({
+//   question,
+//   sectionId,
+//   onUpdateQuestion,
+// }: LabelingEditorProps) {
+//   const handleImageSelect = (file: FileObject) => {
+//     onUpdateQuestion(sectionId, question.id, { imageUrl: file.url });
+//   };
+
+//   const handleLabelAdd = () => {
+//     const newLabels = [
+//       ...(question.labels || []),
+//       { id: crypto.randomUUID(), text: "" },
+//     ];
+//     onUpdateQuestion(sectionId, question.id, { labels: newLabels });
+//   };
+
+//   const handleLabelRemove = (labelId: string) => {
+//     const newLabels = question.labels.filter((label) => label.id !== labelId);
+//     onUpdateQuestion(sectionId, question.id, { labels: newLabels });
+//   };
+
+//   const handleLabelTextChange = (labelId: string, text: string) => {
+//     const newLabels = question.labels.map((label) =>
+//       label.id === labelId ? { ...label, text } : label
+//     );
+//     onUpdateQuestion(sectionId, question.id, { labels: newLabels });
+//   };
+
+//   const handleOptionAdd = () => {
+//     const newOptions = [
+//       ...(question.options || []),
+//       { id: crypto.randomUUID(), text: "" },
+//     ];
+//     onUpdateQuestion(sectionId, question.id, { options: newOptions });
+//   };
+
+//   const handleOptionRemove = (optionId: string) => {
+//     const newOptions = question.options.filter(
+//       (option) => option.id !== optionId
+//     );
+//     onUpdateQuestion(sectionId, question.id, { options: newOptions });
+//   };
+
+//   const handleOptionTextChange = (optionId: string, text: string) => {
+//     const newOptions = question.options.map((option) =>
+//       option.id === optionId ? { ...option, text } : option
+//     );
+//     onUpdateQuestion(sectionId, question.id, { options: newOptions });
+//   };
+
+//   const handleAnswerSelect = (labelId: string, optionId: string) => {
+//     const newSubQuestions = [...(question.subQuestions || [])];
+//     const existingIndex = newSubQuestions.findIndex(
+//       (sq) => sq.item === labelId
+//     );
+
+//     if (existingIndex === -1) {
+//       newSubQuestions.push({
+//         subId: crypto.randomUUID(),
+//         item: labelId,
+//         correctAnswer: optionId,
+//         points: 1,
+//         subIndex: newSubQuestions.length,
+//       });
+//     } else {
+//       newSubQuestions[existingIndex] = {
+//         ...newSubQuestions[existingIndex],
+//         correctAnswer: optionId,
+//         subIndex: existingIndex,
+//       };
+//     }
+
+//     onUpdateQuestion(sectionId, question.id, { subQuestions: newSubQuestions });
+//   };
+
+//   const handleExplanationChange = (labelId: string, content: string) => {
+//   const newSubQuestions = [...(question.subQuestions || [])];
+//   const index = newSubQuestions.findIndex((sq) => sq.item === labelId);
+
+//   if (index === -1) {
+//     newSubQuestions.push({
+//       subId: crypto.randomUUID(),
+//       item: labelId,
+//       correctAnswer: "",
+//       points: 1,
+//       subIndex: newSubQuestions.length,
+//       explanation: content,
+//     });
+//   } else {
+//     newSubQuestions[index] = {
+//       ...newSubQuestions[index],
+//       explanation: content,
+//       subIndex: index,
+//     };
+//   }
+
+//   onUpdateQuestion(sectionId, question.id, { subQuestions: newSubQuestions });
+// };
+
+
+//   return (
+//     <div className="space-y-3">
+//       <div className="space-y-1.5">
+//         <Label className="text-xs font-medium flex items-center gap-1.5">
+//           <Image className="w-3 h-3" />
+//           Image
+//         </Label>
+//         <FilePicker
+//           fileType="image"
+//           onFileSelect={handleImageSelect}
+//           currentFileUrl={question.imageUrl}
+//         />
+//       </div>
+
+//       <div className="grid grid-cols-2 gap-3">
+//         <div className="space-y-1.5">
+//           <Label className="text-xs font-medium flex items-center gap-1.5">
+//             <BookOpen className="w-3 h-3" />
+//             Labels (on image)
+//           </Label>
+//           <div className="space-y-1">
+//             {(question.labels || []).map((label, index) => (
+//               <div key={label.id} className="flex gap-1.5 items-center">
+//                 <div className="flex items-center justify-center h-5 w-5 rounded-full bg-muted/50 text-xs font-medium">
+//                   {index + 1}
+//                 </div>
+//                 <Input
+//                   value={label.text}
+//                   onChange={(e) =>
+//                     handleLabelTextChange(label.id, e.target.value)
+//                   }
+//                   placeholder={`Label ${index + 1}`}
+//                   className="h-7 text-sm"
+//                 />
+//                 <Button
+//                   variant="ghost"
+//                   size="icon"
+//                   onClick={() => handleLabelRemove(label.id)}
+//                   disabled={(question.labels || []).length <= 2}
+//                   className="h-6 w-6 text-muted-foreground hover:text-destructive"
+//                 >
+//                   <X className="w-3.5 h-3.5" />
+//                 </Button>
+//               </div>
+//             ))}
+//           </div>
+//           <Button
+//             variant="ghost"
+//             size="sm"
+//             onClick={handleLabelAdd}
+//             className="h-7 text-xs w-full justify-start bg-muted/30 hover:bg-muted/50 mt-1"
+//           >
+//             <PlusCircle className="mr-1 h-3.5 w-3.5" />
+//             Add Label
+//           </Button>
+//         </div>
+
+//         <div className="space-y-1.5">
+//           <Label className="text-xs font-medium flex items-center gap-1.5">
+//             <List className="w-3 h-3" />
+//             Options
+//           </Label>
+//           <div className="space-y-1">
+//             {(question.options || []).map((option, index) => (
+//               <div key={option.id} className="flex gap-1.5 items-center">
+//                 <div className="flex items-center justify-center h-5 w-5 rounded-full bg-muted/50 text-xs font-medium">
+//                   {String.fromCharCode(65 + index)}
+//                 </div>
+//                 <Input
+//                   value={option.text}
+//                   onChange={(e) =>
+//                     handleOptionTextChange(option.id, e.target.value)
+//                   }
+//                   placeholder={`Option ${index + 1}`}
+//                   className="h-7 text-sm"
+//                 />
+//                 <Button
+//                   variant="ghost"
+//                   size="icon"
+//                   onClick={() => handleOptionRemove(option.id)}
+//                   disabled={(question.options || []).length <= 2}
+//                   className="h-6 w-6 text-muted-foreground hover:text-destructive"
+//                 >
+//                   <X className="w-3.5 h-3.5" />
+//                 </Button>
+//               </div>
+//             ))}
+//           </div>
+//           <Button
+//             variant="ghost"
+//             size="sm"
+//             onClick={handleOptionAdd}
+//             className="h-7 text-xs w-full justify-start bg-muted/30 hover:bg-muted/50 mt-1"
+//           >
+//             <PlusCircle className="mr-1 h-3.5 w-3.5" />
+//             Add Option
+//           </Button>
+//         </div>
+//       </div>
+
+//       <div className="space-y-1.5">
+//         <Label className="text-xs font-medium flex items-center gap-1.5">
+//           <CheckCircle className="w-3 h-3" />
+//           Correct Answers
+//         </Label>
+//         <div className="space-y-1 bg-muted/20 p-2 rounded-md">
+//           {(question.labels || []).map((label, index) => (
+//             <div key={label.id} className="flex items-center gap-1.5 text-sm">
+//               <div className="flex items-center justify-center h-5 w-5 shrink-0 rounded-full bg-muted/50 text-xs font-medium">
+//                 {index + 1}
+//               </div>
+//               <span className="w-1/3 text-xs truncate">
+//                 {label.text || `Label ${index + 1}`}
+//               </span>
+//               <ArrowRight className="w-3 h-3 shrink-0" />
+//               <Select
+//                 value={
+//                   question.subQuestions?.find((sq) => sq.item === label.id)
+//                     ?.correctAnswer || ""
+//                 }
+//                 onValueChange={(optionId) =>
+//                   handleAnswerSelect(label.id, optionId)
+//                 }
+//               >
+//                 <SelectTrigger className="flex-1 h-7 text-xs">
+//                   <SelectValue placeholder="Select correct option" />
+//                 </SelectTrigger>
+//                 <SelectContent>
+//                   {(question.options || []).map((option, optIndex) => (
+//                     <SelectItem
+//                       key={option.id}
+//                       value={option.id}
+//                       className="text-sm py-1.5 px-2"
+//                     >
+//                       <div className="flex items-center gap-1.5">
+//                         <div className="flex items-center justify-center h-4 w-4 rounded-full bg-muted/50 text-xs font-medium">
+//                           {String.fromCharCode(65 + optIndex)}
+//                         </div>
+//                         <span>{option.text || `Option ${optIndex + 1}`}</span>
+//                       </div>
+//                     </SelectItem>
+//                   ))}
+//                 </SelectContent>
+//               </Select>
+//             </div>
+//           ))}
+//         </div>
+//       </div>
+      
+//     </div>
+//   );
+// }
+
 "use client";
 import React from "react";
 import { Button } from "@testComponents/components/ui/button";
@@ -22,6 +312,7 @@ import {
 } from "lucide-react";
 import FilePicker from "@testComponents/components/file-picker";
 import type { FileObject } from "@testComponents/lib/supabase-storage";
+import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 
 interface LabelingEditorProps {
   question: LabelingQuestion;
@@ -109,8 +400,34 @@ export default function LabelingEditor({
     onUpdateQuestion(sectionId, question.id, { subQuestions: newSubQuestions });
   };
 
+  // ✅ NEW: Explanation update handler
+  const handleExplanationChange = (labelId: string, content: string) => {
+    const newSubQuestions = [...(question.subQuestions || [])];
+    const index = newSubQuestions.findIndex((sq) => sq.item === labelId);
+
+    if (index === -1) {
+      newSubQuestions.push({
+        subId: crypto.randomUUID(),
+        item: labelId,
+        correctAnswer: "",
+        points: 1,
+        subIndex: newSubQuestions.length,
+        explanation: content,
+      });
+    } else {
+      newSubQuestions[index] = {
+        ...newSubQuestions[index],
+        explanation: content,
+        subIndex: index,
+      };
+    }
+
+    onUpdateQuestion(sectionId, question.id, { subQuestions: newSubQuestions });
+  };
+
   return (
     <div className="space-y-3">
+      {/* IMAGE UPLOAD */}
       <div className="space-y-1.5">
         <Label className="text-xs font-medium flex items-center gap-1.5">
           <Image className="w-3 h-3" />
@@ -123,7 +440,9 @@ export default function LabelingEditor({
         />
       </div>
 
+      {/* LABELS + OPTIONS */}
       <div className="grid grid-cols-2 gap-3">
+        {/* LABELS */}
         <div className="space-y-1.5">
           <Label className="text-xs font-medium flex items-center gap-1.5">
             <BookOpen className="w-3 h-3" />
@@ -166,6 +485,7 @@ export default function LabelingEditor({
           </Button>
         </div>
 
+        {/* OPTIONS */}
         <div className="space-y-1.5">
           <Label className="text-xs font-medium flex items-center gap-1.5">
             <List className="w-3 h-3" />
@@ -209,6 +529,7 @@ export default function LabelingEditor({
         </div>
       </div>
 
+      {/* CORRECT ANSWERS */}
       <div className="space-y-1.5">
         <Label className="text-xs font-medium flex items-center gap-1.5">
           <CheckCircle className="w-3 h-3" />
@@ -216,43 +537,64 @@ export default function LabelingEditor({
         </Label>
         <div className="space-y-1 bg-muted/20 p-2 rounded-md">
           {(question.labels || []).map((label, index) => (
-            <div key={label.id} className="flex items-center gap-1.5 text-sm">
-              <div className="flex items-center justify-center h-5 w-5 shrink-0 rounded-full bg-muted/50 text-xs font-medium">
-                {index + 1}
-              </div>
-              <span className="w-1/3 text-xs truncate">
-                {label.text || `Label ${index + 1}`}
-              </span>
-              <ArrowRight className="w-3 h-3 shrink-0" />
-              <Select
-                value={
-                  question.subQuestions?.find((sq) => sq.item === label.id)
-                    ?.correctAnswer || ""
-                }
-                onValueChange={(optionId) =>
-                  handleAnswerSelect(label.id, optionId)
-                }
-              >
-                <SelectTrigger className="flex-1 h-7 text-xs">
-                  <SelectValue placeholder="Select correct option" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(question.options || []).map((option, optIndex) => (
-                    <SelectItem
-                      key={option.id}
-                      value={option.id}
-                      className="text-sm py-1.5 px-2"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <div className="flex items-center justify-center h-4 w-4 rounded-full bg-muted/50 text-xs font-medium">
-                          {String.fromCharCode(65 + optIndex)}
+            <div key={label.id} className="space-y-2">
+              {/* SELECT ANSWER */}
+              <div className="flex items-center gap-1.5 text-sm">
+                <div className="flex items-center justify-center h-5 w-5 shrink-0 rounded-full bg-muted/50 text-xs font-medium">
+                  {index + 1}
+                </div>
+                <span className="w-1/3 text-xs truncate">
+                  {label.text || `Label ${index + 1}`}
+                </span>
+                <ArrowRight className="w-3 h-3 shrink-0" />
+                <Select
+                  value={
+                    question.subQuestions?.find((sq) => sq.item === label.id)
+                      ?.correctAnswer || ""
+                  }
+                  onValueChange={(optionId) =>
+                    handleAnswerSelect(label.id, optionId)
+                  }
+                >
+                  <SelectTrigger className="flex-1 h-7 text-xs">
+                    <SelectValue placeholder="Select correct option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(question.options || []).map((option, optIndex) => (
+                      <SelectItem
+                        key={option.id}
+                        value={option.id}
+                        className="text-sm py-1.5 px-2"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <div className="flex items-center justify-center h-4 w-4 rounded-full bg-muted/50 text-xs font-medium">
+                            {String.fromCharCode(65 + optIndex)}
+                          </div>
+                          <span>
+                            {option.text || `Option ${optIndex + 1}`}
+                          </span>
                         </div>
-                        <span>{option.text || `Option ${optIndex + 1}`}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="ml-7">
+                <RichTextEditor
+                  id={`explanation-${label.id}`}
+                  value={
+                    question.subQuestions?.find((sq) => sq.item === label.id)
+                      ?.explanation || ""
+                  }
+                  onChange={(content) =>
+                    handleExplanationChange(label.id, content)
+                  }
+                  placeholder="Add explanation for this item"
+                  minHeight={120}
+                  maxHeight={200}
+                  className="text-xs"
+                />
+              </div>
             </div>
           ))}
         </div>
@@ -260,3 +602,5 @@ export default function LabelingEditor({
     </div>
   );
 }
+
+
