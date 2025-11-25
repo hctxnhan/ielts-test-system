@@ -14,6 +14,7 @@ export type QuestionType =
   | "pick-from-list"
   | "pick-from-a-list"
   | "true-false-not-given"
+  | "yes-no-not-given"
   | "matching-headings"
   | "short-answer"
   | "writing-task1"
@@ -113,6 +114,15 @@ export interface TrueFalseNotGivenQuestion extends BaseQuestion {
   subQuestions: SubQuestionMeta[];
 }
 
+export interface YesNoNotGivenQuestion extends BaseQuestion {
+  type: "yes-no-not-given";
+  statements: TFNGStatement[];
+  subQuestions: SubQuestionMeta[];
+}
+
+
+
+
 export interface MatchingHeadingsQuestion extends BaseQuestion {
   type: "matching-headings";
   paragraphs: { id: string; text: string }[];
@@ -177,6 +187,7 @@ export type Question =
   | PickFromListQuestion
   | PickFromAListQuestion
   | TrueFalseNotGivenQuestion
+  | YesNoNotGivenQuestion
   | MatchingHeadingsQuestion
   | ShortAnswerQuestion
   | WritingTask1Question

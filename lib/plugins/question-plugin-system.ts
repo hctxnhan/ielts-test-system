@@ -417,8 +417,8 @@ export function initializeQuestionPlugins(): void {
     .catch(console.error);
 
   import("./plugins/true-false-not-given-plugin")
-    .then(({ TrueFalseNotGivenPlugin }) => {
-      QuestionPluginRegistry.register(new TrueFalseNotGivenPlugin());
+    .then(({ QuestionPluginRegistry.createQuestion }) => {
+      QuestionPluginRegistry.register(new QuestionPluginRegistry.createQuestion());
     })
     .catch(console.error);
 

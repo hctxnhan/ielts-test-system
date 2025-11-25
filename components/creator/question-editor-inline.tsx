@@ -29,6 +29,7 @@ import WritingTask1Editor from "./question-editors/writing-task1-editor";
 import WritingTask2Editor from "./question-editors/writing-task2-editor";
 import SentenceTranslationEditor from "./question-editors/sentence-translation-editor";
 import WordFormEditor from "./question-editors/word-form-editor";
+import YesNoNotGivenEditor from "./question-editors/yes-no-not-given-editor";
 
 interface QuestionEditorInlineProps {
   question: Question;
@@ -56,6 +57,8 @@ export default function QuestionEditorInline({
     "sentence-translation",
     "word-form",
   ].includes(question.type);
+
+  console.log("==> question", question.type)
 
   return (
     <Card className="mt-2">
@@ -185,6 +188,14 @@ export default function QuestionEditorInline({
 
           {question.type === "true-false-not-given" && (
             <TrueFalseNotGivenEditor
+              question={question}
+              sectionId={sectionId}
+              onUpdateQuestion={onUpdateQuestion}
+            />
+          )}
+
+          {question.type === "yes-no-not-given" && (
+            <YesNoNotGivenEditor
               question={question}
               sectionId={sectionId}
               onUpdateQuestion={onUpdateQuestion}
