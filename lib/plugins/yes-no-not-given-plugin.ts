@@ -107,7 +107,6 @@ export class YesNoNotGivenPlugin extends BaseQuestionPlugin<YesNoNotGivenQuestio
     
     const scoringStrategy = question.scoringStrategy || "partial";
 
-    // Helper function to normalize answers for comparison
     const normalizeAnswer = (value: unknown): string => {
       if (!value) return "";
       const stringValue = (value || "").toString().trim().toLowerCase();
