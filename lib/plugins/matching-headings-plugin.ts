@@ -99,6 +99,7 @@ export class MatchingHeadingsPlugin extends BaseQuestionPlugin<MatchingHeadingsQ
       questionText: standardItems.find((item) => item.id === subQ.item)?.text,
       answerText: standardOptions.find((opt) => opt.id === subQ.correctAnswer)?.text,
       subIndex: index,
+      explanation: subQ.explanation || ''
     }));
 
     return {

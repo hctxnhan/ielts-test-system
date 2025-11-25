@@ -18,6 +18,11 @@ import AudioPlayer from "./audio-player";
 import ReadingPassageViewer from "./reading-passage-viewer";
 import SectionQuestionsRenderer from "./section-questions-renderer";
 import TestBottomNavigation from "./test-bottom-navigation";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@testComponents/components/ui/accordion";
+import { motion, AnimatePresence } from "framer-motion";
+
+import _ from "lodash";
+
 
 export interface BaseTestContainerProps {
   test: Test;
@@ -74,6 +79,7 @@ export default function BaseTestContainer({
     );
   }
 
+
   // If test is not loaded yet, show loading
   if (!test) {
     return (
@@ -125,6 +131,29 @@ export default function BaseTestContainer({
                   Listen carefully.
                 </AlertDescription>
               </Alert>
+            )}
+            {!_.isEmpty(currentSection.transcript) && readOnly && (
+              <Accordion type="single" collapsible className="mt-4">
+                <AccordionItem value="transcript">
+                  <AccordionTrigger className="text-sm font-bold no-underline">
+                    Hiện Transcript
+                  </AccordionTrigger>
+                  <AccordionContent className="p-0">
+                    <AnimatePresence initial={false}>
+                      <motion.div
+                        key="transcript"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="text-sm leading-relaxed prose max-w-none overflow-hidden"
+                      >
+                        <RichTextContent content={currentSection.transcript} />
+                      </motion.div>
+                    </AnimatePresence>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             )}
           </div>
         )}

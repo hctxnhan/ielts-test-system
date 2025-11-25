@@ -52,10 +52,13 @@ class ShortAnswerPlugin extends BaseQuestionPlugin<ShortAnswerQuestion> {
         item: q.id,
         acceptableAnswers: [""],
         points: 1,
+        explanation: ''
       })),
       wordLimit: 3,
     };
   }
+
+
 
   createRenderer(): React.ComponentType<QuestionRendererProps<ShortAnswerQuestion>> {
     return ShortAnswerQuestionRenderer as unknown as React.ComponentType<
@@ -76,6 +79,7 @@ class ShortAnswerPlugin extends BaseQuestionPlugin<ShortAnswerQuestion> {
     }));
 
     const standardSubQuestions: StandardSubQuestionMeta[] =
+   
       question.subQuestions.map((sub) => {
         const shortAnswerSub = sub as any;
         return {
@@ -86,6 +90,7 @@ class ShortAnswerPlugin extends BaseQuestionPlugin<ShortAnswerQuestion> {
           questionText: standardItems.find((item) => item.id === sub.item)?.text,
           answerText: shortAnswerSub.acceptableAnswers?.join(", "),
           acceptableAnswers: shortAnswerSub.acceptableAnswers,
+          explanation: sub.explanation || ''
         };
       });
 
