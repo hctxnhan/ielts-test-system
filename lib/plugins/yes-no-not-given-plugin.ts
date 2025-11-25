@@ -59,19 +59,19 @@ export class YesNoNotGivenPlugin extends BaseQuestionPlugin<YesNoNotGivenQuestio
           subId: uuidv4(),
           item: statementIds[0],
           correctAnswer: "yes",
-          points: this.config.defaultPoints / 3,
+          points: 1,
         },
         {
           subId: uuidv4(),
           item: statementIds[1],
           correctAnswer: "no",
-          points: this.config.defaultPoints / 3,
+          points: 1,
         },
         {
           subId: uuidv4(),
           item: statementIds[2],
           correctAnswer: "not-given",
-          points: this.config.defaultPoints / 3,
+          points: 1,
         },
       ],
     };
