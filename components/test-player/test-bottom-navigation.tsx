@@ -125,11 +125,6 @@ export default function TestBottomNavigation({
                 {currentSection.title}
               </span>
               <span className="text-xs text-muted-foreground shrink-0">
-                {/* {(() => {
-                  const fullSection = test.sections[currentSectionIndex];
-                  const sectionStats = sectionStatsCache[fullSection.id];
-                  return sectionStats ? sectionStats.sectionAnswers.length : 0;
-                })()} / {currentSection.questions.length} */}
               </span>
             </div>
 
@@ -214,11 +209,6 @@ export default function TestBottomNavigation({
                   {currentSection.title}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {/* {(() => {
-                    const fullSection = test.sections[currentSectionIndex];
-                    const sectionStats = sectionStatsCache[fullSection.id];
-                    return sectionStats ? sectionStats.sectionAnswers.length : 0;
-                  })()} / {currentSection.questions.length} */}
                 </span>
               </div>
             </div>
