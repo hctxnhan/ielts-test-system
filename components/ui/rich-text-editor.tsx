@@ -13,7 +13,7 @@ import TextStyle from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
 import { Editor, EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { Extension, Node} from "@tiptap/core";
+import { Extension, Node } from "@tiptap/core";
 
 import {
   AlignCenter,
@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "./button";
+
 
 interface RichTextEditorProps {
   id?: string;
@@ -150,13 +151,13 @@ const FloatingTableToolbar = ({ editor }: { editor: Editor | null }) => {
         if (top < margin) {
           // Not enough space above - position below table
           top = tableRect.bottom + 10;
-          
+
           // Check if there's enough space below
           if (top + toolbarHeight > viewportHeight - margin) {
             // Not enough space below either - use best available position
             const availableSpaceAbove = tableRect.top - margin;
             const availableSpaceBelow = viewportHeight - tableRect.bottom - margin;
-            
+
             if (availableSpaceAbove >= toolbarHeight) {
               // Use space above
               top = tableRect.top - toolbarHeight - 5;
@@ -216,15 +217,15 @@ const FloatingTableToolbar = ({ editor }: { editor: Editor | null }) => {
       const target = event.target as Node;
       const toolbarElement = toolbarRef.current;
       const editorElement = editor.view.dom;
-      
+
       // Don't close if clicking inside the toolbar or editor
       if (
-        toolbarElement?.contains(target) || 
+        toolbarElement?.contains(target) ||
         editorElement?.contains(target)
       ) {
         return;
       }
-      
+
       // Close the toolbar if clicking outside
       setIsVisible(false);
     };
@@ -233,7 +234,7 @@ const FloatingTableToolbar = ({ editor }: { editor: Editor | null }) => {
     editor.on("update", handleSelectionUpdate);
     window.addEventListener("resize", handleResize);
     window.addEventListener("scroll", handleScroll);
-    
+
     const handleEscapeKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsVisible(false);
@@ -345,7 +346,7 @@ const FloatingTableToolbar = ({ editor }: { editor: Editor | null }) => {
   );
 
   // Use portal to render outside of any overflow containers
-  return typeof window !== 'undefined' 
+  return typeof window !== 'undefined'
     ? createPortal(toolbarContent, document.body)
     : null;
 };
@@ -474,13 +475,13 @@ const FloatingHighlightToolbar = ({ editor, readonly = false }: { editor: Editor
         if (top < margin) {
           // Not enough space above - position below selection
           top = selectionBottom + 10;
-          
+
           // Check if there's enough space below
           if (top + toolbarHeight > viewportHeight - margin) {
             // Not enough space below either - position in viewport center or best available spot
             const availableSpaceAbove = start.top - margin;
             const availableSpaceBelow = viewportHeight - selectionBottom - margin;
-            
+
             if (availableSpaceAbove > availableSpaceBelow && availableSpaceAbove >= toolbarHeight) {
               // Use space above
               top = start.top - toolbarHeight - 5;
@@ -540,12 +541,12 @@ const FloatingHighlightToolbar = ({ editor, readonly = false }: { editor: Editor
       const target = event.target as Node;
       const toolbarElement = toolbarRef.current;
       const editorElement = editor.view.dom;
-      
+
       // Don't close if clicking inside the toolbar
       if (toolbarElement?.contains(target)) {
         return;
       }
-      
+
       // For highlight toolbar, we need to be more careful about clicks in the editor
       // Only close if clicking outside both toolbar and editor, or if there's no selection
       if (!editorElement?.contains(target)) {
@@ -570,7 +571,7 @@ const FloatingHighlightToolbar = ({ editor, readonly = false }: { editor: Editor
     editorElement.addEventListener('mouseup', handleMouseUp);
     window.addEventListener('resize', handleResize);
     window.addEventListener('scroll', handleScroll);
-    
+
     const handleEscapeKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsVisible(false);
@@ -607,7 +608,7 @@ const FloatingHighlightToolbar = ({ editor, readonly = false }: { editor: Editor
 
   const isHighlighted = editor.isActive("highlight");
   const currentColor = editor.getAttributes("highlight").color;
-  
+
   const toolbarContent = (
     <div
       ref={toolbarRef}
@@ -623,8 +624,8 @@ const FloatingHighlightToolbar = ({ editor, readonly = false }: { editor: Editor
           <button
             key={color.value}
             className={`w-6 h-6 rounded border hover:border-gray-400 ${color.class} ${currentColor === color.value
-                ? "border-gray-800 ring-1 ring-gray-400"
-                : "border-gray-300"
+              ? "border-gray-800 ring-1 ring-gray-400"
+              : "border-gray-300"
               }`}
             title={`${color.name}${currentColor === color.value ? " (current)" : ""}`}
             onClick={() => toggleHighlight(color.value)}
@@ -647,7 +648,7 @@ const FloatingHighlightToolbar = ({ editor, readonly = false }: { editor: Editor
   );
 
   // Use portal to render outside of any overflow containers
-  return typeof window !== 'undefined' 
+  return typeof window !== 'undefined'
     ? createPortal(toolbarContent, document.body)
     : null;
 };
@@ -1166,7 +1167,7 @@ export function RichTextEditor({
       {!readonly && <FloatingTableToolbar editor={editor} />}
       {/* {enableHighlight && <FloatingHighlightToolbar editor={editor} readonly={readonly} />} */}
       <FloatingHighlightToolbar editor={editor} readonly={readonly} />
-     
+
       <EditorContent editor={editor} placeholder={placeholder} id={id} />
     </div>
   );

@@ -147,6 +147,7 @@ export interface WritingTask1Question extends BaseQuestion {
   wordLimit: number;
   sampleAnswer?: string;
   scoringPrompt?: string;
+  suggestedAnswer?: string;
 }
 
 export interface WritingTask2Question extends BaseQuestion {
@@ -154,6 +155,7 @@ export interface WritingTask2Question extends BaseQuestion {
   prompt: string;
   wordLimit: number;
   sampleAnswer?: string;
+  suggestedAnswer?: string;
   scoringPrompt?: string;
   imageUrl?: string;
 }
