@@ -204,7 +204,7 @@ export default function YesNoNotGivenQuestion({
           const isValidUserAnswer = validAnswers.includes(userAnswer || "");
           const isCorrect =
             showCorrectAnswer && isValidUserAnswer && userAnswer === subQuestion.correctAnswer;
-          const isIncorrect = showCorrectAnswer && isValidUserAnswer && !isCorrect;
+          const isIncorrect = showCorrectAnswer && !isCorrect;
           return (
             <div key={subQuestion.subId} className="space-y-1.5 text-sm">
               <div className="flex items-start space-x-1.5 font-medium">
