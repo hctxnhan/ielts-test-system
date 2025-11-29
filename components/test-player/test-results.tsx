@@ -204,8 +204,9 @@ export default function TestResults({ currentTest, testResults, isExercise = fal
             <span className="bg-primary text-primary-foreground rounded-full w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 flex items-center justify-center mr-3 sm:mr-4">
               <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
             </span>
-            {currentTest.title} -{' '}
-            {(currentTest.skill ?? currentTest.type ?? '').toUpperCase()}
+            {currentTest.title}
+            {/* -{' '}
+            {(currentTest.skill ?? currentTest.type ?? '').toUpperCase()} */}
           </CardTitle>
         </CardHeader>
 
