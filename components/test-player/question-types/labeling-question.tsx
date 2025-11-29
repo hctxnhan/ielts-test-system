@@ -66,13 +66,13 @@ export default function LabelingQuestionRenderer({
         )}
         minHeight={20}
       />
-      <div className="relative border rounded-lg overflow-hidden bg-gray-50 flex justify-center">
+      {/* <div className="relative border rounded-lg overflow-hidden bg-gray-50 flex justify-center">
         <img
           src={question.imageUrl || "/placeholder.svg"}
           alt="Diagram to label"
           className="max-h-[500px] object-contain"
         />
-      </div>
+      </div> */}
       <div className="grid grid-cols-1 md:grid-cols-[minmax(250px,1fr)_minmax(250px,1fr)] gap-6">
         <div className="space-y-4">
           <p className="font-medium text-base md:text-lg">Options</p>
