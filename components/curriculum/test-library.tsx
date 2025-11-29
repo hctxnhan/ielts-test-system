@@ -118,7 +118,7 @@ export function TestLibrary() {
       </div>
 
       {/* Test List */}
-      <div className="flex-1 space-y-2 overflow-y-auto">
+      <div className="flex-1 space-y-2  max-h-[600px] overflow-y-auto">
         {filteredTests.length === 0 ? (
           <div className="text-center py-8">
             <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
