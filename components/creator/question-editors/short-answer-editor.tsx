@@ -26,7 +26,6 @@ export default function ShortAnswerEditor({
   sectionId,
   onUpdateQuestion,
 }: ShortAnswerEditorProps) {
-  console.log("==> questions", question)
   return (
     <div className="space-y-3">
       <div className="space-y-1.5">

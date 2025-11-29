@@ -343,7 +343,6 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
   calculateTotalDuration: () => {
     const { currentTest } = get();
     if (!currentTest) return 0;
-    console.log("==> calculateTotalDuration", currentTest)
     return currentTest.sections.reduce(
       (total, section) => total + section.duration,
       0

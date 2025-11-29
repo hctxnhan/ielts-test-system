@@ -218,9 +218,6 @@ export const useTestStore = create<TestState>()((set, get) => {
           },
         );
 
-
-
-
         let testResults: any = {
           totalScore,
           maxPossibleScore,

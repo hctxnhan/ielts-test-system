@@ -147,8 +147,7 @@ export function getSectionStats(
   const sectionAnswers: UserAnswer[] = [];
   let correctAnswers = 0;
   let incorrectAnswers = 0;
-
-  // Process each question in the section
+   // Process each question in the section
   for (const question of section.questions) {
     const { score, maxScore } = getQuestionScore(question, answers);
     sectionScore += score;

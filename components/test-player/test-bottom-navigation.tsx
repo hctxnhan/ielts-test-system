@@ -59,6 +59,8 @@ export default function TestBottomNavigation({
   useEffect(() => {
     const updateSectionStats = () => {
       const newCache: SectionStatsCache = {};
+
+    
       
       for (const section of test.sections) {
         try {
@@ -230,7 +232,7 @@ export default function TestBottomNavigation({
                 const answeredQuestionsCount = sectionStats ? sectionStats.sectionAnswers.length : 0;
                 const isComplete = answeredQuestionsCount === questionCount;
                 const isCurrent = index === currentSectionIndex;
-
+               
                 return (
                   <Button
                     key={section.id}

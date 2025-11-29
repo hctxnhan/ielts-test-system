@@ -58,8 +58,6 @@ export default function QuestionEditorInline({
     "word-form",
   ].includes(question.type);
 
-  console.log("==> question", question.type)
-
   return (
     <Card className="mt-2">
       <CardHeader className="py-3">

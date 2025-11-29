@@ -24,7 +24,6 @@ export default function MultipleChoiceEditor({
   sectionId,
   onUpdateQuestion,
 }: MultipleChoiceEditorProps) {
-  console.log("===>> question", question)
   return (
     <div className="space-y-3">
       <div className="space-y-1.5">

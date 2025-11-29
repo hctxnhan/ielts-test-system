@@ -21,7 +21,6 @@ export default function WritingTask2Editor({
   sectionId,
   onUpdateQuestion,
 }: WritingTask2EditorProps) {
-  console.log("==> question 2", question)
   return (
     <div className="grid gap-3">
       {/* <div className="gap-1.5 hidden">

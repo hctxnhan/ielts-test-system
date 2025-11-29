@@ -33,9 +33,6 @@ export default function YesNoNotGivenEditor({
   sectionId,
   onUpdateQuestion,
 }: YesNoNotGivenEditorProps) {
-
-  console.log("==> question", question)
-
  
   const generateStmtId = () => uuidv4();
   const generateSubId = () => uuidv4();

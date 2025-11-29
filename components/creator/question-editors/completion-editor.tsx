@@ -209,7 +209,6 @@ export default function CompletionEditor({
   onUpdateQuestion,
 }: CompletionEditorProps) {
   const length = question.text?.match(/_{3,}/g)?.length || 0;
-  console.log("==> question", question)
 
   // Sync blanks <-> subQuestion count
   useEffect(() => {

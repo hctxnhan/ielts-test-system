@@ -34,7 +34,6 @@ export default function TrueFalseNotGivenEditor({
   onUpdateQuestion,
 }: TrueFalseNotGivenEditorProps) {
 
-  console.log("==> question TrueFalseNotGivenEditor", question)
   const generateStmtId = () => uuidv4();
   const generateSubId = () => uuidv4();
 
