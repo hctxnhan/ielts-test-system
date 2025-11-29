@@ -219,6 +219,21 @@ export default function QuestionRenderer({
   // If a plugin provides a renderer, use it dynamically to reduce repetition.
   const Renderer = QuestionPluginRegistry.getRenderer(updatedQuestion.type);
   if (Renderer) {
+    if (updatedQuestion.type && updatedQuestion.type == 'writing-task1' || updatedQuestion.type == 'writing-task2' ) {
+      return (
+      <div style={containerStyle}>
+        <Renderer
+          question={updatedQuestion}
+          value={localAnswer as unknown}
+          onChange={handleChange}
+          readOnly={isReviewMode}
+          showCorrectAnswer={isReviewMode}
+          onQuestionHighlighted={onQuestionContentChange}
+          {...(answer !== undefined ? ({ answer: answer as unknown as UserAnswer }) : {})}
+        />
+      </div>
+    );
+    } else 
     return (
       <div style={containerStyle}>
         <QuestionImage />
@@ -241,7 +256,7 @@ export default function QuestionRenderer({
     case "writing-task2":
       return (
         <div style={containerStyle}>
-          <QuestionImage />
+          {/* <QuestionImage /> */}
           <WritingTask1QuestionRenderer
             question={updatedQuestion}
             value={localAnswer as WritingTaskAnswer | null}
