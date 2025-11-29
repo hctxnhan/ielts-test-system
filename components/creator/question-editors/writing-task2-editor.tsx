@@ -93,6 +93,27 @@ export default function WritingTask2Editor({
           Leave empty for standard IELTS Task 2 criteria
         </p>
       </div>
+      <div className="grid gap-1.5">
+        <Label
+          htmlFor={`suggested-answer-${question.id}`}
+          className="text-sm font-medium"
+        >
+          Suggested Answer{" "}
+          <span className="font-normal text-muted-foreground">(Optional)</span>
+        </Label>
+        <RichTextEditor
+          id={`suggested-answer-${question.id}`}
+          value={question.suggestedAnswer || ""}
+          onChange={(content) => {
+            onUpdateQuestion(sectionId, question.id, {
+              suggestedAnswer: content,
+            });
+          }}
+          placeholder="Provide a suggested answer..."
+          minHeight={120}
+          className="text-sm"
+        />
+      </div>
 
       <div className="grid gap-1.5">
         <Label

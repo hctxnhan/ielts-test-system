@@ -117,7 +117,7 @@ const SectionPerformance = ({ section, skill }: { section: SectionResult, skill:
         <div className="flex justify-between items-center text-xs text-muted-foreground">
           {
             skill !== 'writing' && <div>
-              {section.totalScore?.toFixed(2)}/{Math.round(section.maxScore)} điểm
+              {section.totalScore?.toFixed(2)}/{Math.round(section.totalCount)} điểm
             </div>
           }
 

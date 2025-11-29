@@ -112,7 +112,6 @@ export function TestCreator({
     updateQuestion,
     reorderQuestion,
   } = useCreatorStore();
-
   // Set default test if provided
   useEffect(() => {
     if (defaultTest) {

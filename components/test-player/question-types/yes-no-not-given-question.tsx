@@ -157,17 +157,11 @@ import {
 } from "@testComponents/components/ui/radio-group";
 import { Label } from "@testComponents/components/ui/label";
 import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
-import type { TrueFalseNotGivenQuestion } from "@testComponents/lib/types";
+import type { YesNoNotGivenQuestion } from "@testComponents/lib/types";
 import { cn } from "@testComponents/lib/utils";
-import _ from "lodash";
 
-import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@radix-ui/react-accordion";
-
-
-
-interface TrueFalseNotGivenQuestionProps {
-  question: TrueFalseNotGivenQuestion;
+interface YesNoNotGivenQuestionProps {
+  question: YesNoNotGivenQuestion;
   value: Record<string, string> | null;
   onChange: (value: Record<string, string>, subId?: string) => void;
   readOnly?: boolean;
@@ -179,15 +173,15 @@ interface TrueFalseNotGivenQuestionProps {
   ) => void;
 }
  
-export default function TrueFalseNotGivenQuestion({
+export default function YesNoNotGivenQuestion({
   question,
   value,
   onChange,
   readOnly = false,
   showCorrectAnswer = false,
-  onQuestionHighlighted = () => { },
-}: TrueFalseNotGivenQuestionProps) {
-
+  onQuestionHighlighted = () => {},
+}: YesNoNotGivenQuestionProps) {
+ 
   return (
     <div className="space-y-2">
       <RichTextEditor
@@ -205,13 +199,12 @@ export default function TrueFalseNotGivenQuestion({
 
           if (!subQuestion) return null;
 
-          const validAnswers = ["true", "false", "not-given"];
-          const userAnswer = value?.[subQuestion.subId] || "";
+          const validAnswers = ["yes", "no", "not-given"];
+          const userAnswer = value?.[subQuestion.subId];
           const isValidUserAnswer = validAnswers.includes(userAnswer || "");
           const isCorrect =
             showCorrectAnswer && isValidUserAnswer && userAnswer === subQuestion.correctAnswer;
           const isIncorrect = showCorrectAnswer && !isCorrect;
-
           return (
             <div key={subQuestion.subId} className="space-y-1.5 text-sm">
               <div className="flex items-start space-x-1.5 font-medium">
@@ -235,7 +228,6 @@ export default function TrueFalseNotGivenQuestion({
                   minHeight={20}
                 />
               </div>
-
               <RadioGroup
                 value={isValidUserAnswer ? userAnswer : undefined}
                 onValueChange={(val) => {
@@ -261,27 +253,27 @@ export default function TrueFalseNotGivenQuestion({
               >
                 <div className="flex items-center gap-1.5">
                   <RadioGroupItem
-                    value="true"
-                    id={`true-${statement.id}`}
+                    value="yes"
+                    id={`yes-${statement.id}`}
                     disabled={readOnly}
                     className={cn(
                       isCorrect && userAnswer === "true" && "text-green-600",
                       isIncorrect && userAnswer === "true" && "text-red-600",
                     )}
                   />
-                  <Label htmlFor={`true-${statement.id}`}>True</Label>
+                  <Label htmlFor={`yes-${statement.id}`}>Yes</Label>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <RadioGroupItem
-                    value="false"
-                    id={`false-${statement.id}`}
+                    value="no"
+                    id={`no-${statement.id}`}
                     disabled={readOnly}
                     className={cn(
                       isCorrect && userAnswer === "false" && "text-green-600",
                       isIncorrect && userAnswer === "false" && "text-red-600",
                     )}
                   />
-                  <Label htmlFor={`false-${statement.id}`}>False</Label>
+                  <Label htmlFor={`no-${statement.id}`}>No</Label>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <RadioGroupItem
@@ -290,11 +282,11 @@ export default function TrueFalseNotGivenQuestion({
                     disabled={readOnly}
                     className={cn(
                       isCorrect &&
-                      userAnswer === "not-given" &&
-                      "text-green-600",
+                        userAnswer === "not-given" &&
+                        "text-green-600",
                       isIncorrect &&
-                      userAnswer === "not-given" &&
-                      "text-red-600",
+                        userAnswer === "not-given" &&
+                        "text-red-600",
                     )}
                   />
                   <Label htmlFor={`not-given-${statement.id}`}>Not Given</Label>
@@ -313,28 +305,9 @@ export default function TrueFalseNotGivenQuestion({
                       .join(" ")}
                   </div>
                 )}
-              {!_.isEmpty(subQuestion.explanation) && readOnly && (
-                <Accordion type="single" collapsible className="mt-4 border-0 outline-none">
-                  <AccordionItem value="transcript">
-                    <AccordionTrigger className={cn(
-                      "text-sm font-bold underline flex items-center gap-2 py-2",
-                      "hover:no-underline outline-none border-0 text-blue-600"
-                    )} >
-
-                      Giải thích đáp án
-                    </AccordionTrigger>
-                    <AccordionContent className="p-0 border-0 outline-none">
-
-                      <RichTextContent content={subQuestion.explanation} />
-
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              )}
             </div>
           );
         })}
-
       </div>
 
       <style jsx global>{`

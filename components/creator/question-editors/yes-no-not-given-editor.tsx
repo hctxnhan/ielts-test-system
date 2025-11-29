@@ -13,27 +13,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@testComponents/components/ui/select";
-import type { TrueFalseNotGivenQuestion } from "@testComponents/lib/types";
+import type { YesNoNotGivenQuestion } from "@testComponents/lib/types";
 import { List, PlusCircle, X } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 
-interface TrueFalseNotGivenEditorProps {
-  question: TrueFalseNotGivenQuestion;
+interface YesNoNotGivenEditorProps {
+  question: YesNoNotGivenQuestion;
   sectionId: string;
   onUpdateQuestion: (
     sectionId: string,
     questionId: string,
-    updates: Partial<TrueFalseNotGivenQuestion>,
+    updates: Partial<YesNoNotGivenQuestion>,
   ) => void;
 }
 
-export default function TrueFalseNotGivenEditor({
+export default function YesNoNotGivenEditor({
   question,
   sectionId,
   onUpdateQuestion,
-}: TrueFalseNotGivenEditorProps) {
-
+}: YesNoNotGivenEditorProps) {
+ 
   const generateStmtId = () => uuidv4();
   const generateSubId = () => uuidv4();
 
@@ -44,7 +44,7 @@ export default function TrueFalseNotGivenEditor({
   };
 
   const handleAnswerChange = (index: number, value: string) => {
-    const validAnswers = ["true", "false", "not-given"];
+    const validAnswers = ["yes", "no", "not-given"];
     if (!validAnswers.includes(value)) return;
 
     const updatedSubQuestions = [...(question.subQuestions || [])];
@@ -53,14 +53,14 @@ export default function TrueFalseNotGivenEditor({
       updatedSubQuestions[index] = {
         subId: generateSubId(),
         item: question.statements[index].id,
-        correctAnswer: value as "true" | "false" | "not-given",
+        correctAnswer: value as "yes" | "no" | "not-given",
         points: 1,
         explanation: "",
       };
     } else {
       updatedSubQuestions[index] = {
         ...updatedSubQuestions[index],
-        correctAnswer: value as "true" | "false" | "not-given",
+        correctAnswer: value as "yes" | "no" | "not-given",
       };
     }
 
@@ -145,7 +145,7 @@ export default function TrueFalseNotGivenEditor({
                   onValueChange={(value) =>
                     handleAnswerChange(
                       index,
-                      value as "true" | "false" | "not-given",
+                      value as "yes" | "no" | "not-given",
                     )
                   }
                 >
@@ -153,11 +153,11 @@ export default function TrueFalseNotGivenEditor({
                     <SelectValue placeholder="Answer" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="true" className="text-sm py-1.5 px-2">
-                      True
+                    <SelectItem value="yes" className="text-sm py-1.5 px-2">
+                      Yes
                     </SelectItem>
-                    <SelectItem value="false" className="text-sm py-1.5 px-2">
-                      False
+                    <SelectItem value="no" className="text-sm py-1.5 px-2">
+                      No
                     </SelectItem>
                     <SelectItem value="not-given" className="text-sm py-1.5 px-2">
                       Not Given

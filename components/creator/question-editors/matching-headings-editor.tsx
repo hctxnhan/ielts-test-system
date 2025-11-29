@@ -381,7 +381,6 @@ const MatchingHeadingsEditor = ({
    * Ensure subQuestions exists for every paragraph and preserves existing data.
    * This prevents mismatch between paragraphs and explanations.
    */
-  console.log("==> question", question)
   const ensureSubQuestionsForParagraphs = React.useCallback(() => {
     const paragraphs = question.paragraphs || [];
     const existingSubs = question.subQuestions || [];

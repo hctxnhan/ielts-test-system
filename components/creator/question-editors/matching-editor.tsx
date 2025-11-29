@@ -35,7 +35,6 @@ export default function MatchingEditor({
   sectionId,
   onUpdateQuestion,
 }: MatchingEditorProps) {
-  console.log("==> question", question)
   const [isUsingStructuredFormat, setIsUsingStructuredFormat] = useState(
     () =>
       Array.isArray(question.items) &&

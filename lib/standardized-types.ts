@@ -80,6 +80,13 @@ export interface StandardTrueFalseNotGivenQuestion
   subQuestions: StandardSubQuestionMeta[];
 }
 
+export interface StandardYesNoNotGivenQuestion
+  extends StandardBaseQuestion {
+  type: "yes-no-not-given";
+  items: StandardQuestionItem[];
+  subQuestions: StandardSubQuestionMeta[];
+}
+
 export interface StandardMatchingHeadingsQuestion extends StandardBaseQuestion {
   type: "matching-headings";
   items: StandardQuestionItem[];
@@ -142,6 +149,7 @@ export type StandardQuestion =
   | StandardLabelingQuestion
   | StandardPickFromListQuestion
   | StandardTrueFalseNotGivenQuestion
+  | StandardYesNoNotGivenQuestion
   | StandardMatchingHeadingsQuestion
   | StandardShortAnswerQuestion
   | StandardWritingTask1Question

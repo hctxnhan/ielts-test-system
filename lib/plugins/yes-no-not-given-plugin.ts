@@ -1,18 +1,18 @@
 import React from "react";
 import { v4 as uuidv4 } from "uuid";
-import type { TrueFalseNotGivenQuestion } from "../types";
-import type { StandardTrueFalseNotGivenQuestion, StandardSubQuestionMeta, StandardQuestionItem } from "../standardized-types";
+import type { TrueFalseNotGivenQuestion, YesNoNotGivenQuestion } from "../types";
+import type { StandardTrueFalseNotGivenQuestion, StandardSubQuestionMeta, StandardQuestionItem, StandardYesNoNotGivenQuestion } from "../standardized-types";
 import { BaseQuestionPlugin, ValidationResult, QuestionRendererProps, QuestionEditorProps, ScoringContext, ScoringResult } from "../question-plugin-system";
 
 // Import the existing components
-import TrueFalseNotGivenQuestionComponent from "../../components/test-player/question-types/true-false-not-given-question";
+import YesNoNotGivenQuestionComponent from "../../components/test-player/question-types/yes-no-not-given-question";
 import TrueFalseNotGivenEditor from "../../components/creator/question-editors/true-false-not-given-editor";
 
-export class TrueFalseNotGivenPlugin extends BaseQuestionPlugin<TrueFalseNotGivenQuestion> {
+export class YesNoNotGivenPlugin extends BaseQuestionPlugin<YesNoNotGivenQuestion> {
   config = {
-    type: "true-false-not-given" as const,
-    displayName: "True / False / Not Given",
-    description: "Determine if statements are true, false, or not given based on the passage",
+    type: "yes-no-not-given" as const,
+    displayName: "Yes / No / Not Given",
+    description: "Determine if statements are yes, no, or not given based on the passage",
     icon: "❓",
     category: ["reading" as const],
     supportsPartialScoring: true,
@@ -21,20 +21,20 @@ export class TrueFalseNotGivenPlugin extends BaseQuestionPlugin<TrueFalseNotGive
     hasSubQuestions: true,
   };
 
-  createRenderer(): React.ComponentType<QuestionRendererProps<TrueFalseNotGivenQuestion>> {
-    return TrueFalseNotGivenQuestionComponent as unknown as React.ComponentType<QuestionRendererProps<TrueFalseNotGivenQuestion>>;
+  createRenderer(): React.ComponentType<QuestionRendererProps<YesNoNotGivenQuestion>> {
+    return YesNoNotGivenQuestionComponent as unknown as React.ComponentType<QuestionRendererProps<YesNoNotGivenQuestion>>;
   }
 
-  createEditor(): React.ComponentType<QuestionEditorProps<TrueFalseNotGivenQuestion>> {
-    return TrueFalseNotGivenEditor as unknown as React.ComponentType<QuestionEditorProps<TrueFalseNotGivenQuestion>>;
+  createEditor(): React.ComponentType<QuestionEditorProps<YesNoNotGivenQuestion>> {
+    return TrueFalseNotGivenEditor as unknown as React.ComponentType<QuestionEditorProps<YesNoNotGivenQuestion>>;
   }
 
-  createDefault(index: number): TrueFalseNotGivenQuestion {
+  createDefault(index: number): YesNoNotGivenQuestion {
     const statementIds = [uuidv4(), uuidv4(), uuidv4()];
     
     return {
       id: uuidv4(),
-      type: "true-false-not-given",
+      type: "yes-no-not-given",
       text: "",
       points: this.config.defaultPoints,
       scoringStrategy: "partial",
@@ -58,29 +58,26 @@ export class TrueFalseNotGivenPlugin extends BaseQuestionPlugin<TrueFalseNotGive
         {
           subId: uuidv4(),
           item: statementIds[0],
-          correctAnswer: "true",
+          correctAnswer: "yes",
           points: 1,
-          explanation: '',
         },
         {
           subId: uuidv4(),
           item: statementIds[1],
-          correctAnswer: "false",
+          correctAnswer: "no",
           points: 1,
-           explanation: '',
         },
         {
           subId: uuidv4(),
           item: statementIds[2],
           correctAnswer: "not-given",
           points: 1,
-          explanation: '',
         },
       ],
     };
   }
 
-  transform(question: TrueFalseNotGivenQuestion): StandardTrueFalseNotGivenQuestion {
+  transform(question: YesNoNotGivenQuestion): StandardYesNoNotGivenQuestion {
     const standardItems: StandardQuestionItem[] = question.statements.map((stmt) => ({
       id: stmt.id,
       text: stmt.text,
@@ -94,7 +91,6 @@ export class TrueFalseNotGivenPlugin extends BaseQuestionPlugin<TrueFalseNotGive
       questionText: standardItems.find((item) => item.id === subQ.item)?.text,
       answerText: String(subQ.correctAnswer),
       subIndex: index,
-      explanation: subQ.explanation || ''
     }));
 
     return {
@@ -105,20 +101,19 @@ export class TrueFalseNotGivenPlugin extends BaseQuestionPlugin<TrueFalseNotGive
   }
 
   score(context: ScoringContext): ScoringResult {
-    const question = context.question as TrueFalseNotGivenQuestion;
+    const question = context.question as YesNoNotGivenQuestion;
     const answer = context.answer;
     const subQuestionId = context.subQuestionId;
     
     const scoringStrategy = question.scoringStrategy || "partial";
 
-    // Helper function to normalize answers for comparison
     const normalizeAnswer = (value: unknown): string => {
       if (!value) return "";
       const stringValue = (value || "").toString().trim().toLowerCase();
       
       // Normalize common variations to standard format
-      if (stringValue === "true" || stringValue === "t") return "true";
-      if (stringValue === "false" || stringValue === "f") return "false";
+      if (stringValue === "yes" || stringValue === "t") return "yes";
+      if (stringValue === "no" || stringValue === "f") return "no";
       if (stringValue === "not-given" || stringValue === "not_given" || stringValue === "ng" || stringValue === "n") return "not-given";
       
       return stringValue;
@@ -188,18 +183,18 @@ export class TrueFalseNotGivenPlugin extends BaseQuestionPlugin<TrueFalseNotGive
     }
   }
 
-  validate(question: TrueFalseNotGivenQuestion): ValidationResult {
+  validate(question: YesNoNotGivenQuestion): ValidationResult {
     const baseValidation = super.validate(question);
     const errors = [...baseValidation.errors];
     const warnings = [...baseValidation.warnings];
 
     // True/False/Not Given specific validation
     if (!question.statements || question.statements.length === 0) {
-      errors.push("True/False/Not Given questions must have at least one statement");
+      errors.push("Yes/No/Not Given questions must have at least one statement");
     }
 
     if (!question.subQuestions || question.subQuestions.length === 0) {
-      errors.push("True/False/Not Given questions must have at least one sub-question");
+      errors.push("Yes/No/Not Given questions must have at least one sub-question");
     }
 
     // Check for empty statement texts
@@ -217,12 +212,12 @@ export class TrueFalseNotGivenPlugin extends BaseQuestionPlugin<TrueFalseNotGive
     }
 
     // Check for valid answer values (lowercase only)
-    const validAnswers = ["true", "false", "not-given"];
+    const validAnswers = ["yes", "no", "not-given"];
     const invalidAnswers = question.subQuestions?.filter(subQ => 
       subQ.correctAnswer && !validAnswers.includes(subQ.correctAnswer?.toLowerCase())
     ) || [];
     if (invalidAnswers.length > 0) {
-      errors.push("All correct answers must be 'true', 'false', or 'not-given' (lowercase)");
+      errors.push("All correct answers must be 'yes', 'no', or 'not-given' (lowercase)");
     }
 
     // Check if statement count matches sub-question count

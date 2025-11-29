@@ -199,11 +199,6 @@ export default function ShortAnswerQuestionRenderer({
             );
           const isIncorrect = showCorrectAnswer && !isCorrect;
 
-          // const questionText = question.questions.find(
-          //   (q) => q.id === subQuestion.item,
-          // );
-          // console.log("==> subQuestion", question, subQuestion)
-
           return (
             <div key={subQuestion.subId} className="space-y-1.5 text-sm">
               <div className="flex items-start space-x-1.5 font-medium">

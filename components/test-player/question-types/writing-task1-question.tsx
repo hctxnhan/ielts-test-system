@@ -42,14 +42,14 @@ export default function WritingTask1QuestionRenderer({
   onChange,
   readOnly = false,
   showCorrectAnswer = false,
-  onQuestionHighlighted = () => {},
+  onQuestionHighlighted = () => { },
   answer,
 }: WritingTask1QuestionProps) {
 
   const [currentEssay, setCurrentEssay] = useState<string | null>(
     value?.text ?? null
   );
-  
+
   // Extract AI score from value prop (during answering) or answer prop (during review)
   const getAIScore = (): ScoringResult | null => {
     // First try to get from value prop (during answering mode)
@@ -62,10 +62,12 @@ export default function WritingTask1QuestionRenderer({
     }
     return null;
   };
-  
+
   const [aiScore, setAiScore] = useState<ScoringResult | null>(getAIScore());
   const [showFeedback, setShowFeedback] = useState(true);
   const [showSampleAnswer, setShowSampleAnswer] = useState(false);
+  const [showSuggestedAnswer, setShowSuggestedAnswer] = useState(false);
+
 
   // Update local state if the external value or answer changes
   useEffect(() => {
@@ -75,11 +77,11 @@ export default function WritingTask1QuestionRenderer({
     } else if (answer?.answer && typeof answer.answer === 'object' && (answer.answer as WritingTaskAnswer)?.text) {
       setCurrentEssay((answer.answer as WritingTaskAnswer).text);
     }
-    
+
     // Update AI score
     const newAiScore = getAIScore();
     setAiScore(newAiScore);
-    
+
     // Reset feedback visibility if no score/feedback
     if (!newAiScore) {
       setShowFeedback(false);
@@ -92,6 +94,12 @@ export default function WritingTask1QuestionRenderer({
       setShowSampleAnswer(true);
     }
   }, [showCorrectAnswer, question.sampleAnswer]);
+
+  useEffect(() => {
+    if (showCorrectAnswer && question.suggestedAnswer) {
+      setShowSuggestedAnswer(true);
+    }
+  }, [showCorrectAnswer, question.suggestedAnswer]);
 
   const wordCount = currentEssay
     ? (currentEssay.replace(/<[^>]*>/g, '').match(/\b\w+\b/g) || []).length
@@ -140,23 +148,23 @@ export default function WritingTask1QuestionRenderer({
           />
           <div className="flex justify-between items-center mt-2">
             <p
-              className={`text-sm ${
-                wordCount < (question.wordLimit || 150)
+              className={`text-sm ${wordCount < (question.wordLimit || 150)
                   ? "text-amber-600"
                   : "text-green-600"
-              }`}
+                }`}
             >
               Word count: {wordCount} / {question.wordLimit || 150} minimum
             </p>
 
             <div className="flex gap-2">
-              {question.sampleAnswer && (showCorrectAnswer || !readOnly) && (
+              {question.suggestedAnswer && (showCorrectAnswer || !readOnly) && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowSampleAnswer(!showSampleAnswer)}
+                  onClick={() => setShowSuggestedAnswer(!showSuggestedAnswer)}
+                  className="hover:bg-primary hover:text-white"
                 >
-                  {showSampleAnswer ? (
+                  {showSuggestedAnswer ? (
                     <>
                       <EyeOff className="mr-2 h-4 w-4" /> Ẩn gợi ý
                     </>
@@ -167,7 +175,28 @@ export default function WritingTask1QuestionRenderer({
                   )}
                 </Button>
               )}
+               {question.sampleAnswer && showCorrectAnswer && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSampleAnswer(!showSampleAnswer)}
+                  className="hover:bg-primary hover:text-white"
+                >
+                  {showSampleAnswer ? (
+                    <>
+                      <EyeOff className="mr-2 h-4 w-4" /> Ẩn bài mẫu
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="mr-2 h-4 w-4" /> Xem bài mẫu
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
+            {/* <div className="flex gap-2">
+              
+            </div> */}
           </div>
         </div>
       </div>
@@ -175,7 +204,7 @@ export default function WritingTask1QuestionRenderer({
         <Card className="p-4 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
           <h4 className="font-medium mb-2 flex items-center">
             <Award className="mr-2 h-5 w-5 text-green-600 dark:text-green-400" />
-           
+
             {/* AI Score: {aiScore.score.toFixed(1)} / {question.points} */}
           </h4>
 
@@ -209,9 +238,18 @@ export default function WritingTask1QuestionRenderer({
           </p>
         </Card>
       )}
-      {showSampleAnswer && question.sampleAnswer && (
+      {showSuggestedAnswer && question.suggestedAnswer && (
         <Card className="p-4 bg-muted/50">
           <h4 className="font-medium mb-2">Gợi ý:</h4>
+          <RichTextContent
+            content={question.suggestedAnswer}
+            className="leading-relaxed"
+          />
+        </Card>
+      )}
+      {showSampleAnswer && question.sampleAnswer && (
+        <Card className="p-4 bg-muted/50">
+          <h4 className="font-medium mb-2">Bài mẫu:</h4>
           <RichTextContent
             content={question.sampleAnswer}
             className="leading-relaxed"
@@ -221,3 +259,5 @@ export default function WritingTask1QuestionRenderer({
     </div>
   );
 }
+
+

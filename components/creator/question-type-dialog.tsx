@@ -70,6 +70,12 @@ export default function QuestionTypeDialog({
       description: "Evaluate statements",
       icon: "✓",
     },
+     {
+      type: "yes-no-not-given" as QuestionType,
+      title: "Yes/No/Not Given",
+      description: "Evaluate statements",
+      icon: "✓",
+    },
     {
       type: "matching-headings" as QuestionType,
       title: "Matching Headings",

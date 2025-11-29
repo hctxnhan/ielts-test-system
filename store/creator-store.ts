@@ -147,12 +147,16 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
     const updatedSections = currentTest.sections.map((section) =>
       section.id === sectionId ? { ...section, ...updates } : section
     );
-
+    const totalDuration = updatedSections.reduce(
+      (sum, section) => sum + (section.duration || 0),
+      0
+    );
+     
     set({
       currentTest: {
         ...currentTest,
         sections: updatedSections,
-        totalDuration: get().calculateTotalDuration(),
+        totalDuration: totalDuration,
       },
     });
   },
@@ -165,11 +169,16 @@ export const useCreatorStore = create<CreatorState>()((set, get) => ({
       (section) => section.id !== sectionId
     );
 
+    const totalDuration = updatedSections.reduce(
+      (sum, section) => sum + (section.duration || 0),
+      0
+    );
+
     set({
       currentTest: {
         ...currentTest,
         sections: updatedSections,
-        totalDuration: get().calculateTotalDuration(),
+        totalDuration: totalDuration,
         totalQuestions: get().calculateTotalQuestions(),
       },
     });
