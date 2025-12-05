@@ -170,10 +170,10 @@ export default function ReadingPassageViewer({
         passage.imageUrls &&
         passage.imageUrls.length > 0 && (
           <div className="space-y-4 mb-6 border p-3 rounded-md bg-muted/10">
-            <h4 className="text-sm font-medium text-primary flex items-center gap-1.5 mb-2">
+            {/* <h4 className="text-sm font-medium text-primary flex items-center gap-1.5 mb-2">
               <Info className="h-4 w-4" />
               Visual Information
-            </h4>
+            </h4> */}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {passage.imageUrls.map((url, index) => (
@@ -192,19 +192,19 @@ export default function ReadingPassageViewer({
                       loading="lazy"
                     />
                   </div>
-                  <div className="text-sm text-muted-foreground mt-2 flex items-center gap-1">
+                  {/* <div className="text-sm text-muted-foreground mt-2 flex items-center gap-1">
                     <Badge variant="outline" className="font-normal h-5">
                       Figure {index + 1}
                     </Badge>
-                  </div>
+                  </div> */}
                 </div>
               ))}
             </div>
 
-            <p className="text-xs text-muted-foreground">
+            {/* <p className="text-xs text-muted-foreground">
               Images may contain important information required to answer
               questions. Click on any image to view it in full size.
-            </p>
+            </p> */}
           </div>
         )}{" "}
       {/* Content with rich text styling */}
