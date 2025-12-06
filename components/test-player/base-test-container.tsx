@@ -302,6 +302,7 @@ export default function BaseTestContainer({
           onCompleteTest={onCompleteTest}
           jumpToSection={jumpToSection}
           answers={progress.answers}
+          isrealTestMode={realTestMode}
         />
       </div>
     </DndProvider>

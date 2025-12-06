@@ -37,6 +37,7 @@ interface TestBottomNavigationProps {
   onCompleteTest: () => void;
   jumpToSection: (index: number) => void;
   answers?: Record<string, UserAnswer>;
+  isrealTestMode: boolean
 }
 
 export default function TestBottomNavigation({
@@ -51,6 +52,7 @@ export default function TestBottomNavigation({
   onCompleteTest,
   jumpToSection,
   answers = {},
+  isrealTestMode = false,
 }: TestBottomNavigationProps) {
   const [isTimeUpDialogOpen, setIsTimeUpDialogOpen] = useState(false);
   const [sectionStatsCache, setSectionStatsCache] = useState<SectionStatsCache>({});
@@ -104,12 +106,12 @@ export default function TestBottomNavigation({
   return (
     <>
       {/* Floating Timer - Only show in non-readonly mode */}
-      {!readOnly && !test.isExercise && (
+      {!readOnly && !test.isExercise && isrealTestMode && (
         <TestTimer initialTime={test.totalDuration} onTimeEnd={handleTimeEnd} />
       )}
 
       {/* Time Up Dialog - Only show in non-readonly mode */}
-      {!readOnly && !test.isExercise && (
+      {!readOnly && !test.isExercise && isrealTestMode && (
         <TimeUpDialog
           isOpen={isTimeUpDialogOpen}
           onSubmitTest={handleSubmitTest}
