@@ -300,6 +300,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@r
 import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
 import _ from "lodash";
 import { cn } from "@testComponents/lib/utils";
+import Paragraph from "@tiptap/extension-paragraph";
+
 
 const colors = [
   { name: "Yellow", value: "#fef08a" },
@@ -377,6 +379,7 @@ export default function Completion({
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const [popoverPos, setPopoverPos] = useState<{ x: number; y: number } | null>(null);
 
+
   // Build editor content by replacing blanks with input node spans
   const content = useMemo(() => {
     let blankCounter = 0;
@@ -388,10 +391,29 @@ export default function Completion({
     });
   }, [question.text, question.subQuestions]);
 
+
+  const ParagraphWithStyle = Paragraph.extend({
+    addAttributes() {
+      return {
+        style: {
+          default: null,
+          parseHTML: element => element.getAttribute("style"),
+          renderHTML: attributes => {
+            if (!attributes.style) return {};
+            return { style: attributes.style };
+          },
+        },
+      };
+    },
+  });
+
   const editor = useEditor({
     editable: true,
     extensions: [
-      StarterKit.configure({}),
+      StarterKit.configure({
+        paragraph: false, 
+      }),
+      ParagraphWithStyle,
       Highlight.configure({ multicolor: true }),
       InputNode,
       Table.configure({ resizable: true }),
@@ -427,6 +449,8 @@ export default function Completion({
       setPopoverPos({ x: left + rect.width / 2, y: selectionTop - 40 });
     },
   });
+
+  
 
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;

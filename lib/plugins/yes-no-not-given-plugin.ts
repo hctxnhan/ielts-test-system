@@ -60,18 +60,21 @@ export class YesNoNotGivenPlugin extends BaseQuestionPlugin<YesNoNotGivenQuestio
           item: statementIds[0],
           correctAnswer: "yes",
           points: 1,
+          explanation: '',
         },
         {
           subId: uuidv4(),
           item: statementIds[1],
           correctAnswer: "no",
           points: 1,
+          explanation: '',
         },
         {
           subId: uuidv4(),
           item: statementIds[2],
           correctAnswer: "not-given",
           points: 1,
+          explanation: '',
         },
       ],
     };
@@ -91,6 +94,7 @@ export class YesNoNotGivenPlugin extends BaseQuestionPlugin<YesNoNotGivenQuestio
       questionText: standardItems.find((item) => item.id === subQ.item)?.text,
       answerText: String(subQ.correctAnswer),
       subIndex: index,
+      explanation: subQ.explanation || ''
     }));
 
     return {
