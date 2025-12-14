@@ -146,7 +146,7 @@ export default function BaseTestContainer({
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="text-sm leading-relaxed prose max-w-none overflow-hidden"
+                        className="text-sm leading-relaxed prose max-w-none max-h-[300px] overflow-y-auto"
                       >
                         <RichTextContent content={currentSection.transcript} />
                       </motion.div>
