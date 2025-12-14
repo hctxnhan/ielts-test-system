@@ -135,7 +135,7 @@ export default function BaseTestContainer({
             {!_.isEmpty(currentSection.transcript) && readOnly && (
               <Accordion type="single" collapsible className="mt-4">
                 <AccordionItem value="transcript">
-                  <AccordionTrigger className="text-sm font-bold no-underline">
+                  <AccordionTrigger className="text-sm font-bold no-underline text-blue-600">
                     Hiện Transcript
                   </AccordionTrigger>
                   <AccordionContent className="p-0">
@@ -302,6 +302,7 @@ export default function BaseTestContainer({
           onCompleteTest={onCompleteTest}
           jumpToSection={jumpToSection}
           answers={progress.answers}
+          isrealTestMode={realTestMode}
         />
       </div>
     </DndProvider>

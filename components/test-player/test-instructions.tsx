@@ -123,7 +123,7 @@ export default function TestInstructions({
   onBack,
   onStart,
 }: TestInstructionsProps) {
-  const [realTestMode, setRealTestMode] = useState(false);
+  const [realTestMode, setRealTestMode] = useState(true);
   const [customMode, setCustomMode] = useState(false);
   const [filterMode, setFilterMode] = useState<'sections' | 'types'>('sections');
   // Initialize with all sections and types selected by default

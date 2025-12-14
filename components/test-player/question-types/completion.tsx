@@ -300,6 +300,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@r
 import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
 import _ from "lodash";
 import { cn } from "@testComponents/lib/utils";
+import Paragraph from "@tiptap/extension-paragraph";
+import { ChevronDown } from "lucide-react";
+
 
 const colors = [
   { name: "Yellow", value: "#fef08a" },
@@ -377,6 +380,7 @@ export default function Completion({
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const [popoverPos, setPopoverPos] = useState<{ x: number; y: number } | null>(null);
 
+
   // Build editor content by replacing blanks with input node spans
   const content = useMemo(() => {
     let blankCounter = 0;
@@ -388,10 +392,29 @@ export default function Completion({
     });
   }, [question.text, question.subQuestions]);
 
+
+  const ParagraphWithStyle = Paragraph.extend({
+    addAttributes() {
+      return {
+        style: {
+          default: null,
+          parseHTML: element => element.getAttribute("style"),
+          renderHTML: attributes => {
+            if (!attributes.style) return {};
+            return { style: attributes.style };
+          },
+        },
+      };
+    },
+  });
+
   const editor = useEditor({
     editable: true,
     extensions: [
-      StarterKit.configure({}),
+      StarterKit.configure({
+        paragraph: false, 
+      }),
+      ParagraphWithStyle,
       Highlight.configure({ multicolor: true }),
       InputNode,
       Table.configure({ resizable: true }),
@@ -427,6 +450,8 @@ export default function Completion({
       setPopoverPos({ x: left + rect.width / 2, y: selectionTop - 40 });
     },
   });
+
+  
 
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
@@ -542,7 +567,7 @@ export default function Completion({
       {orderedSubQuestions.length > 0 && readOnly && !_.isEmpty(orderedSubQuestions[0]?.explanation) && (
         <div className="pt-4">
           <h4 className={cn(
-            "text-sm font-bold underline flex items-center gap-2 py-2",
+            "text-sm font-bold underline-none flex items-center gap-2 py-2",
             "hover:no-underline outline-none border-0 text-blue-600"
           )}>Giải thích đáp án</h4>
 
@@ -551,8 +576,9 @@ export default function Completion({
             {orderedSubQuestions.map((subQuestion, idx) => (
               <AccordionItem key={subQuestion.subId || idx} value={subQuestion.subId || String(idx)}>
                 <div className="border rounded-md overflow-hidden">
-                  <AccordionTrigger className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium bg-muted/5">
-                    <span>Question {question.index + idx + 1}</span>
+                  <AccordionTrigger className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium bg-muted/5 text-blue-600">
+                    <span>Question {question.index + idx + 1} </span>
+                    <ChevronDown className="h-4 w-4 transition-transform duration-200 accordion-trigger-icon" />
                   </AccordionTrigger>
                   <AccordionContent className="px-3 py-2">
                     {/* RichTextContent is display-only; if explanation is empty show placeholder */}
