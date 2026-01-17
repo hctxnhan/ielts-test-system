@@ -61,6 +61,7 @@ export default function BaseTestContainer({
     currentSection: getCurrentSection,
   } = useTestStore();
 
+
   const currentSection = test.sections[currentSectionIndex];
 
   const togglePassage = () => {
