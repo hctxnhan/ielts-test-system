@@ -18,6 +18,7 @@ interface AudioPlayerProps {
 }
 
 export default function AudioPlayer({ src, onEnded, realTestMode = false }: AudioPlayerProps) {
+  
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -26,6 +27,7 @@ export default function AudioPlayer({ src, onEnded, realTestMode = false }: Audi
   const [error, setError] = useState<string | null>(null);
   const [hasAutoPlayed, setHasAutoPlayed] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+ 
 
   // Reset state when src changes
   useEffect(() => {
@@ -239,7 +241,7 @@ export default function AudioPlayer({ src, onEnded, realTestMode = false }: Audi
 
       <button
         onClick={togglePlay}
-        className={`p-1 hover:bg-muted rounded-sm ${realTestMode ? 'cursor-not-allowed' : ''}`}
+        className={`p-1 hover:bg-muted rounded-sm ${realTestMode  ? 'cursor-not-allowed' : ''}`}
         aria-label={isPlaying ? "Pause" : "Play"}
         disabled={realTestMode}
       >

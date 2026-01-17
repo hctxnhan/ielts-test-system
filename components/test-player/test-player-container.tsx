@@ -205,7 +205,7 @@ export default function TestPlayer({ params, test, onBack }: TestPlayerProps) {
       onNextSection={handleNextSection}
       currentSectionIndex={progress?.currentSectionIndex || 0}
       jumpToSection={jumpToSection}
-      realTestMode={realTestMode}
+      realTestMode={test.isExercise ? false : realTestMode}
     />
   );
 }
