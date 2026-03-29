@@ -38,7 +38,6 @@ export const supabaseStorage = {
     folder: string = ""
   ): Promise<FileObject[]> => {
     try {
-      // List files in the specified folder
       const { data: fileList, error: listError } = await supabase.storage
         .from(STORAGE_BUCKET)
         .list(folder, { limit: 100 });
@@ -52,22 +51,17 @@ export const supabaseStorage = {
         return [];
       }
 
-      // Filter files by the type prefix and convert to FileObject format
       const filePromises = fileList.map(async (item) => {
         const fullPath = folder ? `${folder}/${item.name}` : item.name;
-
         const { data: urlData } = await supabase.storage
           .from(STORAGE_BUCKET)
           .getPublicUrl(fullPath);
-
-        // Remove the type prefix from the display name
         const displayName = item.name.replace(`${type}_`, "");
-
         return {
           id: item.id,
           name: displayName,
           url: urlData.publicUrl,
-          type: item.metadata?.mimetype,
+          type: item.metadata?.mimetype as FileType,
           size: item.metadata?.size || 0,
           createdAt: item.created_at || new Date().toISOString(),
           path: fullPath,
@@ -76,9 +70,8 @@ export const supabaseStorage = {
       });
 
       const files = await Promise.all(filePromises);
-
       return files.filter(
-        (item) => item.id === null || item.type.startsWith(type)
+        (item) => item.id === null || item.type?.startsWith(type)
       );
     } catch (error) {
       console.error("Error in listFiles:", error);
@@ -96,9 +89,8 @@ export const supabaseStorage = {
       const fileNameParts = file.name.split(".");
       const fileExt = fileNameParts.length > 1 ? fileNameParts.pop() : ""; // Handle files with no extension
       const baseFileName = fileNameParts.join("."); // Handle filenames with multiple periods
-      const fileName = `${baseFileName}-${timestamp}${
-        fileExt ? `.${fileExt}` : ""
-      }`;
+      const fileName = `${baseFileName}-${timestamp}${fileExt ? `.${fileExt}` : ""
+        }`;
 
       // Store the type as metadata in the filename prefix
       const typedFileName = `${type}_${fileName}`;
