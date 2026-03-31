@@ -195,6 +195,28 @@ export const supabaseStorage = {
     }
   },
 
+  // Move a file to a different folder
+  moveFile: async (fromPath: string, toFolder: string): Promise<string | null> => {
+    try {
+      const fileName = getFileNameFromPath(fromPath);
+      const toPath = toFolder ? `${toFolder}/${fileName}` : fileName;
+
+      const { error } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .move(fromPath, toPath);
+
+      if (error) {
+        console.error("Error moving file:", error);
+        return null;
+      }
+
+      return toPath;
+    } catch (error) {
+      console.error("Error in moveFile:", error);
+      return null;
+    }
+  },
+
   // Delete a file by path
   deleteFile: async (filePath: string): Promise<boolean> => {
     try {
