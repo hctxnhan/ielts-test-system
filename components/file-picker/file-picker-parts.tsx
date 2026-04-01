@@ -134,11 +134,12 @@ interface FileCardProps {
   onSelect: (file: FileObject) => void;
   onDelete: (e: React.MouseEvent, file: FileObject) => void;
   onMove: (file: FileObject, targetFolder: string) => void;
+  onCopy: (file: FileObject, targetFolder: string) => void;
   onMouseEnter: (id: string) => void;
   onMouseLeave: () => void;
 }
 
-export function FileCard({ file, fileType, availableFolders, onSelect, onDelete, onMove, onMouseEnter, onMouseLeave }: FileCardProps) {
+export function FileCard({ file, fileType, availableFolders, onSelect, onDelete, onMove, onCopy, onMouseEnter, onMouseLeave }: FileCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -236,8 +237,10 @@ export function FileCard({ file, fileType, availableFolders, onSelect, onDelete,
 
             <DropdownMenuSeparator />
 
+            <DropdownMenuSeparator />
+
             {/* Copy to folder */}
-            {/* <DropdownMenuSub>
+            <DropdownMenuSub>
               <DropdownMenuSubTrigger className="gap-2 text-xs cursor-pointer">
                 <Copy className="h-3.5 w-3.5 text-blue-500" />
                 Copy to folder
@@ -256,9 +259,9 @@ export function FileCard({ file, fileType, availableFolders, onSelect, onDelete,
                   <div className="px-2 py-1.5 text-[10px] text-muted-foreground">No other folders</div>
                 )}
               </DropdownMenuSubContent>
-            </DropdownMenuSub> */}
+            </DropdownMenuSub>
 
-            {/* <DropdownMenuSeparator /> */}
+            <DropdownMenuSeparator />
 
             {/* Delete */}
             <DropdownMenuItem
@@ -287,10 +290,11 @@ interface FileGridProps {
   onSelect: (file: FileObject) => void;
   onDelete: (e: React.MouseEvent, file: FileObject) => void;
   onMove: (file: FileObject, targetFolder: string) => void;
+  onCopy: (file: FileObject, targetFolder: string) => void;
   onHover: (id: string | null) => void;
 }
 
-export function FileGrid({ files, fileType, currentFolder, searchQuery, hoveredFileId, availableFolders, onSelect, onDelete, onMove, onHover }: FileGridProps) {
+export function FileGrid({ files, fileType, currentFolder, searchQuery, hoveredFileId, availableFolders, onSelect, onDelete, onMove, onCopy, onHover }: FileGridProps) {
   return (
     <div>
       <p className="text-xs font-medium mb-2 flex justify-between items-center">
@@ -315,6 +319,7 @@ export function FileGrid({ files, fileType, currentFolder, searchQuery, hoveredF
             onSelect={onSelect}
             onDelete={onDelete}
             onMove={onMove}
+            onCopy={onCopy}
             onMouseEnter={(id) => onHover(id)}
             onMouseLeave={() => onHover(null)}
           />

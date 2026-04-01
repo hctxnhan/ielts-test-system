@@ -38,6 +38,7 @@ export default function FilePicker({ fileType, onFileSelect, currentFileUrl }: F
     handleSelectFile,
     handleDeleteFile,
     handleMoveFile,
+    handleCopyFile,
     clearSelectedFile,
   } = useFilePicker(fileType, onFileSelect, currentFileUrl);
 
@@ -110,6 +111,7 @@ export default function FilePicker({ fileType, onFileSelect, currentFileUrl }: F
                     onSelect={handleSelectFile}
                     onDelete={handleDeleteFile}
                     onMove={handleMoveFile}
+                    onCopy={handleCopyFile}
                     onHover={setHoveredFileId}
                   />
                 </>
