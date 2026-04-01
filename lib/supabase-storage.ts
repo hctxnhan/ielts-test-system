@@ -195,6 +195,37 @@ export const supabaseStorage = {
     }
   },
 
+  // Copy a file to a different folder
+  copyFile: async (fromPath: string, toFolder: string): Promise<string | null> => {
+    try {
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .download(fromPath);
+
+      if (downloadError || !fileData) {
+        console.error("Error downloading file for copy:", downloadError);
+        return null;
+      }
+
+      const fileName = getFileNameFromPath(fromPath);
+      const toPath = toFolder ? `${toFolder}/${fileName}` : fileName;
+
+      const { error: uploadError } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .upload(toPath, fileData, { upsert: false });
+
+      if (uploadError) {
+        console.error("Error uploading copied file:", uploadError);
+        return null;
+      }
+
+      return toPath;
+    } catch (error) {
+      console.error("Error in copyFile:", error);
+      return null;
+    }
+  },
+
   // Move a file to a different folder
   moveFile: async (fromPath: string, toFolder: string): Promise<string | null> => {
     try {

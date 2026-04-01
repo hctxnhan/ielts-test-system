@@ -188,6 +188,7 @@ export function useFilePicker(fileType: FileType, onFileSelect: (file: FileObjec
     handleFileChange,
     handleSelectFile,
     handleDeleteFile,
+    handleCopyFile,
     handleMoveFile,
     clearSelectedFile,
   };
