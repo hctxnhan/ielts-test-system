@@ -40,12 +40,70 @@ const MIME_CATEGORY_MAP: Record<string, FileMimeCategory> = {
   "text/plain": "document",
 };
 
-export function getMimeCategory(mimeType: string): FileMimeCategory {
-  if (!mimeType) return "other";
+export function getMimeCategory(mimeType: string, fileName?: string): FileMimeCategory {
+  if (!mimeType || mimeType === "application/octet-stream") {
+    // Fallback: infer category from file extension
+    if (fileName) {
+      const inferred = inferMimeTypeFromExtension(fileName);
+      if (inferred) {
+        for (const [prefix, category] of Object.entries(MIME_CATEGORY_MAP)) {
+          if (inferred.startsWith(prefix)) return category;
+        }
+      }
+      // Fallback: infer from filename prefix convention (e.g. "audio_xxx", "image_xxx")
+      const lowerName = fileName.toLowerCase();
+      if (lowerName.startsWith("audio_") || lowerName.startsWith("audio-")) return "audio";
+      if (lowerName.startsWith("image_") || lowerName.startsWith("image-")) return "image";
+      if (lowerName.startsWith("video_") || lowerName.startsWith("video-")) return "video";
+    }
+    if (!mimeType) return "other";
+  }
   for (const [prefix, category] of Object.entries(MIME_CATEGORY_MAP)) {
     if (mimeType.startsWith(prefix)) return category;
   }
   return "other";
+}
+
+/** Infer MIME type from file extension when the reported type is generic */
+const EXTENSION_MIME_MAP: Record<string, string> = {
+  // Audio
+  mp3: "audio/mpeg",
+  wav: "audio/wav",
+  ogg: "audio/ogg",
+  flac: "audio/flac",
+  aac: "audio/aac",
+  m4a: "audio/mp4",
+  wma: "audio/x-ms-wma",
+  opus: "audio/opus",
+  webm: "audio/webm",
+  // Image
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  gif: "image/gif",
+  webp: "image/webp",
+  svg: "image/svg+xml",
+  bmp: "image/bmp",
+  ico: "image/x-icon",
+  // Video
+  mp4: "video/mp4",
+  avi: "video/x-msvideo",
+  mov: "video/quicktime",
+  mkv: "video/x-matroska",
+  // Document
+  pdf: "application/pdf",
+  doc: "application/msword",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xls: "application/vnd.ms-excel",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  csv: "text/csv",
+  txt: "text/plain",
+};
+
+export function inferMimeTypeFromExtension(fileName: string): string | null {
+  const ext = fileName.split(".").pop()?.toLowerCase();
+  if (!ext) return null;
+  return EXTENSION_MIME_MAP[ext] || null;
 }
 
 export function formatFileSize(bytes: number): string {
@@ -81,17 +139,31 @@ function validateFile(
   }
 
   if (config.allowedMimeTypes.length > 0) {
+    // Use the reported type, but fall back to extension-based inference
+    // when the browser reports a generic type
+    let effectiveType = file.type;
+    if (!effectiveType || effectiveType === "application/octet-stream") {
+      const inferred = inferMimeTypeFromExtension(file.name);
+      if (inferred) {
+        effectiveType = inferred;
+      } else {
+        // Cannot determine actual MIME type — skip validation rather than
+        // rejecting files whose type the browser simply doesn't recognise
+        return null;
+      }
+    }
+
     const isAllowed = config.allowedMimeTypes.some((pattern) => {
       if (pattern.endsWith("/*")) {
-        return file.type.startsWith(pattern.replace("/*", "/"));
+        return effectiveType.startsWith(pattern.replace("/*", "/"));
       }
-      return file.type === pattern;
+      return effectiveType === pattern;
     });
     if (!isAllowed) {
       return createStorageError(
         "INVALID_MIME_TYPE",
-        `File type "${file.type}" is not allowed. Allowed: ${config.allowedMimeTypes.join(", ")}`,
-        { fileType: file.type, allowed: config.allowedMimeTypes }
+        `mime type ${effectiveType} is not supported`,
+        { fileType: effectiveType, allowed: config.allowedMimeTypes }
       );
     }
   }
@@ -102,7 +174,10 @@ function validateFile(
 // ─── Path Helpers ───────────────────────────────────────────────────────────
 
 function joinPath(...parts: string[]): string {
-  return parts.filter((p) => p && p.trim() !== "").join("/");
+  return parts
+    .filter((p) => p && p.trim() !== "")
+    .join("/")
+    .replace(/\/+/g, "/");
 }
 
 function getFileName(path: string): string {
@@ -172,14 +247,33 @@ export class SupabaseStorageClient {
     folderPath: string
   ): StorageFile {
     const fullPath = joinPath(folderPath, item.name);
-    const mimeType = item.metadata?.mimetype || "";
+    let mimeType = item.metadata?.mimetype || "";
+
+    // Fallback: infer from extension when Supabase returns generic type
+    if (!mimeType || mimeType === "application/octet-stream") {
+      const inferred = inferMimeTypeFromExtension(item.name);
+      if (inferred) {
+        mimeType = inferred;
+      } else {
+        // Infer from filename prefix convention (e.g. "audio_xxx")
+        const lowerName = item.name.toLowerCase();
+        if (lowerName.startsWith("audio_") || lowerName.startsWith("audio-")) {
+          mimeType = "audio/mpeg";
+        } else if (lowerName.startsWith("image_") || lowerName.startsWith("image-")) {
+          mimeType = "image/jpeg";
+        } else if (lowerName.startsWith("video_") || lowerName.startsWith("video-")) {
+          mimeType = "video/mp4";
+        }
+      }
+    }
+
     return {
       id: item.id || fullPath,
       name: item.name,
       path: fullPath,
       url: this.getFileUrl(fullPath),
       mimeType,
-      category: getMimeCategory(mimeType),
+      category: getMimeCategory(mimeType, item.name),
       size: item.metadata?.size || 0,
       createdAt: item.created_at || new Date().toISOString(),
       updatedAt: item.updated_at || item.created_at || new Date().toISOString(),
@@ -217,11 +311,17 @@ export class SupabaseStorageClient {
         });
 
       if (error) {
-        return {
-          files: [],
-          folders: [],
-          error: createStorageError("LIST_FAILED", error.message, error),
-        };
+        // Ignore MIME type errors from Supabase bucket restrictions
+        const isMimeError = error.message?.toLowerCase().includes("mime type")
+          && error.message?.toLowerCase().includes("is not supported");
+        if (!isMimeError) {
+          return {
+            files: [],
+            folders: [],
+            error: createStorageError("LIST_FAILED", error.message, error),
+          };
+        }
+        console.warn("[StorageManager] Ignoring MIME type error from Supabase list:", error.message);
       }
 
       if (!data) return { files: [], folders: [], error: null };
@@ -308,6 +408,42 @@ export class SupabaseStorageClient {
           });
 
         if (error) {
+          // Supabase buckets with MIME type restrictions may return
+          // "mime type ... is not supported" errors during listing.
+          // This is non-fatal — ignore it and continue with any data returned.
+          const isMimeError = error.message?.toLowerCase().includes("mime type")
+            && error.message?.toLowerCase().includes("is not supported");
+
+          if (isMimeError) {
+            console.warn("[StorageManager] Ignoring MIME type error from Supabase list:", error.message);
+            // Still process data if Supabase returned it alongside the error
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const items = (data as unknown) as any[] | null;
+            if (items && items.length > 0) {
+              for (const item of items) {
+                if (item.id === null) {
+                  allFolders.push({
+                    name: item.name,
+                    path: joinPath(resolvedPath, item.name),
+                    itemCount: 0,
+                    createdAt: item.created_at || new Date().toISOString(),
+                  });
+                } else if (item.name !== ".folder") {
+                  allFiles.push(this.mapToStorageFile(item, resolvedPath));
+                }
+              }
+            }
+            exhausted = true;
+            break;
+          }
+
+          // If we already collected some data, return what we have
+          // instead of discarding everything
+          if (allFolders.length > 0 || allFiles.length > 0) {
+            console.warn("[StorageManager] Partial list error (returning collected data):", error.message);
+            exhausted = true;
+            break;
+          }
           return {
             folders: [],
             files: [],
@@ -430,6 +566,30 @@ export class SupabaseStorageClient {
           fileName = `${base}-${ts}${ext}`;
         }
 
+        // Use inferred MIME type for upload when browser reports generic type
+        let uploadContentType = file.type;
+        if (!uploadContentType || uploadContentType === "application/octet-stream") {
+          const inferred = inferMimeTypeFromExtension(file.name);
+          if (inferred) {
+            uploadContentType = inferred;
+          } else if (this.uploadConfig.allowedMimeTypes.length > 0) {
+            // Fall back to the first non-wildcard allowed type, or expand wildcard
+            // e.g. "audio/*" → "audio/mpeg" as a safe default
+            const firstAllowed = this.uploadConfig.allowedMimeTypes[0];
+            if (firstAllowed.endsWith("/*")) {
+              const prefix = firstAllowed.replace("/*", "");
+              const defaults: Record<string, string> = {
+                audio: "audio/mpeg",
+                image: "image/jpeg",
+                video: "video/mp4",
+              };
+              uploadContentType = defaults[prefix] || uploadContentType;
+            } else {
+              uploadContentType = firstAllowed;
+            }
+          }
+        }
+
         const resolvedPath = this.resolvePath(joinPath(folderPath, fileName));
 
         const { data, error } = await this.supabase.storage
@@ -437,7 +597,7 @@ export class SupabaseStorageClient {
           .upload(resolvedPath, file, {
             cacheControl: this.uploadConfig.cacheControl,
             upsert: this.uploadConfig.upsert,
-            contentType: file.type,
+            contentType: uploadContentType,
           });
 
         if (error) {
@@ -453,8 +613,8 @@ export class SupabaseStorageClient {
           name: fileName,
           path: storagePath,
           url: this.getFileUrl(storagePath),
-          mimeType: file.type,
-          category: getMimeCategory(file.type),
+          mimeType: uploadContentType,
+          category: getMimeCategory(uploadContentType, file.name),
           size: file.size,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -641,14 +801,61 @@ export class SupabaseStorageClient {
     try {
       const resolvedPath = this.resolvePath(joinPath(folderPath, ".folder"));
 
-      const { error } = await this.supabase.storage
-        .from(this.bucketName)
-        .upload(resolvedPath, new Blob([""]), { upsert: true });
+      // Supabase buckets with MIME-type restrictions reject empty blobs
+      // (application/octet-stream). We must send a contentType that the
+      // bucket allows. Derive it from the upload config.
+      let placeholderType = "text/plain";
+      if (this.uploadConfig.allowedMimeTypes.length > 0) {
+        const first = this.uploadConfig.allowedMimeTypes[0];
+        if (first.endsWith("/*")) {
+          const prefix = first.replace("/*", "");
+          const defaults: Record<string, string> = {
+            audio: "audio/mpeg",
+            image: "image/png",
+            video: "video/mp4",
+            text: "text/plain",
+          };
+          placeholderType = defaults[prefix] || first.replace("*", "octet-stream");
+        } else {
+          placeholderType = first;
+        }
+      }
 
-      if (error) {
+      // Try with the derived MIME type first
+      let result = await this.supabase.storage
+        .from(this.bucketName)
+        .upload(resolvedPath, new Blob(["folder"], { type: placeholderType }), {
+          upsert: true,
+          contentType: placeholderType,
+        });
+
+      // If rejected by bucket MIME policy, retry without contentType restriction
+      // by trying common MIME types that the bucket might accept
+      if (result.error?.message?.toLowerCase().includes("mime type")) {
+        const fallbackTypes = [
+          "application/octet-stream",
+          "text/plain",
+          "audio/mpeg",
+          "image/png",
+          "video/mp4",
+        ].filter((t) => t !== placeholderType);
+
+        for (const fallbackType of fallbackTypes) {
+          result = await this.supabase.storage
+            .from(this.bucketName)
+            .upload(resolvedPath, new Blob(["folder"], { type: fallbackType }), {
+              upsert: true,
+              contentType: fallbackType,
+            });
+          if (!result.error) break;
+          if (!result.error.message?.toLowerCase().includes("mime type")) break;
+        }
+      }
+
+      if (result.error) {
         return {
           folder: null,
-          error: createStorageError("FOLDER_CREATE_FAILED", error.message, error),
+          error: createStorageError("FOLDER_CREATE_FAILED", result.error.message, result.error),
         };
       }
 

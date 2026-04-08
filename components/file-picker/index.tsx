@@ -205,6 +205,7 @@ export default function FilePicker({
               </DialogTitle>
             </DialogHeader>
             <div className="max-h-[70vh] overflow-y-auto">
+              {isOpen && (
               <StorageManager
                 supabaseConfig={supabaseConfig}
                 uploadConfig={uploadConfig}
@@ -228,6 +229,7 @@ export default function FilePicker({
                 defaultFilterCategories={defaultFilterCategories}
                 onFileSelect={handleFileSelect}
               />
+              )}
             </div>
           </DialogContent>
         </Dialog>
