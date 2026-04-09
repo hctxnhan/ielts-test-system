@@ -190,6 +190,8 @@ export interface StorageManagerProps {
   defaultFilterCategories?: FileMimeCategory[];
   /** Pre-selected files (URLs or paths) to highlight on load */
   initialSelectedUrls?: string[];
+  /** Override the native file input accept attribute (e.g. "audio/*,.mp3,.wav") */
+  inputAccept?: string;
 
   // ─── Callbacks (Retool event bridge) ────────────────────────────────────
 

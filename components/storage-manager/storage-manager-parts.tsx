@@ -1261,6 +1261,7 @@ export function PaginationControls({
 
 interface UploadPanelProps {
   uploadConfig: UploadConfig;
+  inputAccept?: string;
   currentFolder: string;
   isUploading: boolean;
   onUpload: (files: File[]) => void;
@@ -1269,6 +1270,7 @@ interface UploadPanelProps {
 
 export function UploadPanel({
   uploadConfig,
+  inputAccept,
   currentFolder,
   isUploading,
   onUpload,
@@ -1279,16 +1281,35 @@ export function UploadPanel({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const acceptStr = useMemo(() => {
+    if (inputAccept) return inputAccept;
     if (uploadConfig.allowedMimeTypes.length === 0) return undefined;
     return uploadConfig.allowedMimeTypes.join(",");
-  }, [uploadConfig.allowedMimeTypes]);
+  }, [inputAccept, uploadConfig.allowedMimeTypes]);
 
   const handleFiles = useCallback(
     (files: FileList | File[]) => {
-      const arr = Array.from(files).slice(0, uploadConfig.maxFilesPerUpload);
-      setSelectedFiles(arr);
+      let arr = Array.from(files);
+
+      // Filter by allowed MIME types (drag & drop bypasses <input accept>)
+      if (uploadConfig.allowedMimeTypes.length > 0) {
+        arr = arr.filter((file) => {
+          const type = file.type || "";
+          const ext = file.name.split(".").pop()?.toLowerCase() || "";
+          return uploadConfig.allowedMimeTypes.some((pattern) => {
+            if (pattern.startsWith(".")) {
+              return ext === pattern.slice(1).toLowerCase();
+            }
+            if (pattern.endsWith("/*")) {
+              return type.startsWith(pattern.replace("/*", "/"));
+            }
+            return type === pattern;
+          });
+        });
+      }
+
+      setSelectedFiles(arr.slice(0, uploadConfig.maxFilesPerUpload));
     },
-    [uploadConfig.maxFilesPerUpload]
+    [uploadConfig.maxFilesPerUpload, uploadConfig.allowedMimeTypes]
   );
 
   const handleDrop = useCallback(

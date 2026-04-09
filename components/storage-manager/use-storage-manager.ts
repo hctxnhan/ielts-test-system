@@ -58,6 +58,7 @@ export function useStorageManager(props: StorageManagerProps) {
     defaultSort = DEFAULT_SORT,
     defaultFilterCategories,
     initialSelectedUrls,
+    inputAccept,
     onFileSelect,
     onFilesSelect,
     onUploadComplete,
@@ -316,7 +317,30 @@ export function useStorageManager(props: StorageManagerProps) {
       setIsUploading(true);
       setError(null);
       try {
-        const result = await client.uploadFiles(uploadFiles, currentFolder);
+        // Client-side filter: reject files that don't match allowedMimeTypes
+        let filesToUpload = uploadFiles;
+        if (uploadConfig.allowedMimeTypes.length > 0) {
+          filesToUpload = uploadFiles.filter((file) => {
+            const type = file.type || "";
+            const ext = file.name.split(".").pop()?.toLowerCase() || "";
+            return uploadConfig.allowedMimeTypes.some((pattern) => {
+              if (pattern.startsWith(".")) return ext === pattern.slice(1).toLowerCase();
+              if (pattern.endsWith("/*")) return type.startsWith(pattern.replace("/*", "/"));
+              return type === pattern;
+            });
+          });
+          if (filesToUpload.length === 0 && uploadFiles.length > 0) {
+            const err: StorageError = {
+              code: "INVALID_MIME_TYPE",
+              message: `Only ${uploadConfig.allowedMimeTypes.filter(p => p.endsWith("/*")).join(", ")} files are allowed`,
+            };
+            setError(err);
+            callbackRefs.current.onError?.(err);
+            return { uploaded: [], errors: [err] };
+          }
+        }
+
+        const result = await client.uploadFiles(filesToUpload, currentFolder);
         if (result.errors.length > 0) {
           setError(result.errors[0]);
           callbackRefs.current.onError?.(result.errors[0]);
@@ -538,6 +562,7 @@ export function useStorageManager(props: StorageManagerProps) {
     features,
     uploadConfig,
     paginationConfig,
+    inputAccept,
     hasSaveCallback: !!callbackRefs.current.onSave,
 
     files: displayFiles,

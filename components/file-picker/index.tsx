@@ -60,7 +60,7 @@ function fileTypeToMimePatterns(fileType: FileType): string[] {
     case "image":
       return ["image/*"];
     case "audio":
-      return ["audio/*"];
+      return ["audio/*", ".mp3", ".wav", ".ogg", ".flac", ".aac", ".m4a", ".wma", ".opus", ".webm"];
     default:
       return [];
   }
@@ -117,7 +117,7 @@ export default function FilePicker({
     () => ({
       allowedMimeTypes: fileTypeToMimePatterns(fileType),
       maxFileSize: 52428800, // 50MB
-      maxFilesPerUpload: 1,
+      maxFilesPerUpload: 20,
       autoUniqueNames: true,
     }),
     [fileType]
@@ -206,29 +206,30 @@ export default function FilePicker({
             </DialogHeader>
             <div className="max-h-[70vh] overflow-y-auto">
               {isOpen && (
-              <StorageManager
-                supabaseConfig={supabaseConfig}
-                uploadConfig={uploadConfig}
-                paginationConfig={{ enabled: true, pageSize: 20, pageSizeOptions: [10, 20, 50] }}
-                features={{
-                  canCreateFolder: true,
-                  canUpload: true,
-                  canDelete: true,
-                  canMove: true,
-                  canCopy: true,
-                  canRename: true,
-                  canDownload: false,
-                  showPreview: false,
-                  multiSelect: false,
-                  showBreadcrumb: true,
-                  showFileSize: true,
-                  showDate: true,
-                }}
-                defaultViewMode="grid"
-                defaultSort={{ field: "name", direction: "asc" }}
-                defaultFilterCategories={defaultFilterCategories}
-                onFileSelect={handleFileSelect}
-              />
+                <StorageManager
+                  supabaseConfig={supabaseConfig}
+                  uploadConfig={uploadConfig}
+                  inputAccept={fileType === "audio" ? ".mp3,.wav,.ogg,.flac,.aac,.m4a,.wma" : fileType === "image" ? "image/*" : undefined}
+                  paginationConfig={{ enabled: true, pageSize: 20, pageSizeOptions: [10, 20, 50] }}
+                  features={{
+                    canCreateFolder: true,
+                    canUpload: true,
+                    canDelete: false,
+                    canMove: false,
+                    canCopy: false,
+                    canRename: false,
+                    canDownload: false,
+                    showPreview: false,
+                    multiSelect: false,
+                    showBreadcrumb: true,
+                    showFileSize: true,
+                    showDate: true,
+                  }}
+                  defaultViewMode="grid"
+                  defaultSort={{ field: "name", direction: "asc" }}
+                  defaultFilterCategories={defaultFilterCategories}
+                  onFileSelect={handleFileSelect}
+                />
               )}
             </div>
           </DialogContent>
