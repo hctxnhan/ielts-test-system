@@ -134,6 +134,7 @@ function StorageManagerInner(props: StorageManagerProps) {
       {showUpload && (
         <UploadPanel
           uploadConfig={manager.uploadConfig}
+          inputAccept={manager.inputAccept}
           currentFolder={manager.currentFolder}
           isUploading={manager.isUploading}
           onUpload={async (files) => {
