@@ -216,10 +216,29 @@ function StorageManagerInner(props: StorageManagerProps) {
                   : name
               )
             }
-            onDelete={manager.handleDeleteFolder}
-            onRename={manager.handleRenameFolder}
-            onMove={manager.handleMoveFolder}
-            onCopy={manager.handleCopyFolder}
+            onDelete={(folderName) =>
+              manager.handleDeleteFolder(
+                manager.currentFolder ? `${manager.currentFolder}/${folderName}` : folderName
+              )
+            }
+            onRename={(folderName, newName) =>
+              manager.handleRenameFolder(
+                manager.currentFolder ? `${manager.currentFolder}/${folderName}` : folderName,
+                newName
+              )
+            }
+            onMove={(folderName, toParent) =>
+              manager.handleMoveFolder(
+                manager.currentFolder ? `${manager.currentFolder}/${folderName}` : folderName,
+                toParent
+              )
+            }
+            onCopy={(folderName, toParent) =>
+              manager.handleCopyFolder(
+                manager.currentFolder ? `${manager.currentFolder}/${folderName}` : folderName,
+                toParent
+              )
+            }
           />
 
           {/* Files */}

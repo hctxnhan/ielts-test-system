@@ -330,6 +330,7 @@ export class SupabaseStorageClient {
       const files: StorageFile[] = [];
 
       for (const item of data) {
+        if (!item.name) continue;
         if (item.id === null) {
           folders.push({
             name: item.name,
@@ -421,6 +422,7 @@ export class SupabaseStorageClient {
             const items = (data as unknown) as any[] | null;
             if (items && items.length > 0) {
               for (const item of items) {
+                if (!item.name) continue;
                 if (item.id === null) {
                   allFolders.push({
                     name: item.name,
@@ -459,6 +461,7 @@ export class SupabaseStorageClient {
         }
 
         for (const item of data) {
+          if (!item.name) continue;
           if (item.id === null) {
             // It's a folder
             allFolders.push({
@@ -921,6 +924,9 @@ export class SupabaseStorageClient {
     if (!data) return paths;
 
     for (const item of data) {
+      // Skip empty-named items to prevent infinite recursion
+      if (!item.name) continue;
+
       const fullPath = joinPath(folderPath, item.name);
       if (item.id === null) {
         // It's a subfolder — recurse
