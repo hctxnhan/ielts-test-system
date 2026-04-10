@@ -48,7 +48,7 @@ function fileTypeToCategories(fileType: FileType): FileMimeCategory[] {
     case "image":
       return ["image"];
     case "audio":
-      return ["audio"];
+      return ["audio", "image"];
     default:
       return [];
   }
@@ -60,7 +60,7 @@ function fileTypeToMimePatterns(fileType: FileType): string[] {
     case "image":
       return ["image/*"];
     case "audio":
-      return ["audio/*", ".mp3", ".wav", ".ogg", ".flac", ".aac", ".m4a", ".wma", ".opus", ".webm"];
+      return ["audio/*", "image/*", ".mp3", ".wav", ".ogg", ".flac", ".aac", ".m4a", ".wma", ".opus", ".webm", ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"];
     default:
       return [];
   }
@@ -209,7 +209,7 @@ export default function FilePicker({
                 <StorageManager
                   supabaseConfig={supabaseConfig}
                   uploadConfig={uploadConfig}
-                  inputAccept={fileType === "audio" ? ".mp3,.wav,.ogg,.flac,.aac,.m4a,.wma" : fileType === "image" ? "image/*" : undefined}
+                  inputAccept={fileType === "audio" ? ".mp3,.wav,.ogg,.flac,.aac,.m4a,.wma,.jpg,.jpeg,.png,.gif,.webp,.svg" : fileType === "image" ? "image/*" : undefined}
                   paginationConfig={{ enabled: true, pageSize: 20, pageSizeOptions: [10, 20, 50] }}
                   features={{
                     canCreateFolder: true,
