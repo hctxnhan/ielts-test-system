@@ -44,26 +44,18 @@ interface FilePickerProps {
 
 /** Map FileType ("image"|"audio") to FileMimeCategory filter */
 function fileTypeToCategories(fileType: FileType): FileMimeCategory[] {
-  switch (fileType) {
-    case "image":
-      return ["image"];
-    case "audio":
-      return ["audio", "image"];
-    default:
-      return [];
-  }
+  // Show both audio and image files regardless of fileType context
+  return ["audio", "image"];
 }
 
 /** Map FileType to allowed MIME patterns for upload */
 function fileTypeToMimePatterns(fileType: FileType): string[] {
-  switch (fileType) {
-    case "image":
-      return ["image/*"];
-    case "audio":
-      return ["audio/*", "image/*", ".mp3", ".wav", ".ogg", ".flac", ".aac", ".m4a", ".wma", ".opus", ".webm", ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"];
-    default:
-      return [];
-  }
+  // Allow both audio and image uploads regardless of fileType context
+  return [
+    "audio/*", "image/*",
+    ".mp3", ".wav", ".ogg", ".flac", ".aac", ".m4a", ".wma", ".opus", ".webm",
+    ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg",
+  ];
 }
 
 /** Convert StorageFile → FileObject for backward compatibility */
@@ -209,7 +201,7 @@ export default function FilePicker({
                 <StorageManager
                   supabaseConfig={supabaseConfig}
                   uploadConfig={uploadConfig}
-                  inputAccept={fileType === "audio" ? ".mp3,.wav,.ogg,.flac,.aac,.m4a,.wma,.jpg,.jpeg,.png,.gif,.webp,.svg" : fileType === "image" ? "image/*" : undefined}
+                  inputAccept=".mp3,.wav,.ogg,.flac,.aac,.m4a,.wma,.jpg,.jpeg,.png,.gif,.webp,.svg"
                   paginationConfig={{ enabled: true, pageSize: 20, pageSizeOptions: [10, 20, 50] }}
                   features={{
                     canCreateFolder: true,
