@@ -18,7 +18,9 @@ import { useToast } from "@testComponents/components/ui/use-toast";
 import type { FileObject } from "@testComponents/lib/supabase-storage";
 import type { Test, TestType } from "@testComponents/lib/types";
 import { useCreatorStore } from "@testComponents/store/creator-store";
+import { useDraftAutosave } from "@testComponents/hooks/use-draft-autosave";
 import {
+  AlertTriangle,
   BookOpen,
   ChevronDown,
   ChevronUp,
@@ -27,6 +29,7 @@ import {
   Package,
   PlusCircle,
   Save,
+  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { z } from "zod";
@@ -84,19 +87,32 @@ const TestSchema = z
 interface TestCreatorProps {
   defaultTest?: Test;
   onTestCreateSubmit?: (test: Test) => void;
+  onUnsavedChangesChange?: (hasChanges: boolean) => void;
+  onClose?: () => void;
   testType?: TestType;
 }
 
 export function TestCreator({
   defaultTest,
   onTestCreateSubmit,
+  onUnsavedChangesChange,
+  onClose,
   testType = "reading",
 }: TestCreatorProps) {
   const [testDetailsCollapsed, setTestDetailsCollapsed] = useState(false);
   const { toast } = useToast();
   const [validationErrors, setValidationErrors] = useState<
     Array<{ field: string; message: string }>
-  >([]); // Changed to store field name with message
+  >([]);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+
+  const handleClose = () => {
+    if (hasUnsavedChanges) {
+      setShowCloseConfirm(true);
+    } else {
+      onClose?.();
+    }
+  }; // Changed to store field name with message
 
   const {
     currentTest,
@@ -112,16 +128,23 @@ export function TestCreator({
     updateQuestion,
     reorderQuestion,
   } = useCreatorStore();
-  // Set default test if provided
+
+  const isEditMode = !!defaultTest;
+
+  const { draftRestored, initialized, hasUnsavedChanges, discardDraft, dismissNotification, clearDraft } =
+    useDraftAutosave({ testType, isEditMode });
+
+  // Notify parent about unsaved changes
+  useEffect(() => {
+    onUnsavedChangesChange?.(hasUnsavedChanges);
+  }, [hasUnsavedChanges, onUnsavedChangesChange]);
+
+  // Set default test if provided (edit mode only — create mode is handled by useDraftAutosave)
   useEffect(() => {
     if (defaultTest) {
-      // Load the default test into the store
       loadTest(defaultTest);
-    } else {
-      // Create a default empty test
-      createNewTest(testType, "New Test");
     }
-  }, [defaultTest, testType, createNewTest, loadTest]);
+  }, [defaultTest]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Save the current test
   const handleSaveTest = () => {
@@ -133,6 +156,8 @@ export function TestCreator({
       if (onTestCreateSubmit && currentTest) {
         onTestCreateSubmit(currentTest);
       }
+
+      clearDraft();
 
       toast({
         title: "Test saved",
@@ -232,6 +257,58 @@ export function TestCreator({
 
       {currentTest ? (
         <div className="space-y-3">
+          {showCloseConfirm && (
+            <div className="flex items-center justify-between gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">
+              <div className="flex items-center gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                <span>You have unsaved changes. Close anyway? Your draft will be saved.</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs text-red-800 hover:text-red-900 dark:text-red-200"
+                  onClick={() => onClose?.()}
+                >
+                  Close
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs text-red-800 hover:text-red-900 dark:text-red-200"
+                  onClick={() => setShowCloseConfirm(false)}
+                >
+                  Keep Editing
+                </Button>
+              </div>
+            </div>
+          )}
+          {draftRestored && (
+            <div className="flex items-center justify-between gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+              <div className="flex items-center gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                <span>A previous draft has been restored.</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs text-amber-800 hover:text-amber-900 dark:text-amber-200"
+                  onClick={discardDraft}
+                >
+                  Discard Draft
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5 text-amber-800 hover:text-amber-900 dark:text-amber-200"
+                  onClick={dismissNotification}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          )}
           <Card className="shadow-sm">
             <CardHeader
               className="py-2.5 px-4 cursor-pointer border-b flex-row justify-between items-center hover:bg-muted/20 transition-colors"
@@ -470,7 +547,7 @@ export function TestCreator({
       ) : (
         <div className="text-center py-6">
           <p className="text-muted-foreground text-sm">
-            Loading test editor...
+            {!initialized ? "Loading test editor..." : "No test loaded."}
           </p>
         </div>
       )}
