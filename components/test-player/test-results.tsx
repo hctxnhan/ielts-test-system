@@ -8,8 +8,8 @@ import {
   CardTitle
 } from '@testComponents/components/ui/card';
 import { Progress } from '@testComponents/components/ui/progress';
-import { SectionResult, Test, TestResult } from '@testComponents/lib/types';
-import { BarChart3, ChevronLeft, Clock, Eye, EyeOff, Search } from 'lucide-react';
+import { SectionResult, Test, TestResult, Question, Section, MultipleChoiceQuestion } from '@testComponents/lib/types';
+import { BarChart3, CheckCircle2, ChevronDown, ChevronLeft, Clock, Eye, EyeOff, Minus, Search, XCircle } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import TestReview from './test-review-container';
 import { RichTextEditor } from '../ui/rich-text-editor';
@@ -31,14 +31,16 @@ const getScoreColorClass = (percentage: number) => {
 };
 
 
-// ScoreCircle component for the circular progress visualization
-const ScoreCircle = ({ percentage }: { percentage: number }) => {
+// ScoreCircle component - focuses on correct answers count
+const ScoreCircle = ({ correct, total, percentage }: { correct: number; total: number; percentage: number }) => {
   const colorClass = getScoreColorClass(percentage);
 
   return (
     <div className="relative w-32 h-32 sm:w-36 sm:h-36 lg:w-40 lg:h-40">
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl sm:text-4xl lg:text-5xl font-bold">{percentage}%</span>{' '}
+        <span className="text-2xl sm:text-3xl lg:text-4xl font-bold">{correct}</span>
+        <span className="text-xs sm:text-sm text-muted-foreground">/ {total} câu đúng</span>
+        <span className="text-xs text-muted-foreground mt-0.5">({percentage}%)</span>
       </div>
       <svg className="w-full h-full" viewBox="0 0 100 100">
         <circle
@@ -87,13 +89,14 @@ const MetricCard = ({
   </div>
 );
 
-// SectionPerformance component for section score visualization
+// SectionPerformance component - focuses on correct answers
 const SectionPerformance = ({ section, skill }: { section: SectionResult, skill: string }) => {
   if (!section) return null;
+  const answered = section.totalCount - section.unansweredCount;
   return (
     <div
       key={section.id}
-      className="p-2 border rounded-md flex flex-col sm:flex-row sm:items-center"
+      className="p-3 border rounded-md flex flex-col sm:flex-row sm:items-center gap-2"
     >
       <div className="sm:w-1/4 mb-1 sm:mb-0">
         <h4 className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
@@ -102,29 +105,27 @@ const SectionPerformance = ({ section, skill }: { section: SectionResult, skill:
       </div>
 
       <div className="flex-1">
-        <div className="flex items-center gap-1 mb-1 ">
+        <div className="flex items-center justify-between mb-1">
+          {skill !== 'writing' && (
+            <span className="text-sm font-semibold">
+              {section.totalScore?.toFixed(0)}/{Math.round(section.totalCount)} câu đúng
+            </span>
+          )}
+          <span className="text-xs text-muted-foreground">
+            {answered}/{section.totalCount} đã trả lời
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
           <Progress
             value={section?.percentageScore}
             className={`h-2 flex-1 bg-muted ${getScoreColorClass(
               section.percentageScore
             )}`}
           />
-          <span className="text-xs font-medium w-8 text-right">
+          <span className="text-xs text-muted-foreground w-8 text-right">
             {section.percentageScore}%
           </span>
-        </div>
-
-        <div className="flex justify-between items-center text-xs text-muted-foreground">
-          {
-            skill !== 'writing' && <div>
-              {section.totalScore?.toFixed(2)}/{Math.round(section.totalCount)} điểm
-            </div>
-          }
-
-          <div>
-            {section.totalCount - section.unansweredCount}/{section.totalCount}{' '}
-            đã trả lời
-          </div>
         </div>
       </div>
     </div>
@@ -137,6 +138,244 @@ export interface TestResultsProps {
   isExercise?: boolean,
   feedback?: string
 }
+
+// Helper to extract correct answer text for a question
+function getCorrectAnswerText(question: Question, subQuestionId?: string): string {
+  if (question.type === 'multiple-choice') {
+    const mcq = question as MultipleChoiceQuestion;
+    const correct = mcq.options.find(o => o.isCorrect);
+    return correct?.text || '—';
+  }
+
+  if (question.subQuestions && subQuestionId) {
+    const sub = question.subQuestions.find(s => s.subId === subQuestionId);
+    if (sub) {
+      if (sub.answerText) return sub.answerText;
+      if ('correctAnswer' in sub && (sub as any).correctAnswer) return String((sub as any).correctAnswer);
+      if ('acceptableAnswers' in sub && Array.isArray((sub as any).acceptableAnswers)) {
+        return (sub as any).acceptableAnswers.join(' / ');
+      }
+    }
+  }
+
+  return '—';
+}
+
+// Helper to get user's answer text for single-answer questions
+function getUserAnswerText(question: Question, answer: any): string {
+  if (!answer && answer !== 0) return '—';
+
+  if (question.type === 'multiple-choice') {
+    const mcq = question as MultipleChoiceQuestion;
+    const selected = mcq.options.find(o => o.id === answer);
+    return selected?.text || String(answer);
+  }
+
+  return String(answer);
+}
+
+// Helper to find a user's answer for a sub-question from the answers record
+function findSubQuestionAnswer(
+  answers: Record<string, any>,
+  questionId: string,
+  subQuestionId: string
+): { userAnswer: any; isCorrect: boolean | undefined; isAnswered: boolean; rawAnswer: any } {
+  // Case 1: Individual sub-answer stored under subQuestionId key
+  if (answers[subQuestionId] && answers[subQuestionId].parentQuestionId === questionId) {
+    return {
+      userAnswer: answers[subQuestionId],
+      isCorrect: answers[subQuestionId].isCorrect,
+      isAnswered: true,
+      rawAnswer: answers[subQuestionId].answer,
+    };
+  }
+
+  // Case 2: Main answer stored under questionId with Record<subId, value>
+  const mainAnswer = answers[questionId];
+  if (mainAnswer) {
+    const mainAnswerValue = mainAnswer.answer;
+    // If the main answer is a record containing sub-answers
+    if (typeof mainAnswerValue === 'object' && mainAnswerValue !== null && subQuestionId in mainAnswerValue) {
+      return {
+        userAnswer: mainAnswer,
+        isCorrect: mainAnswer.isCorrect, // For all-or-nothing, this is the overall result
+        isAnswered: !!mainAnswerValue[subQuestionId],
+        rawAnswer: mainAnswerValue,
+      };
+    }
+  }
+
+  // Case 3: Search all answers for one with matching parentQuestionId and subQuestionId
+  for (const [_key, ans] of Object.entries(answers)) {
+    if (ans && ans.parentQuestionId === questionId && ans.subQuestionId === subQuestionId) {
+      return {
+        userAnswer: ans,
+        isCorrect: ans.isCorrect,
+        isAnswered: true,
+        rawAnswer: ans.answer,
+      };
+    }
+  }
+
+  return { userAnswer: null, isCorrect: undefined, isAnswered: false, rawAnswer: null };
+}
+
+// Helper to get user answer display text for sub-questions
+function getSubAnswerDisplayText(question: Question, rawAnswer: any, subQuestionId: string): string {
+  if (!rawAnswer && rawAnswer !== 0) return '—';
+
+  let val = rawAnswer;
+  // If rawAnswer is a Record (from main answer), extract the sub value
+  if (typeof rawAnswer === 'object' && rawAnswer !== null && subQuestionId in rawAnswer) {
+    val = rawAnswer[subQuestionId];
+  }
+  if (!val && val !== 0) return '—';
+
+  // Resolve option/heading text for matching-type questions
+  if ('options' in question && Array.isArray((question as any).options)) {
+    const opt = (question as any).options.find((o: any) => o.id === val);
+    if (opt?.text) return opt.text;
+  }
+  if ('headings' in question && Array.isArray((question as any).headings)) {
+    const heading = (question as any).headings.find((h: any) => h.id === val);
+    if (heading?.text) return heading.text;
+  }
+
+  return String(val);
+}
+
+// AnswerDetailTable component - shows correct answers grouped by section/question block
+const AnswerDetailTable = ({ currentTest, testResults }: { currentTest: Test; testResults: TestResult }) => {
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const answers = testResults.answers || {};
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections(prev => ({ ...prev, [sectionId]: !prev[sectionId] }));
+  };
+
+  return (
+    <div className="space-y-3">
+      {currentTest.sections.map((section: Section) => {
+        const isExpanded = expandedSections[section.id] !== false; // default expanded
+
+        return (
+          <div key={section.id} className="border rounded-lg overflow-hidden">
+            <button
+              onClick={() => toggleSection(section.id)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-muted/40 hover:bg-muted/60 transition-colors text-left"
+            >
+              <span className="font-semibold text-sm">{section.title}</span>
+              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isExpanded && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-muted/20 border-b">
+                      <th className="text-left px-4 py-2 font-medium text-muted-foreground w-12">#</th>
+                      <th className="text-left px-3 py-2 font-medium text-muted-foreground">Câu hỏi</th>
+                      <th className="text-left px-3 py-2 font-medium text-green-600">Đáp án đúng</th>
+                      <th className="text-left px-3 py-2 font-medium text-muted-foreground">Câu trả lời</th>
+                      <th className="text-center px-3 py-2 font-medium text-muted-foreground w-16">KQ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {section.questions.map((question: Question) => {
+                      const questionTitle = question.text
+                        ? `Q${question.index + 1}–${question.partialEndingIndex || question.index + 1}. ${question.type.replace(/-/g, ' ').toUpperCase()}`
+                        : null;
+
+                      // Questions with subQuestions (matching, completion, TFNG, etc.)
+                      if (question.subQuestions && question.subQuestions.length > 0) {
+                        return (
+                          <React.Fragment key={question.id}>
+                            {questionTitle && (
+                              <tr className="bg-muted/30 border-b">
+                                <td colSpan={5} className="px-4 py-2 font-semibold text-xs uppercase tracking-wide text-muted-foreground">
+                                  {questionTitle}
+                                </td>
+                              </tr>
+                            )}
+                            {question.subQuestions.map((sub, subIdx) => {
+                              const { isCorrect, isAnswered, rawAnswer } = findSubQuestionAnswer(answers, question.id, sub.subId);
+                              const isCompletion = question.type === 'completion' || question.type === 'short-answer';
+                              const questionLabel = isCompletion
+                                ? ''
+                                : (sub.questionText || sub.item || `Câu ${(sub.subIndex ?? subIdx) + 1}`);
+                              const correctText = getCorrectAnswerText(question, sub.subId);
+                              const userText = isAnswered
+                                ? getSubAnswerDisplayText(question, rawAnswer, sub.subId)
+                                : '—';
+
+                              return (
+                                <tr key={`${question.id}-${sub.subId}`} className="border-b last:border-b-0 hover:bg-muted/10">
+                                  <td className="px-4 py-2 text-muted-foreground">{(sub.subIndex ?? subIdx) + 1}</td>
+                                  <td className="px-3 py-2 max-w-[200px] truncate" title={questionLabel}>{questionLabel}</td>
+                                  <td className="px-3 py-2 text-green-700 font-medium max-w-[200px] truncate" title={correctText}>{correctText}</td>
+                                  <td className={`px-3 py-2 max-w-[200px] truncate ${isAnswered && !isCorrect ? 'text-rose-600' : ''}`} title={userText}>{userText}</td>
+                                  <td className="text-center px-3 py-2">
+                                    {!isAnswered ? (
+                                      <Minus className="h-4 w-4 text-muted-foreground mx-auto" />
+                                    ) : isCorrect ? (
+                                      <CheckCircle2 className="h-4 w-4 text-green-500 mx-auto" />
+                                    ) : (
+                                      <XCircle className="h-4 w-4 text-rose-500 mx-auto" />
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </React.Fragment>
+                        );
+                      }
+
+                      // Single-answer questions (multiple-choice, etc.)
+                      const userAnswer = answers[question.id];
+                      const isCorrect = userAnswer?.isCorrect;
+                      const isAnswered = !!userAnswer;
+                      const correctText = getCorrectAnswerText(question);
+                      const userText = isAnswered
+                        ? getUserAnswerText(question, userAnswer?.answer)
+                        : '—';
+
+                      return (
+                        <React.Fragment key={question.id}>
+                          {questionTitle && (
+                            <tr className="bg-muted/30 border-b">
+                              <td colSpan={5} className="px-4 py-2 font-semibold text-xs uppercase tracking-wide text-muted-foreground">
+                                {questionTitle}
+                              </td>
+                            </tr>
+                          )}
+                          <tr className="border-b last:border-b-0 hover:bg-muted/10">
+                            <td className="px-4 py-2 text-muted-foreground">{question.index + 1}</td>
+                            <td className="px-3 py-2 max-w-[200px] truncate" title={question.text}>{question.text || `Câu ${question.index + 1}`}</td>
+                            <td className="px-3 py-2 text-green-700 font-medium max-w-[200px] truncate" title={correctText}>{correctText}</td>
+                            <td className={`px-3 py-2 max-w-[200px] truncate ${isAnswered && !isCorrect ? 'text-rose-600' : ''}`} title={userText}>{userText}</td>
+                            <td className="text-center px-3 py-2">
+                              {!isAnswered ? (
+                                <Minus className="h-4 w-4 text-muted-foreground mx-auto" />
+                              ) : isCorrect ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-500 mx-auto" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-rose-500 mx-auto" />
+                              )}
+                            </td>
+                          </tr>
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 export default function TestResults({ currentTest, testResults, isExercise = false, feedback }: TestResultsProps) {
   const [showReview, setShowReview] = useState(false);
@@ -215,7 +454,7 @@ export default function TestResults({ currentTest, testResults, isExercise = fal
 
           <div className="flex flex-col lg:flex-row justify-between items-center gap-6 sm:gap-8 lg:gap-10">
             <div className="flex-shrink-0">
-              <ScoreCircle percentage={scorePercentage} />
+              <ScoreCircle correct={correctAnswers} total={testResults.totalQuestions} percentage={scorePercentage} />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 w-full lg:flex-1">
@@ -232,6 +471,56 @@ export default function TestResults({ currentTest, testResults, isExercise = fal
                 />
               )}
             </div>
+          </div>
+
+          {/* Answer Summary Table */}
+          <div>
+            <h3 className="text-xs sm:text-sm font-medium mb-3 flex items-center">
+              <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-primary" />
+              Tổng Hợp Kết Quả
+            </h3>
+            <div className="overflow-x-auto rounded-lg border">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/60">
+                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Phần</th>
+                    <th className="text-center px-3 py-2.5 font-medium text-muted-foreground">Tổng câu</th>
+                    <th className="text-center px-3 py-2.5 font-medium text-green-600">Đúng</th>
+                    <th className="text-center px-3 py-2.5 font-medium text-rose-600">Sai</th>
+                    <th className="text-center px-3 py-2.5 font-medium text-muted-foreground">Chưa trả lời</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {testResults.sectionResults.map((section: SectionResult) => (
+                    <tr key={section.id} className="border-t hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-2.5 font-medium">{section.title}</td>
+                      <td className="text-center px-3 py-2.5">{section.totalCount}</td>
+                      <td className="text-center px-3 py-2.5 text-green-600 font-semibold">{section.correctCount}</td>
+                      <td className="text-center px-3 py-2.5 text-rose-600 font-semibold">{section.incorrectCount}</td>
+                      <td className="text-center px-3 py-2.5 text-muted-foreground">{section.unansweredCount}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 bg-muted/40 font-semibold">
+                    <td className="px-4 py-2.5">Tổng cộng</td>
+                    <td className="text-center px-3 py-2.5">{testResults.totalQuestions}</td>
+                    <td className="text-center px-3 py-2.5 text-green-600">{testResults.correctAnswers}</td>
+                    <td className="text-center px-3 py-2.5 text-rose-600">{testResults.totalQuestions - testResults.correctAnswers - (testResults.totalQuestions - testResults.answeredQuestions)}</td>
+                    <td className="text-center px-3 py-2.5 text-muted-foreground">{testResults.totalQuestions - testResults.answeredQuestions}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          {/* Answer Detail by Section */}
+          <div>
+            <h3 className="text-xs sm:text-sm font-medium mb-3 flex items-center">
+              <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 text-primary" />
+              Chi Tiết Đáp Án Theo Phần
+            </h3>
+            <AnswerDetailTable currentTest={currentTest} testResults={testResults} />
           </div>
 
           {/* Section Breakdown */}
