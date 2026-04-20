@@ -30,6 +30,12 @@ const getScoreColorClass = (percentage: number) => {
   return 'text-rose-500';
 };
 
+// Helper to strip HTML tags for plain text display
+function stripHtml(html: string): string {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').trim();
+}
+
 
 // ScoreCircle component - focuses on correct answers count
 const ScoreCircle = ({ correct, total, percentage }: { correct: number; total: number; percentage: number }) => {
@@ -144,16 +150,27 @@ function getCorrectAnswerText(question: Question, subQuestionId?: string): strin
   if (question.type === 'multiple-choice') {
     const mcq = question as MultipleChoiceQuestion;
     const correct = mcq.options.find(o => o.isCorrect);
-    return correct?.text || '—';
+    return correct?.text ? stripHtml(correct.text) : '—';
+  }
+
+  // Writing tasks - show suggested/sample answer snippet
+  if (question.type === 'writing-task1' || question.type === 'writing-task2') {
+    const wq = question as any;
+    const answer = wq.suggestedAnswer || wq.sampleAnswer || '';
+    if (answer) {
+      const plain = stripHtml(answer);
+      return plain.length > 80 ? plain.slice(0, 80) + '...' : plain;
+    }
+    return '—';
   }
 
   if (question.subQuestions && subQuestionId) {
     const sub = question.subQuestions.find(s => s.subId === subQuestionId);
     if (sub) {
-      if (sub.answerText) return sub.answerText;
-      if ('correctAnswer' in sub && (sub as any).correctAnswer) return String((sub as any).correctAnswer);
+      if (sub.answerText) return stripHtml(sub.answerText);
+      if ('correctAnswer' in sub && (sub as any).correctAnswer) return stripHtml(String((sub as any).correctAnswer));
       if ('acceptableAnswers' in sub && Array.isArray((sub as any).acceptableAnswers)) {
-        return (sub as any).acceptableAnswers.join(' / ');
+        return (sub as any).acceptableAnswers.map((a: string) => stripHtml(a)).join(' / ');
       }
     }
   }
@@ -168,10 +185,17 @@ function getUserAnswerText(question: Question, answer: any): string {
   if (question.type === 'multiple-choice') {
     const mcq = question as MultipleChoiceQuestion;
     const selected = mcq.options.find(o => o.id === answer);
-    return selected?.text || String(answer);
+    return selected?.text ? stripHtml(selected.text) : stripHtml(String(answer));
   }
 
-  return String(answer);
+  // Writing tasks - show user's text snippet
+  if (question.type === 'writing-task1' || question.type === 'writing-task2') {
+    const text = typeof answer === 'object' && answer?.text ? answer.text : String(answer);
+    const plain = stripHtml(text);
+    return plain.length > 80 ? plain.slice(0, 80) + '...' : plain;
+  }
+
+  return stripHtml(String(answer));
 }
 
 // Helper to find a user's answer for a sub-question from the answers record
@@ -231,7 +255,7 @@ function getSubAnswerDisplayText(question: Question, rawAnswer: any, subQuestion
   }
   if (!val && val !== 0) return '—';
 
-  // Resolve option/heading text for matching-type questions
+  // Resolve option/heading/item text for matching-type questions
   if ('options' in question && Array.isArray((question as any).options)) {
     const opt = (question as any).options.find((o: any) => o.id === val);
     if (opt?.text) return opt.text;
@@ -239,6 +263,10 @@ function getSubAnswerDisplayText(question: Question, rawAnswer: any, subQuestion
   if ('headings' in question && Array.isArray((question as any).headings)) {
     const heading = (question as any).headings.find((h: any) => h.id === val);
     if (heading?.text) return heading.text;
+  }
+  if ('items' in question && Array.isArray((question as any).items)) {
+    const item = (question as any).items.find((i: any) => i.id === val);
+    if (item?.text) return item.text;
   }
 
   return String(val);
@@ -302,7 +330,7 @@ const AnswerDetailTable = ({ currentTest, testResults }: { currentTest: Test; te
                               const isCompletion = question.type === 'completion' || question.type === 'short-answer';
                               const questionLabel = isCompletion
                                 ? ''
-                                : (sub.questionText || sub.item || `Câu ${(sub.subIndex ?? subIdx) + 1}`);
+                                : stripHtml(sub.questionText || sub.item || `Câu ${(sub.subIndex ?? subIdx) + 1}`);
                               const correctText = getCorrectAnswerText(question, sub.subId);
                               const userText = isAnswered
                                 ? getSubAnswerDisplayText(question, rawAnswer, sub.subId)
@@ -350,7 +378,7 @@ const AnswerDetailTable = ({ currentTest, testResults }: { currentTest: Test; te
                           )}
                           <tr className="border-b last:border-b-0 hover:bg-muted/10">
                             <td className="px-4 py-2 text-muted-foreground">{question.index + 1}</td>
-                            <td className="px-3 py-2 max-w-[200px] truncate" title={question.text}>{question.text || `Câu ${question.index + 1}`}</td>
+                            <td className="px-3 py-2 max-w-[200px] truncate" title={stripHtml(question.text)}>{stripHtml(question.text) || `Câu ${question.index + 1}`}</td>
                             <td className="px-3 py-2 text-green-700 font-medium max-w-[200px] truncate" title={correctText}>{correctText}</td>
                             <td className={`px-3 py-2 max-w-[200px] truncate ${isAnswered && !isCorrect ? 'text-rose-600' : ''}`} title={userText}>{userText}</td>
                             <td className="text-center px-3 py-2">
