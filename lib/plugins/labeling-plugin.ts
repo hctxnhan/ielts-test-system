@@ -95,7 +95,7 @@ export class LabelingPlugin extends BaseQuestionPlugin<LabelingQuestion> {
     );
 
     const standardSubQuestions: StandardSubQuestionMeta[] =
-      question.subQuestions.map((sub) => ({
+      question.subQuestions.map((sub, index) => ({
         subId: sub.subId,
         item: sub.item,
         points: sub.points,
@@ -103,6 +103,7 @@ export class LabelingPlugin extends BaseQuestionPlugin<LabelingQuestion> {
         questionText: standardItems.find((item) => item.id === sub.item)?.text,
         answerText: standardOptions.find((opt) => opt.id === sub.correctAnswer)
           ?.text,
+        subIndex: index,
         explanation: sub.explanation || ''
       }));
 

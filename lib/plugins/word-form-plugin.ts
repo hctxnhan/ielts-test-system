@@ -75,12 +75,13 @@ class WordFormPlugin extends BaseQuestionPlugin<WordFormQuestion> {
       correctForm: ex.correctForm,
     }));
 
-    const standardSubQuestions: StandardSubQuestionMeta[] = question.exercises.map((ex) => ({
+    const standardSubQuestions: StandardSubQuestionMeta[] = question.exercises.map((ex, index) => ({
       subId: ex.id,
       questionText: ex.sentence,
       correctAnswer: ex.correctForm,
       item: ex.baseWord,
       points: question.points / (question.exercises.length || 1),
+      subIndex: index,
     }));
 
     return {

@@ -73,7 +73,7 @@ export class PickFromListPlugin extends BaseQuestionPlugin<PickFromAListQuestion
     const standardSubQuestions: StandardSubQuestionMeta[] = [];
 
     if (question.subQuestions && question.subQuestions.length > 0) {
-      for (const sub of question.subQuestions) {
+      question.subQuestions.forEach((sub, index) => {
         const itemId = sub.item || "";
         const itemData = standardItems.find((item) => item.id === itemId);
 
@@ -84,8 +84,9 @@ export class PickFromListPlugin extends BaseQuestionPlugin<PickFromAListQuestion
           correctAnswer: "true",
           questionText: itemData?.text || "",
           answerText: itemData?.text || "",
+          subIndex: index,
         });
-      }
+      });
     }
 
     return {

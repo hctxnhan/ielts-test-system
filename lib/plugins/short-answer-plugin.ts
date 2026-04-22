@@ -80,7 +80,7 @@ class ShortAnswerPlugin extends BaseQuestionPlugin<ShortAnswerQuestion> {
 
     const standardSubQuestions: StandardSubQuestionMeta[] =
    
-      question.subQuestions.map((sub) => {
+      question.subQuestions.map((sub, index) => {
         const shortAnswerSub = sub as any;
         return {
           subId: sub.subId,
@@ -90,6 +90,7 @@ class ShortAnswerPlugin extends BaseQuestionPlugin<ShortAnswerQuestion> {
           questionText: standardItems.find((item) => item.id === sub.item)?.text,
           answerText: shortAnswerSub.acceptableAnswers?.join(", "),
           acceptableAnswers: shortAnswerSub.acceptableAnswers,
+          subIndex: index,
           explanation: sub.explanation || ''
         };
       });
