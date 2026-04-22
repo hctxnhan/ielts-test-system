@@ -84,7 +84,7 @@ export class MatchingPlugin extends BaseQuestionPlugin<MatchingQuestion> {
     );
 
     const standardSubQuestions: StandardSubQuestionMeta[] =
-      question.subQuestions.map((sub) => ({
+      question.subQuestions.map((sub, index) => ({
         subId: sub.subId,
         item: sub.item,
         points: sub.points,
@@ -92,6 +92,7 @@ export class MatchingPlugin extends BaseQuestionPlugin<MatchingQuestion> {
         questionText: standardItems.find((item) => item.id === sub.item)?.text,
         answerText: standardOptions.find((opt) => opt.id === sub.correctAnswer)
           ?.text,
+        subIndex: index,
         explanation: sub.explanation || ''
       }));
 

@@ -204,6 +204,17 @@ function findSubQuestionAnswer(
   questionId: string,
   subQuestionId: string
 ): { userAnswer: any; isCorrect: boolean | undefined; isAnswered: boolean; rawAnswer: any } {
+  // Case 0: subQuestionId === questionId (e.g. multiple-choice after transform)
+  if (subQuestionId === questionId && answers[questionId] && !answers[questionId].parentQuestionId) {
+    const ans = answers[questionId];
+    return {
+      userAnswer: ans,
+      isCorrect: ans.isCorrect,
+      isAnswered: true,
+      rawAnswer: ans.answer,
+    };
+  }
+
   // Case 1: Individual sub-answer stored under subQuestionId key
   if (answers[subQuestionId] && answers[subQuestionId].parentQuestionId === questionId) {
     return {
@@ -248,6 +259,20 @@ function findSubQuestionAnswer(
 function getSubAnswerDisplayText(question: Question, rawAnswer: any, subQuestionId: string): string {
   if (!rawAnswer && rawAnswer !== 0) return '—';
 
+  // For multiple-choice: rawAnswer is the option ID string directly
+  if (question.type === 'multiple-choice') {
+    const mcq = question as MultipleChoiceQuestion;
+    const selected = mcq.options.find(o => o.id === rawAnswer);
+    return selected?.text ? stripHtml(selected.text) : stripHtml(String(rawAnswer));
+  }
+
+  // For writing tasks: rawAnswer is { text: "...", score: ..., feedback: "..." } or a string
+  if (question.type === 'writing-task1' || question.type === 'writing-task2') {
+    const text = typeof rawAnswer === 'object' && rawAnswer?.text ? rawAnswer.text : String(rawAnswer);
+    const plain = stripHtml(text);
+    return plain.length > 80 ? plain.slice(0, 80) + '...' : (plain || '—');
+  }
+
   let val = rawAnswer;
   // If rawAnswer is a Record (from main answer), extract the sub value
   if (typeof rawAnswer === 'object' && rawAnswer !== null && subQuestionId in rawAnswer) {
@@ -269,7 +294,13 @@ function getSubAnswerDisplayText(question: Question, rawAnswer: any, subQuestion
     if (item?.text) return item.text;
   }
 
-  return String(val);
+  // Fallback: handle objects gracefully
+  if (typeof val === 'object' && val !== null) {
+    if (val.text) return stripHtml(String(val.text));
+    return '—';
+  }
+
+  return stripHtml(String(val));
 }
 
 // AnswerDetailTable component - shows correct answers grouped by section/question block
@@ -311,7 +342,7 @@ const AnswerDetailTable = ({ currentTest, testResults }: { currentTest: Test; te
                   <tbody>
                     {section.questions.map((question: Question) => {
                       const questionTitle = question.text
-                        ? `Q${question.index + 1}–${question.partialEndingIndex || question.index + 1}. ${question.type.replace(/-/g, ' ').toUpperCase()}`
+                        ? `Q${question.index + 1}${question.partialEndingIndex > question.index ? `–${question.partialEndingIndex + 1}` : ''}. ${question.type.replace(/-/g, ' ').toUpperCase()}`
                         : null;
 
                       // Questions with subQuestions (matching, completion, TFNG, etc.)
@@ -338,7 +369,7 @@ const AnswerDetailTable = ({ currentTest, testResults }: { currentTest: Test; te
 
                               return (
                                 <tr key={`${question.id}-${sub.subId}`} className="border-b last:border-b-0 hover:bg-muted/10">
-                                  <td className="px-4 py-2 text-muted-foreground">{(sub.subIndex ?? subIdx) + 1}</td>
+                                  <td className="px-4 py-2 text-muted-foreground">{question.index + (sub.subIndex ?? subIdx) + 1}</td>
                                   <td className="px-3 py-2 max-w-[200px] truncate" title={questionLabel}>{questionLabel}</td>
                                   <td className="px-3 py-2 text-green-700 font-medium max-w-[200px] truncate" title={correctText}>{correctText}</td>
                                   <td className={`px-3 py-2 max-w-[200px] truncate ${isAnswered && !isCorrect ? 'text-rose-600' : ''}`} title={userText}>{userText}</td>

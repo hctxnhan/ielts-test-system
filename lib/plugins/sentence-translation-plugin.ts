@@ -87,11 +87,12 @@ class SentenceTranslationPlugin extends BaseQuestionPlugin<SentenceTranslationQu
     const sentencesCount = sentences.length || 1;
 
     const standardSubQuestions: StandardSubQuestionMeta[] = sentences.map(
-      (s) => ({
+      (s, index) => ({
         subId: s.id,
         questionText: s.sourceText,
         acceptableAnswers: s.referenceTranslations,
         points: question.points / sentencesCount,
+        subIndex: index,
       }),
     );
 
