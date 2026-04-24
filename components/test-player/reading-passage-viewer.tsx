@@ -226,11 +226,12 @@ export default function ReadingPassageViewer({
             .font-scale-container * { transition: font-size 0.2s ease !important; }
           `
         }} />
-        <div className="font-scale-container">
+        <div className="font-scale-container" onDragStart={(e) => e.preventDefault()}>
           <RichTextEditor
             value={passage.content}
             onChange={onContentChange || (() => {})}
             readonly={true}
+            enableHighlight={true}
             className="leading-relaxed w-full h-full"
             minHeight={100}
           />

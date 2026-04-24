@@ -447,7 +447,7 @@ export default function Completion({
         top: Math.min(start.top, end.top) - 10,
         width: Math.abs(end.left - start.left),
       };
-      setPopoverPos({ x: left + rect.width / 2, y: selectionTop - 40 });
+      setPopoverPos({ x: left + rect.width / 2, y: selectionTop - 60 });
     },
   });
 
@@ -609,8 +609,8 @@ export default function Completion({
           box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         }
         .color-btn {
-          width: 18px;
-          height: 18px;
+          width: 22px;
+          height: 22px;
           border-radius: 4px;
           border: 1px solid #aaa;
           cursor: pointer;

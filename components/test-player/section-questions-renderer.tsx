@@ -17,8 +17,14 @@ const SectionQuestionsRenderer: React.FC<SectionQuestionsRendererProps> = ({
   answers,
   onQuestionContentChange,
 }) => {
+  const handleDragStart = (e: React.DragEvent) => {
+    if (!isReviewMode) {
+      e.preventDefault();
+    }
+  };
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" onDragStart={handleDragStart}>
       {questions.map((question, index) => (
         <div
           key={question.id}
