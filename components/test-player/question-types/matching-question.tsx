@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import type { MatchingQuestion } from "@testComponents/lib/types";
-import { DraggableItem, DroppableZone, DndMatchingProvider } from "./shared/dnd-components";
+import { DraggableItem, DroppableZone } from "./shared/dnd-components";
 import { Label } from "@testComponents/components/ui/label";
 import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
 import { cn } from "@testComponents/lib/utils";
@@ -55,7 +55,6 @@ export default function MatchingQuestionRenderer({
   };
 
   return (
-    <DndMatchingProvider onDrop={handleDrop}>
     <div className="mx-auto space-y-6">
       <RichTextEditor
         value={question.text || ""}
@@ -196,6 +195,5 @@ export default function MatchingQuestionRenderer({
         </div>
       </div>
     </div>
-    </DndMatchingProvider>
   );
 }

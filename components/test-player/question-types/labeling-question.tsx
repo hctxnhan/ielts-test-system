@@ -2,7 +2,7 @@
 import React from "react";
 import type { LabelingQuestion } from "@testComponents/lib/types";
 import { useEffect, useState } from "react";
-import { DraggableItem, DroppableZone, DndMatchingProvider } from "./shared/dnd-components";
+import { DraggableItem, DroppableZone } from "./shared/dnd-components";
 import { Label } from "@testComponents/components/ui/label";
 import { RichTextContent } from "@testComponents/components/ui/rich-text-content";
 import { RichTextEditor } from "@testComponents/components/ui/rich-text-editor";
@@ -56,7 +56,6 @@ export default function LabelingQuestionRenderer({
     });
   };
   return (
-    <DndMatchingProvider onDrop={handleDrop}>
     <div className="space-y-6">
       <RichTextEditor
         value={question.text || ""}
@@ -199,6 +198,5 @@ export default function LabelingQuestionRenderer({
         </div>
       </div>
     </div>
-    </DndMatchingProvider>
   );
 }
