@@ -10,10 +10,8 @@ import { ScrollArea } from "@testComponents/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@testComponents/components/ui/tabs";
 import type { Test, TestProgress } from "@testComponents/lib/types";
 import { useTestStore } from "@testComponents/store/test-store";
-import { SplitSquareVertical, HelpCircle, Lightbulb, BookOpenCheck, ChevronLeft } from "lucide-react";
+import { SplitSquareVertical, HelpCircle, Lightbulb, BookOpenCheck, ChevronLeft, ArrowLeftRight } from "lucide-react";
 import { useRef, useState } from "react";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
 import AudioPlayer from "./audio-player";
 import ReadingPassageViewer from "./reading-passage-viewer";
 import SectionQuestionsRenderer from "./section-questions-renderer";
@@ -52,6 +50,7 @@ export default function BaseTestContainer({
   realTestMode = false,
 }: BaseTestContainerProps) {
   const [showPassage, setShowPassage] = useState(true);
+  const [swapLayout, setSwapLayout] = useState(false);
   const [audioPlayed, setAudioPlayed] = useState(false);
   const passageContainerRef = useRef<HTMLDivElement>(null);
   const contentContainerRef = useRef<HTMLDivElement>(null);
@@ -94,7 +93,7 @@ export default function BaseTestContainer({
   const isListeningTest =
     test.type === "listening" || test.skill === "listening";
   return (
-    <DndProvider backend={HTML5Backend}>
+    <>
       <div className="pb-10">
         {/* Add bottom padding for fixed navigation */}
         {test.isExercise &&
@@ -162,7 +161,7 @@ export default function BaseTestContainer({
 
         <div
           ref={contentContainerRef}
-          className="flex flex-col lg:flex-row gap-6 relative"
+          className={`flex flex-col lg:flex-row gap-6 relative ${swapLayout ? 'lg:flex-row-reverse' : ''}`}
         >
           {/* Reading Passage - Full width on mobile, conditionally shown column on desktop with sticky top */}
           {isReadingTest && currentSection.readingPassage && (
@@ -193,13 +192,19 @@ export default function BaseTestContainer({
           )}{" "}
           {/* Questions - Full width on mobile, expanded when passage is hidden */}
           <div className={`lg:transition-all lg:duration-300 flex-1`}>
-            {/* Toggle passage button - moved from passage section to questions section */}
+            {/* Toggle passage button and swap button */}
             {isReadingTest && currentSection.readingPassage && (
-              <div className="justify-start mb-4  lg:flex hidden">
+              <div className="justify-start mb-4 gap-2 lg:flex hidden">
                 <Button variant="outline" size="sm" onClick={togglePassage}>
                   {showPassage ? "Hide Passage" : "Show Passage"}
                   <SplitSquareVertical className="ml-2 h-4 w-4" />
                 </Button>
+                {showPassage && (
+                  <Button variant="outline" size="sm" onClick={() => setSwapLayout(!swapLayout)}>
+                    Đổi vị trí
+                    <ArrowLeftRight className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
               </div>
             )}
 
@@ -306,6 +311,6 @@ export default function BaseTestContainer({
           isrealTestMode={realTestMode}
         />
       </div>
-    </DndProvider>
+    </>
   );
 }
