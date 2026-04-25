@@ -497,7 +497,7 @@ export default function Completion({
 
   useEffect(() => {
     const close = (e: MouseEvent) => {
-      if (!popoverRef.current || !popoverRef.current.contains(e.target as Node)) {
+      if (!popoverRef.current || !popoverRef.current.contains(e.target as globalThis.Node)) {
         setPopoverPos(null);
       }
     };
