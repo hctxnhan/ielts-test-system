@@ -1165,8 +1165,7 @@ export function RichTextEditor({
       />
       {!readonly && <Toolbar editor={editor} />}
       {!readonly && <FloatingTableToolbar editor={editor} />}
-      {enableHighlight && <FloatingHighlightToolbar editor={editor} readonly={readonly} />} />} */}
-      <FloatingHighlightToolbar editor={editor} readonly={readonly} />
+      {enableHighlight && <FloatingHighlightToolbar editor={editor} readonly={readonly} />}
 
       <EditorContent editor={editor} placeholder={placeholder} id={id} />
     </div>
