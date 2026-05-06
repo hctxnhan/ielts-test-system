@@ -1,10 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import { Button } from "@testComponents/components/ui/button";
 import { useCurriculumStore } from "@testComponents/store/curriculum-store";
 import type { CurriculumTest } from "@testComponents/lib/curriculum-types";
 import { GripVertical, Trash2, Clock, BarChart3 } from "lucide-react";
+import { useDrag, useDrop } from "react-dnd";
+
+const TEST_ITEM_DRAG_TYPE = "curriculum-test-item";
 
 interface TestItemProps {
   test: CurriculumTest;
@@ -12,8 +15,58 @@ interface TestItemProps {
   index: number;
 }
 
-export function TestItem({ test, sessionId, index: _index }: TestItemProps) {
-  const { removeTestFromSession } = useCurriculumStore();
+interface TestItemDragData {
+  type: string;
+  testId: number;
+  sessionId: string;
+  index: number;
+}
+
+export function TestItem({ test, sessionId, index }: TestItemProps) {
+  const { removeTestFromSession, reorderTestsInSession, moveTestBetweenSessions } = useCurriculumStore();
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Drag logic
+  const [{ isDragging }, dragRef, previewRef] = useDrag<
+    TestItemDragData,
+    unknown,
+    { isDragging: boolean }
+  >({
+    type: TEST_ITEM_DRAG_TYPE,
+    item: { type: TEST_ITEM_DRAG_TYPE, testId: test.id, sessionId, index },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  // Drop logic
+  const [{ isOver }, dropRef] = useDrop<
+    TestItemDragData,
+    unknown,
+    { isOver: boolean }
+  >({
+    accept: TEST_ITEM_DRAG_TYPE,
+    hover: (draggedItem) => {
+      if (draggedItem.sessionId === sessionId && draggedItem.index === index) return;
+
+      if (draggedItem.sessionId === sessionId) {
+        // Reorder within same session
+        reorderTestsInSession(sessionId, draggedItem.index, index);
+        draggedItem.index = index;
+      } else {
+        // Move between sessions
+        moveTestBetweenSessions(draggedItem.testId, draggedItem.sessionId, sessionId, index);
+        draggedItem.sessionId = sessionId;
+        draggedItem.index = index;
+      }
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+    }),
+  });
+
+  // Combine refs
+  previewRef(dropRef(ref));
 
   const handleRemove = () => {
     if (confirm(`Remove "${test.title}" from this session?`)) {
@@ -42,9 +95,16 @@ export function TestItem({ test, sessionId, index: _index }: TestItemProps) {
   };
 
   return (
-    <div className="test-item flex items-center gap-2 p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors">
+    <div
+      ref={ref}
+      style={{ opacity: isDragging ? 0.4 : 1 }}
+      className={`test-item flex items-center gap-2 p-3 border rounded-lg bg-card hover:bg-accent/50 transition-all ${isOver ? "border-primary border-t-2" : ""}`}
+    >
       {/* Drag Handle */}
-      <div className="cursor-grab active:cursor-grabbing">
+      <div
+        ref={dragRef as unknown as React.RefCallback<HTMLDivElement>}
+        className="cursor-grab active:cursor-grabbing"
+      >
         <GripVertical className="h-4 w-4 text-muted-foreground" />
       </div>
 
