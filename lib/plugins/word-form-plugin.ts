@@ -178,27 +178,7 @@ class WordFormPlugin extends BaseQuestionPlugin<WordFormQuestion> {
       }
 
       try {
-        const prompt = wordFormQuestion.scoringPrompt || `You are an expert grammar teacher specializing in word formation. Evaluate this word form transformation exercise:
-
-Base word: "${exercise.baseWord}"
-Student answer: "${userAnswer}"
-Correct form: "${exercise.correctForm}"
-
-Context sentence: "${exercise.sentence}"
-
-Please evaluate on a scale of 0-1 (where 1 is completely correct) considering:
-- Accuracy of the word transformation
-- Grammatical correctness in context
-- Spelling accuracy
-- Appropriate word form for the context
-
-Provide specific, constructive feedback focusing on:
-- Whether the transformation is correct
-- Any grammatical issues
-- Spelling corrections if needed
-- Explanation of the correct word formation rule
-
-Be encouraging but precise in your feedback.`;
+        const prompt = wordFormQuestion.scoringPrompt || "";
 
         const aiResult = await aiScoringFn({
           text: userAnswer,

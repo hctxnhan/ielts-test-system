@@ -117,22 +117,7 @@ class WritingTask1Plugin extends BaseQuestionPlugin<WritingTask1Question> {
         text: writingQuestion.text,
         prompt: writingQuestion.prompt,
         essay: userText,
-        scoringPrompt: writingQuestion.scoringPrompt || `You are an expert Vietnamese IELTS examiner. Your task is to evaluate this IELTS Writing Task 1 response based on the official scoring criteria.
-
-Provide a score between 1 and 9 (can include decimals like 7.5) and detailed feedback in Vietnamese.
-
-**Scoring Criteria Details (Evaluate based on these):**
-
-*   **Task Achievement/Response (Mức độ hoàn thành yêu cầu):** Assess how well the essay addresses all parts of the task prompt, develops a clear position, and presents relevant, extended, and supported ideas.
-*   **Coherence and Cohesion (Tính mạch lạc và liên kết):** Evaluate the organization of information and ideas, the clarity of progression throughout the response, and the effective use of cohesive devices (linking words, pronouns, etc.). Check paragraphing.
-*   **Lexical Resource (Vốn từ vựng):** Assess the range of vocabulary used, its accuracy, appropriateness for the task, and the control of features like collocation and word formation.
-*   **Grammatical Range and Accuracy (Độ đa dạng và chính xác của ngữ pháp):** Evaluate the range and accuracy of grammatical structures used, including sentence complexity and control over errors.
-
-Provide specific, constructive feedback in Vietnamese focusing on:
-- Strengths and areas for improvement in each criterion
-- Specific examples from the text
-- Suggestions for improvement
-- Overall band score justification`,
+        scoringPrompt: writingQuestion.scoringPrompt || "",
       });
 
       if (aiResult.ok) {

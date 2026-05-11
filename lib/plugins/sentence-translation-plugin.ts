@@ -328,29 +328,7 @@ class SentenceTranslationPlugin extends BaseQuestionPlugin<SentenceTranslationQu
     if (aiScoringFn) {
       try {
         const prompt =
-          scoringPrompt ||
-          `You are an expert language teacher specializing in translation evaluation. Your task is to evaluate the translation quality.
-
-Evaluate this translation from ${sourceLanguage} to ${targetLanguage}:
-
-Source: "${sourceText}"
-Student Translation: "${userAnswerString}"
-
-${referenceTranslations.length > 0 ? `Reference translations:\n${referenceTranslations.join("\n")}\n` : ""}
-
-Please evaluate on a scale of 0-1 (where 1 is perfect translation) considering:
-- Accuracy of meaning (40%)
-- Grammar and syntax (30%) 
-- Natural expression (20%)
-- Cultural appropriateness (10%)
-
-Provide specific, constructive feedback focusing on:
-- What was done well
-- Areas for improvement
-- Specific grammar or vocabulary suggestions
-- Cultural context if relevant
-
-Be encouraging but precise in your feedback.`;
+          scoringPrompt || "";
 
         const aiResult = await aiScoringFn({
           text: userAnswerString,

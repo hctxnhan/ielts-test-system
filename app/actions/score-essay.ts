@@ -1,12 +1,14 @@
 "use server";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateObject, jsonSchema } from "ai";
+import { createClient } from "@supabase/supabase-js";
 
 interface ScoringParams {
   text: string;
   prompt: string;
   essay: string;
   scoringPrompt: string;
+  promptKey?: string;
 }
 
 interface ScoringResult {
@@ -42,20 +44,48 @@ export async function scoreEssayWithAI(
   text: string,
   prompt: string,
   essay: string,
-  scoringPrompt?: string
+  scoringPrompt?: string,
+  promptKey?: string
 ) {
   try {
     const openrouter = createOpenRouter({
       apiKey: process.env.OPENROUTER_API_KEY
     });
-    const model = openrouter(process.env.OPENROUTER_MODEL_ID || '');
 
-    // Use the provided scoring prompt or a generic fallback
-    const promptToUse = scoringPrompt || `
-    You are an expert language examiner. Evaluate the response based on the context and criteria provided.
+    // Try to fetch prompt from DB if scoringPrompt is empty
+    let promptToUse = scoringPrompt || "";
+    let modelId = process.env.OPENROUTER_MODEL_ID || "";
+
+    if (!promptToUse.trim() && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
+      try {
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL,
+          process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+        );
+        const dbKey = promptKey || "scoring.writing";
+        const { data } = await supabase
+          .from("active_prompts")
+          .select("prompt_text, model, temperature")
+          .eq("key", dbKey)
+          .maybeSingle();
+
+        if (data?.prompt_text) {
+          promptToUse = data.prompt_text;
+          if (data.model) modelId = data.model;
+        }
+      } catch {
+        // DB fetch failed — continue with fallback
+      }
+    }
+
+    // Final fallback if still empty
+    if (!promptToUse.trim()) {
+      promptToUse = `You are an expert language examiner. Evaluate the response based on the context and criteria provided.
     
-    Provide an appropriate numerical score and detailed feedback in markdown format.
-    `;
+Provide an appropriate numerical score and detailed feedback in markdown format.`;
+    }
+
+    const model = openrouter(modelId);
 
     if (!process.env.OPENROUTER_API_KEY) {
       throw new Error('OPENROUTER_API_KEY is not set in environment variables');
@@ -128,7 +158,7 @@ export async function scoreEssay(
   params: ScoringParams,
 ): Promise<ScoringResult> {
   try {
-    const { text, prompt, essay, scoringPrompt } = params;
+    const { text, prompt, essay, scoringPrompt, promptKey } = params;
 
     if (!essay || essay.trim().length === 0) {
       return {
@@ -139,7 +169,7 @@ export async function scoreEssay(
       };
     }
 
-    const result = await scoreEssayWithAI(text, prompt, essay, scoringPrompt);
+    const result = await scoreEssayWithAI(text, prompt, essay, scoringPrompt, promptKey);
 
     return {
       ok: true,
